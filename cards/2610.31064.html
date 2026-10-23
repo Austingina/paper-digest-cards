@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜AstroBench</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31064" rel="noopener noreferrer" target="_blank">arXiv 2610.31064</a></span><span class="badge">深读</span></div>
+<h1>深读｜AstroBench</h1>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li><strong>自由漂浮捕获的物理挑战</strong>：航天器内无支撑表面的物体在接触时会改变运动状态（平移/旋转），导致视觉观测、动作预测与实际接触时刻不同步，现有桌面操纵基准难以复现这种“拦截+接触敏感”的失败模式。</li>
+<li><strong>通用策略泛化边界模糊</strong>：尽管 $\pi_{0.5}$ 等 VLA 模型在桌面任务表现优异，但其在零重力、自由漂浮目标上的直接迁移能力缺乏标准化测试；现有空间机器人基准（如 Space Robotics Bench）侧重环境生成，未深入量化特定硬件参考下的捕获成功率。</li>
+<li><strong>任务定义与物理约束脱节</strong>：现有基准常忽略存储/维护接口的几何约束（如 MELFI 箱体、RRM 阀门），导致策略在需要精确对齐和受限运动的操作中缺乏评估依据。</li>
+<li><strong>目标</strong>：建立包含自由漂浮捕获、样本存储和维护操作的 AstroBench，量化冻结的通用 VLA 策略与任务特定模仿学习策略在空间操作中的性能差异，提供可复现的资产与协议。</li>
+</ul></section><section class="section"><h2>方法</h2><ul>
+<li><strong>因子化任务规范</strong>：将任务实例定义为 $e=(\tau,o,z,x_{0},c,\ell,\nu)$，显式绑定任务定义、对象/硬件资产、目标选择、初始状态、视觉上下文、语言指令和执行配置，确保几何变化与语言指令的一致性。</li>
+<li><strong>双工作单元设计</strong>：</li>
+<li><strong>自由漂浮捕获</strong>：固定基座机械臂（Panda + Robotiq）面对无支撑刚体，设置静态、漂移、翻滚、快速翻滚四种初始运动轨迹。</li>
+<li><strong>硬件参考操作</strong>：基于 MELFI 文档构建样本存储箱（卡片转移/插入/提取、盖子开合），基于 RRM 文档构建维护面板（FDV1/SMA 盖移除、固定螺钉松紧），强调工具接口与几何约束。</li>
+<li><strong>捕获评估协议</strong>：定义捕获谓词 $C_k$，只要存在任一时刻满足接触与夹爪状态条件即判定成功（$A_i=1$）。报告捕获率（CR）及首次捕获时间，区分“动作接口拒绝”与“执行后未捕获”，避免基础设施错误干扰成功率统计。</li>
+<li><strong>资产扩展机制</strong>：从 Objaverse 798,759 条记录中筛选出 8,414 个刚性物体实例，保留元数据与物理属性（质量、碰撞几何）分离，支持在不改变任务协议的情况下扩展物体多样性。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li><strong>$\pi_{0.5}$ DROID 冻结策略表现极差</strong>：在 20 种不同物体上，每类物体静态/动态各测试 10 次（共 400 次尝试），仅捕获 2 个静态目标和 4 个动态目标。这表明直接迁移通用 VLA 检查点到自由漂浮场景存在显著困难。</li>
+<li><strong>任务特定 ACT 策略表现尚可</strong>：针对单一魔方物体训练的 ACT 策略，在 10 个固定位置测试中，静态目标捕获率为 8/10，动态目标捕获率为 6/10。显示任务特定模仿学习在受限物体集上能实现基本捕获行为。</li>
+<li><strong>对比结论</strong>：通用策略（$\pi_{0.5}$）在零样本迁移下几乎失效，而小样本训练的策略（ACT）虽局限于单一物体但具备基础能力。结果揭示了当前 VLA 模型在处理非支撑、接触敏感场景时的泛化瓶颈。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li><strong>实验覆盖范围有限</strong>：$\pi_{0.5}$ 实验仅使用了 DROID 检查点且未进行微调，ACT 仅针对单一物体（魔方）训练，未能全面评估其他 VLA 变体或大规模预训练策略在多样化物体上的表现。</li>
+<li><strong>仿真与真机差距</strong>：所有实验均在 NVIDIA Isaac Sim 中进行，尽管基于 PhysX，但零重力下的接触动力学、柔性变形及传感器噪声可能与真实航天环境存在偏差。</li>
+<li><strong>可跟进方向</strong>：</li>
+<li><strong>微调实验</strong>：在 AstroBench 上对 $\pi_{0.5}$ 或 OpenPI 进行少量数据微调（Fine-tuning），量化性能提升幅度，验证“数据效率”假设。</li>
+<li><strong>运动感知模块</strong>：引入显式的目标轨迹预测模块作为 VLA 的条件输入，测试是否能解决动态目标捕获率低的问题。</li>
+<li><strong>真机验证</strong>：利用气浮台或抛物线飞行平台，在真实零重力环境下复现部分静态/漂移任务，评估仿真到实物的迁移率。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li><strong>仿真平台</strong>：NVIDIA Isaac Sim，使用 Isaac Lab 场景与控制接口，GPU PhysX 后端。</li>
+<li><strong>机器人形态</strong>：固定基座 Franka Emika Panda 机械臂，配备 Robotiq 2F-85 夹爪。</li>
+<li><strong>策略模型</strong>：</li>
+<li><strong>$\pi_{0.5}$ DROID</strong>：冻结的关节位置控制检查点，无适应训练。</li>
+<li><strong>ACT (Action Chunking with Transformers)</strong>：基于 400 个本地魔方演示数据从头训练，冻结于第 140,000 步。</li>
+<li><strong>任务配置</strong>：</li>
+<li><strong>$\pi_{0.5}$ 实验</strong>：20 种物体，每种物体静态/动态各重复 10 次（共 400 次尝试）。</li>
+<li><strong>ACT 实验</strong>：1 种物体（魔方），10 个固定位置，静态/动态各评估一次（共 20 次尝试）。</li>
+<li><strong>视觉上下文</strong>：$\pi_{0.5}$ 实验使用 Kibo/JPM 舱室背景。</li>
+<li><strong>捕获检测器</strong>：基于实际目标接触、夹爪状态及相对运动几何的谓词逻辑，不同实验保留其原始检测器版本。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><h3 class="sub">与π系列的关系</h3>
+<p>本文并非提出新的 $\pi$ 架构改进，而是将 <strong>$\pi_{0.5}$ (DROID checkpoint)</strong> 作为基线策略，置于<strong>自由漂浮捕获</strong>这一极端泛化场景中进行压力测试。</p>
+<ul>
+<li><strong>继承点</strong>：直接复用 OpenPI/$\pi_{0.5}$ 的预训练权重与关节位置控制接口，未修改骨干网络或动作头。</li>
+<li><strong>差异点</strong>：传统 $\pi$ 系列评测多在桌面支撑物体上进行，AstroBench 引入了“无支撑+接触后运动改变”的物理条件，暴露了 $\pi_{0.5}$ 在缺乏显式动力学建模时的感知-动作闭环断裂问题（静态仅 1% 成功率）。</li>
+</ul>
+<h3 class="sub">对Austin研究的启发</h3>
+<ul>
+<li><strong>评测基准扩展</strong>：Austin 的 VLA 研究可引入 AstroBench 的“自由漂浮”子集作为鲁棒性测试项，特别是针对动态目标（Drift/Tumble）的捕获率，以评估策略对非平稳环境的适应能力。</li>
+<li><strong>条件接口设计</strong>：$\pi_{0.5}$ 在动态场景失败暗示纯视觉-语言输入不足以处理快速变化的相对运动。可尝试在 OpenPI 执行器中增加<strong>相对速度/轨迹预测</strong>作为额外条件输入（Conditioning），或引入轻量级动力学模型辅助动作生成。</li>
+<li><strong>数据多样性策略</strong>：ACT 在单一物体上的成功 vs $\pi_{0.5}$ 在多物体上的失败，提示 Austin 在构建空间操作数据集时，需平衡“物体多样性”与“任务特定性”，可能需要针对接触敏感任务设计专门的合成数据增强（如随机化初始速度场）。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>AstroBench 通过零重力自由漂浮捕获基准测试，揭示了冻结的 $\pi_{0.5}$ DROID 策略在动态目标上仅 2% 的极低成功率，凸显了通用 VLA 模型在接触敏感空间操作中的泛化瓶颈。</p></div></details>
+</article>
+<p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
+</div>
+</body>
+</html>
