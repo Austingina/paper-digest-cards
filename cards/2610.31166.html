@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Memory before Goal</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31166" rel="noopener noreferrer" target="_blank">arXiv 2610.31166</a></span><span class="badge">深读</span></div>
+<h1>深读｜Memory before Goal</h1>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li><strong>动态场景下的非马尔可夫性痛点</strong>：现有全身 VLA（如 $\pi_{0.5}$, GR00T）仅依赖当前观测，在人形机器人转身或行走导致目标物体离开视野、或被遮挡时，无法利用“动作前”的历史线索（Pre-History Memory），导致决策失败。</li>
+<li><strong>现有记忆机制的局限</strong>：桌面机械臂常用的长帧历史成本高且稀释关键信息；固定间隔采样易错过短暂线索；压缩方法丢失细节。人形机器人因自身运动导致视角剧烈变化，对因果性、自适应的关键帧选择提出了更高要求。</li>
+<li><strong>基准缺失</strong>：缺乏专门针对“全身移动操作 + 记忆依赖”的基准测试，现有基准要么目标始终可见，要么仅针对固定基座机械臂。</li>
+<li><strong>作者目标</strong>：提出一种基于物体事件驱动的感知记忆机制，使策略能根据“过去发生了什么”而非仅“现在看到什么”来执行全身动作，并在仿真与真机上验证其有效性。</li>
+</ul></section><section class="section"><h2>方法</h2><ul>
+<li><strong>整体架构 (WholeBodyMem)</strong>：在现有全身 VLA（如 $\Psi_0$）基础上外挂一个对象引导的感知记忆模块。输入为当前图像、本体状态和指令；输出为全身动作。核心在于引入记忆帧集合 $\mathbf{M}_t$ 和物体 Token $\mathbf{O}_t$。</li>
+<li><strong>基于 SAM3 的对象追踪与事件检测</strong>：使用冻结的 SAM3 模型根据文本提示（如“blue cup”）追踪任务对象。通过计算去除相机运动后的物体位移、掩码重叠率等指标，定义“出现、消失、重现、移动、形变”为关键事件。</li>
+<li><strong>因果自适应记忆选择 (Causal Selection)</strong>：不保留所有帧，而是根据事件评分动态填充内存预算（$B_{max}=7$ 帧）。始终保留首、中、当前帧，剩余槽位由高分事件帧填充，且跳过冗余帧（同一物体在短窗口内已有记录则跳过），确保因果性（仅使用 $t$ 之前的帧）。</li>
+<li><strong>动作专家中的交叉注意力读取</strong>：记忆以原生 Backbone Token 形式存储（保留细节），通过正弦位置编码注入时间/空间信息。动作专家（Action Expert）的 Action Tokens 通过 Cross-Attention 读取记忆 Token，并通过 FiLM 调制层影响最终动作生成，无需修改骨干网络权重。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li><strong>仿真基准 (HuMeGo) 显著提升</strong>：在包含计数、永久性、参考等6类记忆任务的仿真环境中，WholeBodyMem 将基线策略 $\Psi_0$（无记忆）的平均成功率从 <strong>29.1%</strong> 提升至 <strong>72.6%</strong>。</li>
+<li><strong>真机 Unitree G1 验证</strong>：在6个真实世界任务中（如咖啡座送饮料、转身取物等），成功率从基线的 <strong>36.7%</strong> 大幅跃升至 <strong>88.3%</strong>，证明了该方法在真实动态场景中的鲁棒性。</li>
+<li><strong>标准基准 (SIMPLE) 的泛化增益</strong>：即使在不需要复杂记忆的标准全身操作任务（14个 SIMPLE 任务）上，引入固定7帧记忆的 WholeBodyMem 也将成功率从基线的 <strong>70.2%</strong> 提升至 <strong>86.9%</strong>，表明历史上下文对常规操作也有辅助作用。</li>
+<li><strong>消融对比</strong>：相比“均匀采样记忆”（Uniform Memory），基于事件的自适应选择在 FlashPad（计数）和 BlinkPad（短暂线索）等任务上表现出显著优势（例如 FlashPad 成功率从 Uniform 的 ~70% 提升至 ~90%+，具体见 Table III 决策准确率差异），证明“保留正确的帧比保留更多的帧”更重要。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li><strong>依赖 SAM3 追踪质量</strong>：方法强依赖于 SAM3 对任务对象的准确分割与追踪。若物体被严重遮挡或外观剧烈变化导致 ID Switch，事件检测将失效。</li>
+<li><strong>提示词工程依赖</strong>：虽然提示词由 LLM (Claude Opus) 生成并固定，但针对不同场景仍需人工定义“什么是任务对象”，缺乏全自动的开放世界目标发现机制。</li>
+<li><strong>计算开销未详细披露</strong>：SAM3 逐帧推理（50Hz）及记忆 Token 的 Cross-Attention 增加了推理延迟，论文未给出实时性对比数据，可能在高速动态场景中受限。</li>
+<li><strong>可跟进方向</strong>：</li>
+<li>探索轻量级追踪器替代 SAM3 以降低延迟。</li>
+<li>研究端到端学习“什么值得记忆”，而非依赖预定义的事件规则（如位移阈值）。</li>
+<li>将记忆机制与 π0.5 的 System 2 (VLM Planner) 结合，让高层规划也能访问历史关键帧。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li><strong>平台</strong>：仿真使用 MuJoCo (物理) + Isaac Sim (渲染)；真机使用 Unitree G1 人形机器人。</li>
+<li><strong>基线策略</strong>：主要基于 $\Psi_0$ (WholeBodyVLA) 进行微调对比，同时对比了 $\pi_{0.5}$, GR00T, ACT, DP 等在 SIMPLE 基准上的表现。</li>
+<li><strong>数据集</strong>：</li>
+<li><strong>HuMeGo Benchmark</strong>：6个仿真任务（FlashPad, HideMug, ShellGame, LitLamp, BlinkPad, TouchPad）+ 6个真机任务。</li>
+<li><strong>数据规模</strong>：每个仿真任务 100 条演示，90 个测试场景；真机通过遥操作采集。</li>
+<li><strong>模型配置</strong>：</li>
+<li><strong>追踪器</strong>：Frozen SAM3 (Segment Anything Model 3)。</li>
+<li><strong>骨干网</strong>：Vision-Language Backbone + Flow-matching Action Expert (6层 DiT blocks)。</li>
+<li><strong>记忆预算</strong>：$B_{max}=7$ 帧，每帧保留 77 个原生 Token。</li>
+<li><strong>评测协议</strong>：SIMPLE 任务分为 L0/L1/L2 三个随机化等级，每级 10 episodes；HuMeGo 任务每级 30 episodes。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><h3 class="sub">与 π 系列（π0 / π0-FAST / π0.5 / OpenPI）的关系与启发</h3>
+<ul>
+<li><strong>互补而非替代</strong>：本文未直接修改 $\pi_{0.5}$ 或 $\pi_0$ 的骨干权重，而是作为一种“外挂记忆模块”集成到 VLA 架构中。这与 π0.5 强调的 System 1 (Fast) + System 2 (Slow/Reasoning) 分层架构有异曲同工之妙，但本文更侧重于<strong>感知层面的历史回溯</strong>，而非推理层面的逻辑规划。</li>
+<li><strong>对 OpenPI 执行器的启示</strong>：OpenPI 目前主要关注动作执行的流畅性与泛化性。本文指出，在移动操作（Loco-manipulation）中，单纯的动作平滑不足以解决“目标丢失”问题。对于基于 π0/π0.5 开发的全身机器人应用，若涉及转身、遮挡等场景，必须引入类似 WholeBodyMem 的<strong>因果记忆机制</strong>，否则策略会因非马尔可夫性而崩溃。</li>
+<li><strong>数据层面的借鉴</strong>：HuMeGo 基准提供了高质量的“记忆依赖”演示数据（Cue-Retention-Decision 结构），这对训练具备长程时序理解能力的 VLA 模型极具价值，可作为 π 系列后续版本在动态场景微调的重要补充数据集。</li>
+</ul>
+<h3 class="sub">对 Austin 研究的启发</h3>
+<ul>
+<li><strong>解决“抓了但送错”的失败模式</strong>：Austin 研究中常见的失败是机器人抓取物体后，因转身导致目标位置线索丢失，最终放置错误。借鉴本文思路，可在 Austin 的策略中增加一个轻量级的<strong>关键帧缓存模块</strong>：在检测到“目标物体被遮挡”或“机器人开始转身”时，强制保存当前视觉特征向量，并在决策阶段通过 Cross-Attention 重新注入，而非仅依赖当前观测。</li>
+<li><strong>事件驱动的监控机制</strong>：利用 SAM3 或类似分割模型实时监控任务对象的状态变化（如消失、移动），将其作为触发“记忆写入”的信号。这比固定频率采样更高效，能显著降低计算负载并提高关键信息的保留率。</li>
+<li><strong>评测协议升级</strong>：在 Austin 的内部评测中，应增加“转身遮挡”、“物体短暂出现后隐藏”等非马尔可夫测试用例，以验证策略是否真正具备记忆能力，而不仅仅是拟合了静态场景下的操作分布。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>MBZUAI 提出 WholeBodyMem，利用 SAM3 追踪物体事件并自适应选择关键历史帧注入 VLA 动作专家，在仿真和 Unitree G1 真机上将全身移动操作成功率分别提升至 72.6% 和 88.3%，有效解决了动态场景下的非马尔可夫决策难题。</p></div></details>
+</article>
+<p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
+</div>
+</body>
+</html>
