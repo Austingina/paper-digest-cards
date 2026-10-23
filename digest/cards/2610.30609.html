@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,13 +520,28 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30609" rel="noopener noreferrer" target="_blank">arXiv 2610.30609</a></span><span class="badge">深读</span></div>
 <h1>深读｜KinoUAV</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30609" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30609" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li>现有UAV VLN轨迹多用离散动作或几何插值，缺显式动力学约束，易产生高偏航率与碰撞。</li>
 <li>避障常依赖多源观测或显式障碍标注，采集成本高；纯目标描述又使大范围搜索低效。</li>
 <li>目标：构建带可执行动力学轨迹的UAV VLN基准，用仅RGB可学的安全中间量（DFD）解耦感知与动作，并以Cruise–Seek两阶段兼顾远距引导与局部探索。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 5）</span>
+    <a href="/assets/figures/2610.30609.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30609.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.30609.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30609.png'">
+    <img src="/assets/figures/2610.30609.png" onerror="this.onerror=null;this.src='../assets/figures/2610.30609.png'" alt="KinoUAV Figure 5 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>五阶段闭环导航运行流（顶部）</strong>：展示无人机从起点 $S$（绿色）到终点 $G$（红色）的“巡航—搜寻（Cruise-Seek）”执行闭环，依次经历起飞、到达当前航点、预测下一蓝点航点、执行底层动力学控制并循环推进直至抵达目标。</li>
+<li><strong>高层航点规划器（左下蓝色虚线框 High-Level Waypoint Planner）</strong>：以前视与下视双视角 RGB 图像、阶段引导信息（方向/距离）及任务文本描述为输入，经主干权重冻结（雪花图标）并挂载可训练 LoRA 适配器（火焰图标）的视觉语言模型（VLM），直接预测无人机体坐标系（$+X$前、$+Y$左、$+Z$上）下的下一目标航点 $W^i=(X,Y,Z)$。</li>
+<li><strong>低层动力学运动控制器（右下橙色虚线框 Low-Level Motion Controller）</strong>：可训练的状态编码器（State Encoder）编码当前运动状态与目标航点 $W^i$，图像编码器（Image Encoder）提取双视角特征并由 DFD 解码器（DFD Decoder）显式预测方向自由空间距离（DFD）以表征局部无碰几何；多模态特征融合后输入加速度预测器（Acceleration Predictor），结合预测 DFD 安全约束高频输出6自由度离散安全加速度指令驱动无人机飞向 $W^i$。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 5 Caption）</summary><div class="arch-cap-text">Overview of KinoUAV-Agent. It hierarchically integrates waypoint planning, DFD estimation, and acceleration-based motion control.</div></details>
+</div>
+<ul>
 <li>轨迹管线：几何A*得航点链→分层动力学A*在速度/加速度/jerk与空气阻力模型下搜加速度动作→跟踪采集前视/下视图像与运动状态；标注前/下方向自由空间距离DFD（射线到首占体素，上限100m）。</li>
 <li>任务设计：Cruise–Seek两阶段指令（先按方向距离区域巡航引导，再按目标描述局部搜索），兼顾大尺度导航效率与末端定位。</li>
 <li>KinoUAV-Agent：高层VLM预测体坐标系下一航点；低层ResNet编码前/下两视角→DFD预测头+加速度头，结合预测DFD把动作投影到离散安全加速度集。</li>

@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,14 +520,29 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31635" rel="noopener noreferrer" target="_blank">arXiv 2610.31635</a></span><span class="badge">深读</span></div>
 <h1>深读｜HiP3R</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31635" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31635" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>长视频重建的“分块”困境</strong>：前馈3D模型（如VGGT）受限于二次方注意力复杂度，无法直接处理数千帧序列，必须切分为重叠块独立推理。这导致各块坐标系不一致、尺度漂移累积，且同一物理帧在不同块中产生冲突的位姿预测。</li>
 <li><strong>现有对齐方法的粒度错配</strong>：主流方案（如VGGT-Long）仅在块级进行 $\mathrm{Sim}(3)$ 对齐。这种刚性变换虽能校正全局布局，但无法修正块内部因视觉上下文差异导致的帧间位姿不一致（即“重叠窗口冲突”），且难以处理长程回环带来的非凸优化不稳定问题。</li>
 <li><strong>计算与精度的权衡</strong>：全帧级Bundle Adjustment（BA）计算量过大且易破坏前馈模型恢复的度量尺度；而仅靠块级对齐又无法消除局部速度跳变和重复估计误差。</li>
 <li><strong>目标设定</strong>：在不重新训练后端模型的前提下，通过分层位姿图优化，同时实现全局布局/尺度的鲁棒校正与帧级轨迹的平滑一致性，适用于块式（Chunk-based）和流式（Streaming）后端。</li>
-</ul></section><section class="section"><h2>方法</h2><p>HiP3R 提出了一种无需额外训练的分层位姿图优化框架，将重建分解为“粗布局恢复”和“细轨迹精修”两个阶段：</p>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2610.31635.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31635.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31635.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31635.png'">
+    <img src="/assets/figures/2610.31635.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31635.png'" alt="HiP3R Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>分块前馈局部重建（Input &amp; Local Reconstruction）</strong>：输入长序列视频被划分为重叠窗口子块（Chunk $1,\dots,K$），独立送入冻结的前馈3D重建后端（如 VGGT-$\Omega$），输出各块局部坐标系下的相机位姿、稠密点图与像素级置信度。</li>
+<li><strong>Stage I：块级 $\mathrm{Sim}(3)$ 布局优化（Chunk Layout Optimization）</strong>：以每个子块为节点维护相似变换 $A_c = (s_c, R_c, t_c) \in \mathrm{Sim}(3)$；相邻子块通过置信度加权 IRLS 建立重叠约束边（蓝色实线），同时底部分支通过视觉地点识别（VPR）、联合窗口推理与双端点配准构建长程回环边（粉色虚线），渐进式激活并优化全局布局与尺度一致性。</li>
+<li><strong>Stage II：帧级共享相机 $\mathrm{SE}(3)$ 精修（Shared-camera Refinement）</strong>：固定全局块布局后，为每个物理帧 $i$ 分配唯一的共享相机位姿节点 $F_i = (R_i, t_i) \in \mathrm{SE}(3)$，联合 Stage I 投影的一元块位姿先验因子（蓝色虚线）与块内连续帧相对运动因子（橙色实线）进行非线性优化，消除重叠窗口间的位姿冲突并输出一致的相机轨迹与三维点云。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Overview of HiP3R. Frozen backends predict overlapping chunks. Stage I builds a chunk-level $\mathrm{Sim}(3)$ graph from overlap and loop constraints to recover layout and scale. Stage II estimates one shared $\mathrm{SE}(3)$ camera per frame under that layout.</div></details>
+</div>
+<p>HiP3R 提出了一种无需额外训练的分层位姿图优化框架，将重建分解为“粗布局恢复”和“细轨迹精修”两个阶段：</p>
 <ul>
 <li><strong>Stage I：块级 $\mathrm{Sim}(3)$ 布局优化（Coarse Layout）</strong></li>
 <li><strong>节点与边</strong>：每个视频块为一个节点，关联一个相似变换 $A_k \in \mathrm{Sim}(3)$。边包括相邻块的重叠约束和基于视觉地点识别（VPR）的长程回环约束。</li>

@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,13 +520,28 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31569" rel="noopener noreferrer" target="_blank">arXiv 2610.31569</a></span><span class="badge">深读</span></div>
 <h1>深读｜Echo</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31569" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31569" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>背景痛点</strong>：现有 VLA 模型在闭环执行中缺乏对“任务完成”与“失败”的显式感知，导致机器人无法自主停止或在失败时触发恢复。现有方法通常依赖外部监控模型或复杂的架构设计，且往往需要细粒度的帧级进度标注（frame-level progress annotations），增加了数据收集难度和推理开销。</li>
 <li><strong>现有缺口</strong>：大多数工作仅将状态信号用于事后监控或奖励评估，未充分探索这些信号如何直接指导动作生成（action generation）。此外，同步去噪导致状态估计与动作更新耦合，未能利用早期收敛的状态信息来修正后续动作。</li>
 <li><strong>设定与目标</strong>：本文在真机操纵场景下，提出 Echo 框架。其核心目标是在不增加显著参数开销、无需帧级进度标注的前提下，通过联合去噪动作与状态信号，实现更鲁棒的闭环执行（包括成功停止、失败识别及恢复）。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2610.31569.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31569.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31569.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31569.png'">
+    <img src="/assets/figures/2610.31569.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31569.png'" alt="Echo Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多源互补监督数据构造</strong>：左侧输入四种数据类型以解决无帧级标注问题。<strong>成功演示</strong>中，SS在边界处由padding mask引导至1，FS恒为0；<strong>终端失败轨迹</strong>中，SS与FS均在边界处被引导至1，且动作不参与模仿学习；<strong>干预前失败片段</strong>仅监督$SS=0, FS=1$以表征可恢复性；<strong>恢复演示</strong>则通过公式$n_t$使FS目标随进度线性下降，提供从失败到成功的过渡监督。</li>
+<li><strong>联合表示与异步去噪机制</strong>：中部核心模块将任务状态编码为停止信号（SS）和失败信号（FS），作为额外两维特征拼接到动作块$\mathbf{A}_t \in \mathbb{R}^{H \times d_a}$中。模型基于Flow Matching进行联合去噪，引入异步调度使信号去噪时间$\tau_q$快于动作时间$\tau_A$（公式12）。这使得在动作去噪后半程，模型能利用更干净的状态估计引导纠正性动作生成。</li>
+<li><strong>受控交互注意力网络</strong>：右侧Transformer内部实施受控注意力机制。动作Token同时关注SS和FS，且SS/FS也反向关注动作Token以增强条件生成。关键在于阻断SS与FS之间的直接注意力交互，防止“终止”与“失败”语义混淆，确保状态信号的独立性与准确性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Overview of Echo. Four data types provide complementary action and signal supervision, with failed actions excluded from imitation. Stop (SS) and failure (FS) signals are appended to action chunks, with padding-based target construction illustrated.</div></details>
+</div>
+<ul>
 <li><strong>联合表示与去噪</strong>：Echo 将任务状态编码为两个标量信号——停止信号（Stop Signal, SS）和失败信号（Failure Signal, FS）。这两个信号作为动作块（action chunk）的额外两维特征，与机器人动作一起通过 Flow Matching 进行联合去噪。</li>
 <li><strong>互补监督数据构造</strong>：为解决无帧级标注问题，Echo 利用四种数据类型提供互补监督：</li>
 <li><strong>成功演示</strong>：SS 在边界处由 padding mask 引导至 1，FS 始终为 0。</li>

@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,14 +520,30 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31064" rel="noopener noreferrer" target="_blank">arXiv 2610.31064</a></span><span class="badge">深读</span></div>
 <h1>深读｜AstroBench</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31064" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31064" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>自由漂浮捕获的物理挑战</strong>：航天器内无支撑表面的物体在接触时会改变运动状态（平移/旋转），导致视觉观测、动作预测与实际接触时刻不同步，现有桌面操纵基准难以复现这种“拦截+接触敏感”的失败模式。</li>
 <li><strong>通用策略泛化边界模糊</strong>：尽管 $\pi_{0.5}$ 等 VLA 模型在桌面任务表现优异，但其在零重力、自由漂浮目标上的直接迁移能力缺乏标准化测试；现有空间机器人基准（如 Space Robotics Bench）侧重环境生成，未深入量化特定硬件参考下的捕获成功率。</li>
 <li><strong>任务定义与物理约束脱节</strong>：现有基准常忽略存储/维护接口的几何约束（如 MELFI 箱体、RRM 阀门），导致策略在需要精确对齐和受限运动的操作中缺乏评估依据。</li>
 <li><strong>目标</strong>：建立包含自由漂浮捕获、样本存储和维护操作的 AstroBench，量化冻结的通用 VLA 策略与任务特定模仿学习策略在空间操作中的性能差异，提供可复现的资产与协议。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.31064.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31064.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31064.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31064.png'">
+    <img src="/assets/figures/2610.31064.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31064.png'" alt="AstroBench Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>因子化空间操作基准概览</strong>：AstroBench 将每个空间站微重力操作实例形式化为七元组 $e=(\tau,o,z,x_0,c,\ell,\nu)$，显式绑定任务模板、三维刚体/硬件资产、目标槽位、初始运动状态、相机上下文、语言指令与执行配置。</li>
+<li><strong>(a) 自由漂浮目标捕获（Free-floating Capture）</strong>：固定基座的 Franka Panda 机械臂（配 Robotiq 夹爪）在舱内微重力环境下拦截无支撑漂浮刚体（涵盖静态、平移漂移、慢速翻滚与快速翻滚四类初始状态 $x_0$）；图中展示了冻结 $\pi_{0.5}$ 策略的闭环捕获轨迹，系统通过接触与夹爪闭合联合定义的捕获谓词 $C_k$ 判定首次成功捕获时刻。</li>
+<li><strong>(b) MELFI 低温样本存储操作（MELFI Storage）</strong>：复刻国际空间站冷存架，包含混合抽屉、铰链翻盖、弹力约束带与四联样本管卡槽，构建抽屉/盒盖开合及样本卡插入、提取与转移共5类受限几何任务模板。</li>
+<li><strong>(c) RRM 在轨维护面板操作（RRM Servicing）</strong>：机械臂正对壁挂式维护面板，操作 FDV1 加注阀帽、$3\times 3$ SMA 接口阵列、防脱紧固螺钉及工具接收座共4类精细维护模板。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">AstroBench combines free-floating capture, MELFI sample-storage operations and RRM cap and fastener servicing. Panel (a) is a recorded pi0.5 rollout; panels (b) and (c) show the current workcell geometry. The capture target is unsupported; the storage and service hardware is secured to its worksite. The RRM panel is wall-mounted, with a floor-mounted arm centered in front of it.</div></details>
+</div>
+<ul>
 <li><strong>因子化任务规范</strong>：将任务实例定义为 $e=(\tau,o,z,x_{0},c,\ell,\nu)$，显式绑定任务定义、对象/硬件资产、目标选择、初始状态、视觉上下文、语言指令和执行配置，确保几何变化与语言指令的一致性。</li>
 <li><strong>双工作单元设计</strong>：</li>
 <li><strong>自由漂浮捕获</strong>：固定基座机械臂（Panda + Robotiq）面对无支撑刚体，设置静态、漂移、翻滚、快速翻滚四种初始运动轨迹。</li>

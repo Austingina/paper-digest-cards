@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,49 +520,28 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30814" rel="noopener noreferrer" target="_blank">arXiv 2610.30814</a></span><span class="badge">深读</span></div>
 <h1>深读｜DRILL</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30814" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30814" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>目标错位痛点</strong>：现有 VLA 强化学习后训练（如 WMPO, RLVR-World）通常将世界模型（World Model, WM）作为环境替代品，但 WM 的训练目标仍是“像素级一步预测”（Pixel MSE）。这导致 WM 可能完美重建背景或无关细节，却未能准确模拟对策略梯度更新至关重要的状态转移。</li>
 <li><strong>具体失败模式</strong>：论文指出“更低的像素 MSE 可能导致更差的策略梯度”。WM 在视觉显著但任务无关区域（如背景）的误差被均匀惩罚，而策略学习需要的是高优势动作（High Advantage Actions）处的准确动力学信号。</li>
 <li><strong>现有方法缺口</strong>：Policy-Aware WM 和 ESNR 仅诊断了预测质量与策略能力的差距，未提供训练目标；RLVR-World 虽引入预测正确性奖励，但本质仍是优化预测器本身，而非直接优化由想象轨迹（Imagined Rollouts）诱导的策略更新方向。</li>
 <li><strong>作者目标</strong>：提出 DRILL 框架，使世界模型的训练目标从“像素保真度”转向“下游策略回报最大化”，即在想象环境中进行 GRPO 更新后，真实环境中的策略性能提升最大。</li>
-</ul></section><section class="section"><h2>方法</h2><div class="diagram-box arch-box" style="margin:18px 0;padding:14px 16px;border:1px solid #d8d2c7;border-radius:6px;background:#faf7f0"><div style="font-size:12px;color:#6e665c;margin-bottom:8px;font-weight:600">模型结构图（本地千问 Qwen 生成 · Mermaid）</div><pre class="mermaid" style="margin:0;overflow-x:auto">flowchart TB
-  Input[&quot;真实环境轨迹与语言指令&quot;]
-  Policy[&quot;VLA策略&quot;]
-  WM[&quot;世界模型&quot;]
-  Reward[&quot;冻结奖励模型&quot;]
-  Imag[&quot;想象轨迹&quot;]
-  GRPO[&quot;GRPO内层更新&quot;]
-  TempPolicy[&quot;临时策略&quot;]
-  RealEval[&quot;真实环境回报评估&quot;]
-  MetaGrad[&quot;外层元梯度&quot;]
-  WMUpdate[&quot;更新世界模型&quot;]
-  VWI[&quot;DRILL-VWI 加权像素损失&quot;]
-  IMG[&quot;DRILL-IMG 截断HVP元梯度&quot;]
-  Loss[&quot;策略回报最大化目标&quot;]
-  PUR[&quot;PUR诊断指标&quot;]
-  Output[&quot;高策略回报世界模型&quot;]
-
-  Input --&gt;|观测与指令| Policy
-  Input --&gt;|观测与指令| WM
-  Policy --&gt;|动作| Imag
-  WM --&gt;|预测下一帧| Imag
-  Imag --&gt;|想象轨迹| GRPO
-  Reward --&gt;|奖励信号| GRPO
-  GRPO --&gt;|一步更新| TempPolicy
-  TempPolicy --&gt;|真实环境评估| RealEval
-  RealEval --&gt;|回报梯度| MetaGrad
-  MetaGrad --&gt;|更新| WMUpdate
-  WMUpdate --&gt;|新参数| WM
-  MetaGrad --&gt;|优化目标| Loss
-  IMG --&gt;|元梯度| MetaGrad
-  Policy --&gt;|访问频率| VWI
-  WM --&gt;|预测置信度| VWI
-  Reward --&gt;|组相对优势| VWI
-  VWI --&gt;|加权更新| WMUpdate
-  Loss --&gt;|输出| Output
-  PUR --&gt;|诊断反馈| WMUpdate</pre></div>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.30814.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30814.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.30814.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30814.png'">
+    <img src="/assets/figures/2610.30814.png" onerror="this.onerror=null;this.src='../assets/figures/2610.30814.png'" alt="DRILL Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>内层想象优化 (Inner Imagined GRPO)</strong>：VLA策略 $\pi_\theta$ 在当前世界模型 $\mathcal{W}_\phi$ 生成的想象轨迹上执行一步GRPO更新，得到临时策略 $\theta^+$。该模块输入为离线演示数据与当前模型参数，输出为经过策略梯度优化的中间策略，旨在利用模型内部信号快速提升策略性能。</li>
+<li><strong>外层信用分配 (Outer Credit Assignment)</strong>：将策略改进信号反馈至世界模型以最大化真实环境回报 $J(\pi_{\theta^+})$。图中展示两种变体路径：DRILL-VWI 直接复用想象轨迹，构建带符号的访问加权动力学更新；DRILL-IMG 则通过可微分 rollout 对内部GRPO目标进行反向传播，实现端到端元梯度优化。</li>
+<li><strong>双路反馈机制 (Dual Feedback Paths)</strong>：DRILL-VWI 作为轻量级代理，利用策略访问频率、组相对优势及模型置信度重加权像素MSE损失，无需额外真实交互；DRILL-IMG 则结合少量真实仿真 rollout ($B_{real}=30$) 计算外层梯度，更忠实于目标函数但计算成本较高。两者共同构成双层优化闭环，动态修正世界模型偏差以指导策略学习。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of DRILL. The policy first learns inside the current world model through imagined GRPO. The resulting policy-improvement signal is then fed back to the world model: DRILL-VWI uses the same imagined rollouts to form a signed, visitation-weighted dynamics update, while DRILL-IMG differentiates the imagined policy objective through differentiable rollouts.</div></details>
+</div>
 <ul>
 <li><strong>双层优化框架 (Bilevel Framework)</strong>：</li>
 <li><strong>内层循环</strong>：在当前世界模型 $\mathcal{W}_\phi$ 生成的想象轨迹上，对 VLA 策略 $\pi_\theta$ 执行一步 GRPO（Group Relative Policy Optimization）更新，得到临时策略 $\theta^+$。</li>
@@ -537,7 +619,6 @@ details.fold .fold-body {
 </article>
 <footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
 </div>
-<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";mermaid.initialize({startOnLoad:true,theme:"neutral",securityLevel:"loose"});</script>
 <script>
 (function(){
   const sec = document.getElementById('paper-qa');

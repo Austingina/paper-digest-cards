@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,14 +520,30 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30735" rel="noopener noreferrer" target="_blank">arXiv 2610.30735</a></span><span class="badge">深读</span></div>
 <h1>深读｜When One Step Is Enough</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30735" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30735" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>推理延迟瓶颈</strong>：流匹配（Flow Matching）VLA 模型在部署时需迭代求解 ODE（通常 $N=4 \sim 10$ 步 Euler 积分），导致控制频率受限，难以满足动态或接触丰富任务对高频闭环控制的需求。</li>
 <li><strong>现有加速方案的代价</strong>：为实现单步生成，现有工作多采用蒸馏、分布整形目标或修改训练损失（如 MeanFlow, Consistency Models），这些方法增加了训练复杂度且可能损害模型容量或泛化性。</li>
 <li><strong>核心疑问与缺口</strong>：对于大规模预训练的 VLA 模型，是否真的必须依赖多步积分来保证动作质量？现有研究多在小型策略或图像生成领域验证单步退化，缺乏对主流大参数量 VLA（如 $\pi_{0.5}$, LAP）在机器人控制任务上的系统性实证对比。</li>
 <li><strong>目标</strong>：探究在不修改模型权重、不增加辅助损失的前提下，直接对训练好的流匹配 VLA 进行单步 Euler 推理是否能保持与多步推理相当的任务成功率。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.30735.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30735.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.30735.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30735.png'">
+    <img src="/assets/figures/2610.30735.png" onerror="this.onerror=null;this.src='../assets/figures/2610.30735.png'" alt="When One Step Is Enough Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>配对评估协议（Paired Evaluation）</strong>：针对每个（模型, 基准）组合，固定初始种子与噪声采样，分别执行参考步数（Reference Steps，如 $\pi_{0.5}$ 的 $N=10$）与单步 Euler 积分（$N=1$）。该模块确保对比仅由积分步数差异引起，排除随机性干扰，为后续统计检验提供严格受控的数据对。</li>
+<li><strong>性能差距量化（Performance Gap Quantification）</strong>：计算成功率差值 $\Delta = \mathrm{SR}_{\mathrm{ref}} - \mathrm{SR}_{1}$（单位：pp）。图中散点分布直观展示各模型在单步与多步推理下的表现差异，靠近 $x=y$ 对角线的点表明两者性能无显著统计差异，验证了单步近似的有效性。</li>
+<li><strong>统计等价性检验（TOST）</strong>：采用双单侧 t 检验（TOST）而非传统均值比较，设定实用等价边界 $\delta=3$ pp（成功率）或 $0.15$（CALVIN 链长）。该模块旨在从统计学上证明单步推理性能落在多步推理的“可接受误差范围”内，确立“一步即足”的理论依据。</li>
+<li><strong>多维影响分析（Multi-dimensional Analysis）</strong>：除成功率外，同步评估轨迹平滑度（Jerk）、动作多样性及推理延迟。该模块揭示单步 Euler 积分在大幅降低计算成本的同时，是否引入高频噪声或导致动作僵化，从而全面论证其在具身智能部署中的实际可行性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">1-step vs. reference-step success rates (SR) across all (model, benchmark) cells in our study; Δ = SR_ref - SR_1 is the performance gap in percentage points (pp). Points on or near the x=y diagonal indicate a negligible gap between 1-step Euler integration and multi-step ODE integration.</div></details>
+</div>
+<ul>
 <li><strong>配对评估协议（Paired Evaluation）</strong>：针对每个（模型, 基准）组合，使用相同的初始种子和噪声采样，分别执行参考步数（Reference Steps，如 $\pi_{0.5}$ 为 10 步）和单步（1-step Euler）推理。</li>
 <li><strong>统计等价性检验</strong>：采用双单侧 t 检验（TOST, Two One-Sided T-tests）来验证单步与多步性能是否在预设的实用等价边界内（成功率差异 $\delta=3$ pp，CALVIN 链长差异 $\delta=0.15$），而非仅比较均值大小。</li>
 <li><strong>模型覆盖范围</strong>：选取六个不同规模（450M - 4.7B 参数）和架构的流匹配 VLA 模型，包括 SmolVLA, FLOWER, X-VLA, $\pi_{0.5}$, LAP, XR-0，以及一个从头训练的 DiT 基线。</li>

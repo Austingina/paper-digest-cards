@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,14 +520,30 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30786" rel="noopener noreferrer" target="_blank">arXiv 2610.30786</a></span><span class="badge">深读</span></div>
 <h1>深读｜EBV-CAN</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30786" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30786" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>背景痛点</strong>：柔性内窥镜/连续体机器人在狭窄腔道导航时，长被动轴与环境接触（Contact-Aided Navigation, CAN）会改变电机指令与末端位移的映射关系。现有方法多依赖力传感或仿真强化学习，缺乏在真实物理环境中结合视觉语言模型（VLM）进行闭环控制的有效方案。</li>
 <li><strong>现有缺口</strong>：传统模仿学习（如GRU-BC）虽能拟合专家动作分布（低离线MAE），但在闭环执行中因误差累积导致任务失败；且多数方法未将“全局场景理解”与“局部视觉反馈”有效解耦，难以处理长程路径规划。</li>
 <li><strong>设定</strong>：真机平台（2自由度柔性内窥镜），输入为初始全局鸟瞰图（EBV）+ 实时内镜视图（EV）+ 电机状态 + 语言指令；输出为弯曲/插入动作。</li>
 <li><strong>目标</strong>：提出一种视觉语言策略，利用缓存的全局静态地图作为空间参考，结合局部动态观测和语言指令，实现高精度的接触辅助导航，并验证模型对指令的语义遵循能力。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 4）</span>
+    <a href="/assets/figures/2610.30786.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30786.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.30786.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30786.png'">
+    <img src="/assets/figures/2610.30786.png" onerror="this.onerror=null;this.src='../assets/figures/2610.30786.png'" alt="EBV-CAN Figure 4 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>(a) 缓存全局空间记忆（Cached Global Memory）</strong>：初始全局鸟瞰图（Initial EBV，$448\times 336$）经冻结 DINOv2 ViT-S/14 提取 $24\times 32$ 个 384维 Patch 特征，经 LayerNorm、线性投影（$384\to 256$）并叠加 2D 位置编码后，缓存为固定全局记忆矩阵 $G \in \mathbb{R}^{768\times 256}$ 作为键值对 $(K,V)$。</li>
+<li><strong>(b) 动态条件编码（Dynamic Conditioning）</strong>：语言指令 $l$ 经词嵌入与 GRU 池化生成语义向量 $z_l$；近8帧内镜视图（EV）的冻结 DINOv2 CLS 特征与 MLP 编码的电机状态 $s_t$ 拼接后输入导航 GRU，再与当前 EV 帧的 CNN 特征融合投影为 256维动态导航特征 $h_t$。</li>
+<li><strong>(c) 三查询空间接地（Three-query Grounding）</strong>：引入尖端（Tip）、下一导引航点（WP）与指令目标（Tgt）三个可学习查询，按 $Q^0 + W_h h_t + W_l z_l$ 注入动态条件后，经2层4头残差交叉注意力读取全局记忆 $G$，输出空间接地表征 $Q^2 \in \mathbb{R}^{3\times 256}$。</li>
+<li><strong>(d) 动作预测与辅助监督（Action Prediction）</strong>：Tip Token 单独经 MLP（$256\to 2$）回归尖端坐标 $(\hat{x},\hat{y})$ 提供显式空间监督；$Q^2$ 的三个 Token 与 $h_t$ 拼接为 1024维向量，经动作 MLP（$1024\to 12$）预测未来6步双电机指令（插入与弯曲），闭环仅执行首步动作 $a_{t:1}$。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 4 Caption）</summary><div class="arch-cap-text">Implemented EBV-CAN architecture. (a) Initial-EBV patch features are cached, projected, and combined with fixed two-dimensional positional encodings. (b) EV history, the repeated current-state embedding, and current-image CNN features produce $h_t$; the text encoder produces $z_l$. (c) Both condition all three learned queries. Two residual cross-attention blocks read the fixed memory. (d) The action head concatenates $h_t$ with all three final query tokens and predicts six two-motor commands; only the first is executed. The auxiliary coordinate head uses only the tip token. C denotes concatenation; CLS denotes the class token. Q, K, and V denote query, key, and value; WP and Tgt denote waypoint and target. Input thumbnails are representative.</div></details>
+</div>
+<ul>
 <li><strong>整体Pipeline</strong>：采用“全局静态记忆 + 局部动态感知”架构。初始时刻捕获一张全局鸟瞰图（EBV），后续推理仅使用实时内镜视图（EV）和电机状态，通过查询机制在缓存的全局特征上定位当前尖端、下一航点和目标。</li>
 <li><strong>空间监督查询机制</strong>：引入三个可学习的语义查询向量（Tip Query, Waypoint Query, Target Query）。这些查询由局部观测特征 $h_t$ 和语言嵌入 $z_l$ 共同条件化，通过残差交叉注意力读取缓存的全局EBV特征，分别预测尖端坐标、下一航点位置和指令目标位置。</li>
 <li><strong>动作预测头</strong>：将动态特征 $h_t$ 与三个查询的最终Token拼接，输入MLP预测未来6步的2自由度电机命令（弯曲、插入），仅执行第一步。这种设计将可解释的空间定位结果直接耦合到控制输出中。</li>

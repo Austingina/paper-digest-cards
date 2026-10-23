@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,14 +520,29 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31166" rel="noopener noreferrer" target="_blank">arXiv 2610.31166</a></span><span class="badge">深读</span></div>
 <h1>深读｜Memory before Goal</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31166" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31166" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>动态场景下的非马尔可夫性痛点</strong>：现有全身 VLA（如 $\pi_{0.5}$, GR00T）仅依赖当前观测，在人形机器人转身或行走导致目标物体离开视野、或被遮挡时，无法利用“动作前”的历史线索（Pre-History Memory），导致决策失败。</li>
 <li><strong>现有记忆机制的局限</strong>：桌面机械臂常用的长帧历史成本高且稀释关键信息；固定间隔采样易错过短暂线索；压缩方法丢失细节。人形机器人因自身运动导致视角剧烈变化，对因果性、自适应的关键帧选择提出了更高要求。</li>
 <li><strong>基准缺失</strong>：缺乏专门针对“全身移动操作 + 记忆依赖”的基准测试，现有基准要么目标始终可见，要么仅针对固定基座机械臂。</li>
 <li><strong>作者目标</strong>：提出一种基于物体事件驱动的感知记忆机制，使策略能根据“过去发生了什么”而非仅“现在看到什么”来执行全身动作，并在仿真与真机上验证其有效性。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 3）</span>
+    <a href="/assets/figures/2610.31166.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31166.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31166.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31166.png'">
+    <img src="/assets/figures/2610.31166.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31166.png'" alt="Memory before Goal Figure 3 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>记忆编织器 (Memory Weaver)</strong>：VLM 接收当前图像 $I_t$、本体状态 $s_t$ 及指令 $\ell$，通过因果自适应选择机制筛选关键事件帧，生成循环记忆状态 $s_t$。该模块利用 SAM3 追踪物体并计算位移与掩码重叠率，在预算 $B_{max}=7$ 内动态填充首、中、当前及高分事件帧，确保仅使用 $t$ 之前的因果信息以保留短时线索。</li>
+<li><strong>感知器 (Perceiver)</strong>：并行处理视觉输入以提取目标表征 $g_t$。该模块聚焦于任务相关对象（如“blue cup”），将原始像素特征压缩为紧凑的目标 Token $\mathbf{O}_t$，为动作生成提供显式的空间与语义引导，解决仅依赖当前视图无法响应已离开视野事件的问题。</li>
+<li><strong>动作专家 (Action Expert)</strong>：由 $L=6$ 个 DiT 块组成，采用分层交叉注意力机制读取记忆。在每个 DiT 块中，动作 Token 首先通过 Cross-Attention 关注循环记忆状态 $s_t$ 以获取历史上下文，随后关注目标表征 $g_t$ 以定位操作对象。最终结合 FiLM 调制层输出全身动作 $\mathbf{a}_t=(a_t,\dots,a_{t+H-1})$，涵盖上半身关节目标与下半身控制指令。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 3 Caption）</summary><div class="arch-cap-text">Overview of MemoVLA. A VLM produces a recurrent memory state s_t via the Memory Weaver and a goal representation g_t via the Perceiver; the Action Expert (L=6 DiT blocks) attends to s_t first and g_t second in every block.</div></details>
+</div>
+<ul>
 <li><strong>整体架构 (WholeBodyMem)</strong>：在现有全身 VLA（如 $\Psi_0$）基础上外挂一个对象引导的感知记忆模块。输入为当前图像、本体状态和指令；输出为全身动作。核心在于引入记忆帧集合 $\mathbf{M}_t$ 和物体 Token $\mathbf{O}_t$。</li>
 <li><strong>基于 SAM3 的对象追踪与事件检测</strong>：使用冻结的 SAM3 模型根据文本提示（如“blue cup”）追踪任务对象。通过计算去除相机运动后的物体位移、掩码重叠率等指标，定义“出现、消失、重现、移动、形变”为关键事件。</li>
 <li><strong>因果自适应记忆选择 (Causal Selection)</strong>：不保留所有帧，而是根据事件评分动态填充内存预算（$B_{max}=7$ 帧）。始终保留首、中、当前帧，剩余槽位由高分事件帧填充，且跳过冗余帧（同一物体在短窗口内已有记录则跳过），确保因果性（仅使用 $t$ 之前的帧）。</li>

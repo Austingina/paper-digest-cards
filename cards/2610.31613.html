@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,13 +520,29 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31613" rel="noopener noreferrer" target="_blank">arXiv 2610.31613</a></span><span class="badge">深读</span></div>
 <h1>深读｜Progress Probes P²</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31613" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31613" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li>VLA仍有语言接地失败、死锁与突发错误；部署需要运行时监测。</li>
 <li>现有方案多用外部VLM（Sentinel、Robometer）或需失败标签的激活分类器（SAFE），成本高或数据难。</li>
 <li>机制可解释性显示VLA激活可线性读出位姿、物体状态与任务阶段——作者假设进度也可被线性探针读出，目标是在仅用成功示教、不依赖外部VLM的前提下做轻量运行时失败监测。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.31613.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31613.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31613.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31613.png'">
+    <img src="/assets/figures/2610.31613.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31613.png'" alt="Progress Probes P² Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>进度标签构建（Progress Labeling）</strong>：仅利用成功演示轨迹，将时间步 $t$ 映射为归一化剩余时间 $\zeta_t = 1 - t/T$ 作为监督信号。该模块确立了“进度即剩余时间”的线性假设，无需失败样本即可生成稠密奖励代理，为后续探针训练提供无偏基准。</li>
+<li><strong>内部激活提取（Activation Extraction）</strong>：从预训练视觉-语言-动作模型 $\pi_{0.5}$ 的前向传播中截取中间层特征 $z_t^i$。此过程复用策略推理时的计算图，不引入额外前向开销，直接捕获多模态输入在潜空间中的语义表征，作为进度预测的原始特征源。</li>
+<li><strong>线性探针拟合（Linear Probe Fitting）</strong>：对提取的特征 $z_t^i$ 训练轻量级线性回归器 $\phi(\cdot)$，建立从内部状态到进度标签 $\zeta_t$ 的映射关系。该模块通过最小化均方误差优化权重，实现从高维潜变量到低维标量进度的解耦解码，具备极强的可解释性与低计算复杂度。</li>
+<li><strong>运行时异常监测（Runtime Monitoring）</strong>：实时计算监测分数 $s = \hat{\zeta}(o_t) - (1 - t/\mu_T)$，其中 $\mu_T$ 为成功轨迹平均长度。当估计进度显著落后于标称进度（即 $s &gt; \delta$）时触发报警，该机制仅惩罚执行迟滞而不干扰快速成功路径，实现零开销的在线失败检测。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Progress Probes (P²) decode task progress directly from the VLA’s internal activations. Using only successful demonstrations, we assign each timestep a normalized progress τ_t and fit a linear probe to predict it from z_t^i, enabling lightweight zero-overhead runtime failure monitoring.</div></details>
+</div>
+<ul>
 <li>在成功轨迹上把归一化剩余时间ζ_t=1−t/T标为进度；对π0.5各层激活做线性回归得φ(z^i)。</li>
 <li>运行时监测分数s=ζ̂(o_t)−(1−t/μ_T)，μ_T为成功轨迹平均长度；仅当估计进度落后于标称（s&gt;δ）报警，不惩罚更快执行。</li>
 <li>探针训练只需成功数据；推理复用策略前向已算好的激活，不改策略权重、不训失败分类头，额外开销极小。</li>

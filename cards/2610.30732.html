@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,35 +520,29 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30732" rel="noopener noreferrer" target="_blank">arXiv 2610.30732</a></span><span class="badge">深读</span></div>
 <h1>深读｜SmolVLA-MoE</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30732" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30732" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>轻量VLA的多任务瓶颈</strong>：现有轻量级 VLA（如 SmolVLA）为追求推理效率，采用单一稠密动作专家（Dense Action Expert）。在多任务场景下，不同任务（空间推理、物体操作等）需要不同的计算模式，单一 FFN 难以在有限参数预算内同时编码所有任务特征，导致容量受限。</li>
 <li><strong>扩容与效率的矛盾</strong>：传统做法通过扩大模型规模来提升多任务能力，但这会成比例增加推理开销，违背了轻量级部署的初衷；而模型压缩（如蒸馏、LoRA）则是以牺牲表征容量为代价换取效率。</li>
 <li><strong>MoE在VLA中的空白</strong>：稀疏混合专家（MoE）在 LLM 中已证明能“加容量不加算力”，但在 VLA 的动作生成模块中缺乏系统性研究，尤其是如何在不改变推理延迟的前提下提升动作专家的泛化性。</li>
 <li><strong>目标设定</strong>：作者旨在构建 SmolVLA-MoE，通过在动作专家 FFN 层引入稀疏 MoE，在保持与稠密基线相同的激活参数量（~500M）和推理效率的同时，显著提升多任务操作的成功率。</li>
-</ul></section><section class="section"><h2>方法</h2><div class="diagram-box arch-box" style="margin:18px 0;padding:14px 16px;border:1px solid #d8d2c7;border-radius:6px;background:#faf7f0"><div style="font-size:12px;color:#6e665c;margin-bottom:8px;font-weight:600">模型结构图（本地千问 Qwen 生成 · Mermaid）</div><pre class="mermaid" style="margin:0;overflow-x:auto">flowchart TB
-  img[&quot;视觉观测&quot;] --&gt; vlm[&quot;冻结 VLM 骨干&quot;]
-  txt[&quot;语言指令&quot;] --&gt; vlm
-  noise[&quot;噪声动作与时间步&quot;] --&gt; act[&quot;动作专家 Transformer&quot;]
-  vlm --&gt; act
-  act --&gt; attn[&quot;共享注意力层&quot;]
-  attn --&gt; moe[&quot;MoE-FFN 模块&quot;]
-  moe --&gt; router[&quot;Token 级路由器&quot;]
-  router --&gt; topk[&quot;Top-K 路由专家&quot;]
-  router --&gt; adapter[&quot;Scaling Adapter&quot;]
-  adapter --&gt; topk
-  moe --&gt; shared[&quot;可调权重共享专家&quot;]
-  topk --&gt; combine[&quot;加权组合&quot;]
-  shared --&gt; combine
-  combine --&gt; fm[&quot;Flow Matching 去噪&quot;]
-  fm --&gt; action[&quot;机器人动作&quot;]
-  fm --&gt; loss_fm[&quot;Flow Matching 损失&quot;]
-  router --&gt; loss_lb[&quot;负载均衡损失&quot;]
-  loss_fm --&gt; total[&quot;总损失&quot;]
-  loss_lb --&gt; total
-  init[&quot;Sparse Upcycling 初始化&quot;] --&gt; shared
-  init --&gt; topk</pre></div>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.30732.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30732.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.30732.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30732.png'">
+    <img src="/assets/figures/2610.30732.png" onerror="this.onerror=null;this.src='../assets/figures/2610.30732.png'" alt="SmolVLA-MoE Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>冻结VLM骨干</strong>：输入视觉观测与语言指令，经SmolVLM2-500M（含SigLIP编码器）处理生成上下文表征。该部分参数完全冻结以保留预训练知识，其Key-Value缓存作为后续动作专家的交叉注意力源。</li>
+<li><strong>MoE-FFN动作专家</strong>：替换原稠密SwiGLU FFN为稀疏MoE结构。每个模块包含$N$个并行路由专家、1个始终激活的共享专家$E_s$及Token级路由器。仅Top-$K$专家被激活，实现计算稀疏化。</li>
+<li><strong>动态路由与缩放适配</strong>：Router通过线性投影计算得分并选取Top-$K$专家；引入AdaMoE风格缩放适配器调整权重$\hat{w}_k = w_k + s(x)$，解耦专家选择与权重分配，增强对复杂动作分布的适应性。</li>
+<li><strong>加权融合输出</strong>：最终特征由可调权重的共享专家与路由专家输出线性组合而成：$y = \alpha \cdot E_s(x) + y_{routed}(x)$。$\alpha$平衡知识继承与任务特化，随后输入Flow Matching头生成机器人动作序列。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of the SmolVLA-MoE architecture. The frozen VLM backbone processes visual observations and language instructions to produce contextual representations. The action expert replaces dense FFN layers with MoE-FFN layers, each containing a shared expert with scaling adapter and N routed experts with top-K sparse gating.</div></details>
+</div>
 <ul>
 <li><strong>整体架构</strong>：基于 SmolVLA 框架，保留冻结的 VLM 骨干（SmolVLM2-500M），仅对动作专家（Action Expert）中的 FFN 层进行改造。动作生成仍采用 Flow Matching 机制。</li>
 <li><strong>FFN级稀疏MoE设计</strong>：将动作专家中的稠密 SwiGLU FFN 替换为 MoE-FFN 模块。每个模块包含 $N$ 个并行路由专家（Routed Experts）、1 个共享专家（Shared Expert）和一个 Token 级路由器。注意力层保持共享，仅 FFN 部分稀疏化。</li>
@@ -535,7 +632,6 @@ details.fold .fold-body {
 </article>
 <footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
 </div>
-<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";mermaid.initialize({startOnLoad:true,theme:"neutral",securityLevel:"loose"});</script>
 <script>
 (function(){
   const sec = document.getElementById('paper-qa');

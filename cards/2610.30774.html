@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,14 +520,30 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30774" rel="noopener noreferrer" target="_blank">arXiv 2610.30774</a></span><span class="badge">深读</span></div>
 <h1>深读｜Evaluation of Front-End Feature Matching for Lunar Visual SLAM</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30774" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30774" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>月球导航的视觉依赖与前端瓶颈</strong>：在LunaNet等卫星服务部署前，月球车主要依赖相机进行定位（VO/SLAM）。然而，月壤低纹理、强光照变化及相机光学畸变使得特征匹配极具挑战。现有研究多基于城市/室内场景或轨道图像配准，缺乏针对“漫游车视角下低纹理地形”的前端匹配基准。</li>
 <li><strong>合成数据与真实数据的评估鸿沟</strong>：现有基准常仅报告单一指标或在完整SLAM系统中测试，掩盖了随视角变化（Viewpoint Change）的匹配退化过程。此外，合成数据上的优劣排序是否迁移至真实月球试验台/类比场景尚不明确，导致算法选型存在风险。</li>
 <li><strong>VO与回环检测的割裂评估</strong>：视觉里程计（VO）关注相邻帧匹配，回环检测（Loop Closure）关注大基线重访匹配。现有工作常将二者分开基准测试，未在同一前端框架下验证“成对匹配质量”如何同时影响VO轨迹误差和回环验证成功率。</li>
 <li><strong>目标</strong>：在合成、月球试验台及地面类比数据集上，系统评估11种经典/学习检测-匹配组合及跟踪器，明确其在不同视角变化下的位姿恢复能力、计算开销及对下游VO/回环的影响，为月球SLAM前端选型提供实证依据。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.30774.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30774.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.30774.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30774.png'">
+    <img src="/assets/figures/2610.30774.png" onerror="this.onerror=null;this.src='../assets/figures/2610.30774.png'" alt="Evaluation of Front-End Feature Matching for Lunar Visual SLAM Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>三层级多源月球视觉基准架构（按列从左至右）</strong>：涵盖高保真物理渲染合成层（LuPNT base、LuSNAR 9）、室内月球光学模拟试验台层（PolarTraverse、LunaPolaris seq. 07）以及地球火山地貌实地类比层（S3LI Etna、S3LI Vulcano）共6个代表性序列。</li>
+<li><strong>漫游车视角退化图像输入（第一行）</strong>：展示单目/双目相机采集的原始灰度或彩色帧，覆盖低纹理月壤、散落岩石、极区低太阳高度角造成的长阴影与极端高动态明暗对比等典型月面视觉挑战，作为经典（SIFT/ORB/AKAZE/BRISK）与学习（SuperPoint+SuperGlue/LightGlue）前端特征组合的统一输入。</li>
+<li><strong>多源参考深度真值与共视几何量化（第二行）</strong>：展示与图像像素对齐的参考深度图（色标范围 $0\text{--}20\,\mathrm{m}$，天空与无效像素标灰），分别源自渲染真值（Rendered）、地面激光扫描（TLS）、机载 LiDAR 或立体匹配（Stereo），用于将特征点反投影至三维空间以量化图像对视角重叠率 $\omega$、中位三角化角 $\bar{\alpha}$、对极精度（EP）及 RANSAC PnP 相对位姿。</li>
+<li><strong>俯视真值轨迹与下游任务映射（第三行）</strong>：给出 XY 平面漫游车真值轨迹（绿三角为起点 Start，红星为采样帧 Sample），支撑开环视觉里程计相对轨迹误差（ATE/$L$）与重访回环几何验证的跨尺度评测。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Sample image, reference depth (sky and invalid pixels gray) and top-down trajectory with the sample frame marked, for six of the nine datasets. LunaPolaris shows sequence 07. TLS: terrestrial laser scan.</div></details>
+</div>
+<ul>
 <li><strong>多源异构基准构建</strong>：</li>
 <li><strong>数据集分层</strong>：包含LuPNT/LuSNAR（合成）、PolarTraverse/LunaPolaris（月球试验台）、S3LI Etna/Vulcano（地面火山类比），共9个数据集。</li>
 <li><strong>视角变化量化</strong>：采用重叠率 $\omega$ 和中位三角化角 $\bar{\alpha}$ 描述图像对难度，而非仅依赖帧间隔。通过参考深度和真值位姿计算共视像素，剔除遮挡影响。</li>

@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,13 +520,28 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30186" rel="noopener noreferrer" target="_blank">arXiv 2610.30186</a></span><span class="badge">深读</span></div>
 <h1>深读｜SIGNN++</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30186" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.30186" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>背景痛点</strong>：地基星图识别（SID）在 GNSS 拒止的夜间环境中至关重要，但现有基于学习的 SID 方法（如 SIGNN）主要在合成或非地外环境验证，缺乏对真实地面观测噪声（大气折射、光污染、云层遮挡、运动模糊）的鲁棒性评估。</li>
 <li><strong>现有缺口</strong>：传统确定性方法（如 Tetra, ROSIA）依赖几何一致性，易受位置误差和虚假检测干扰；而现有的 GNN 方法（SIGNN）节点特征严重依赖光度校准精度，且在多重噪声同时存在时性能显著下降。</li>
 <li><strong>设定与目标</strong>：针对地基夜间观测场景，旨在通过改进训练数据分布、优化图神经网络特征表示及引入姿态精化模块，提升在真实复杂环境下的星体识别准确率（Precision/Recall）和姿态解算成功率，同时保持实时运行能力。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2610.30186.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30186.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.30186.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.30186.png'">
+    <img src="/assets/figures/2610.30186.png" onerror="this.onerror=null;this.src='../assets/figures/2610.30186.png'" alt="SIGNN++ Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>端到端星图识别与定姿主干（中部）</strong>：输入地基夜空图像经灰度重心法（CoG）提取星点质心并由孔径测光估算表观星等，构建以星点为节点、$1^\circ\text{--}4^\circ$角距内星对为边的几何星图；先由 SIGNN+FT 图神经网络输出初步恒星目录 ID，再经 PSA 几何对齐模块滤除外点并输出精化星体 ID 与相机三维姿态。</li>
+<li><strong>傅里叶边编码图注意力网络（底部绿色框 SIGNN+FT）</strong>：节点星等特征经线性层映射为 100维向量，输入第1层16头 GATv2 卷积（拼接聚合为 1600维，配 LayerNorm、LeakyReLU 与 $p=0.4$ Dropout）；一维星间角距边特征 $x$ 经傅里叶正余弦位置编码 $PE(x)=\{x, \sin(2^0\pi x), \cos(2^0\pi x), \dots\}$ 升维以消除深度网络谱偏差，与节点特征共同输入第2层16头 GATv2 卷积，最终由线性分类层预测 5053 类恒星 ID 概率分布。</li>
+<li><strong>RANSAC透视星对齐精化（顶部橙色框 PSA）</strong>：按 GNN 置信度采样星对并通过奇异值分解（SVD）求解初始三维旋转矩阵，将星表参考星投影至像平面检验内点一致性（Consensus）；若未达标则重新采样，若通过则联合非线性优化相机视场角（FOV）与旋转矩阵。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">SIGNN++ Architecture. It inputs a night sky image and outputs star IDs and the camera&#x27;s attitude. We use the center-of-gravity (CoG) method for star centroiding. Since centroiding is not the focus of this work, we use the CoG method as a simple and widely adopted baseline and provide identical centroid inputs to all SID methods for fair comparison. Section III-B and Section III-C describe the FT module and Perspective Star Alignment, respectively.</div></details>
+</div>
+<ul>
 <li><strong>整体 Pipeline</strong>：输入夜空图像 → CoG 质心提取 → SIGNN++ GNN 推理（节点/边特征处理）→ RANSAC 透视星对齐（PSA）进行 ID 细化与姿态估计。</li>
 <li><strong>真实感噪声训练模型</strong>：重构训练数据集以模拟地面观测特性。引入四种噪声（Drop, False-star, Magnitude, Positional），其中 Drop 概率随星等变暗而增加（模拟光污染），False-star 分布遵循恒星计数斜率（模拟云层/鸟类产生的微弱假星），且每帧独立应用噪声，仅保留 20% 无噪帧。</li>
 <li><strong>傅里叶变换边特征 (FT)</strong>：将一维角距离映射为高维正弦/余弦特征空间（$L=6$），缓解深度网络的谱偏差，增强几何相似边的区分度，降低对光度变化的敏感性。</li>

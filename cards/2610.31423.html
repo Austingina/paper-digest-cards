@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,53 +520,27 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31423" rel="noopener noreferrer" target="_blank">arXiv 2610.31423</a></span><span class="badge">深读</span></div>
 <h1>深读｜FocusVLA</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31423" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31423" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>多视角 VLA 的“视角依赖惯性”痛点</strong>：现有 VLA（如 $\pi_{0.5}$）通常将全局与局部视觉特征静态融合，导致策略在任务早期形成对特定视角（通常是腕部局部视角）的强依赖。这种依赖缺乏阶段感知能力，难以随任务从“全局规划/移动”切换到“局部交互/抓取”而动态调整，造成阶段-视角错配。</li>
 <li><strong>现有方法的缺口</strong>：传统多视角方法多采用固定融合或通用注意力，未显式建模任务进度对视觉需求的影响；部分工作（如 BFA）虽引入权重预测，但多为当前帧分配且需修改策略输入前特征，缺乏对未来动作意图的显式引导。</li>
 <li><strong>设定与目标</strong>：本文基于 $\pi_{0.5}$ 多视角骨干，在仿真（RoboTwin 2.0）和真机上验证。目标是提出一种非侵入式框架，通过预测未来交互意图来动态路由全局/局部视觉特征，提升策略在不同操作阶段的适应性和鲁棒性，而不改变核心 VLA 架构。</li>
-</ul></section><section class="section"><h2>方法</h2><div class="diagram-box arch-box" style="margin:18px 0;padding:14px 16px;border:1px solid #d8d2c7;border-radius:6px;background:#faf7f0"><div style="font-size:12px;color:#6e665c;margin-bottom:8px;font-weight:600">模型结构图（本地千问 Qwen 生成 · Mermaid）</div><pre class="mermaid" style="margin:0;overflow-x:auto">flowchart TB
-    in[&quot;输入 多视角图像 语言指令 状态 动作历史&quot;]
-    enc[&quot;骨干视觉编码&quot;]
-    ctx[&quot;跨模态上下文编码&quot;]
-    intent[&quot;未来意图预测&quot;]
-    label[&quot;轨迹弱监督标签&quot;]
-    agg[&quot;意图Token聚合&quot;]
-    route[&quot;路由权重映射&quot;]
-    act[&quot;动作特征流&quot;]
-    ca_g[&quot;全局视觉交叉注意力&quot;]
-    ca_l[&quot;局部视觉交叉注意力&quot;]
-    fuse[&quot;动态加权融合&quot;]
-    res[&quot;残差注入动作流&quot;]
-    policy[&quot;动作生成&quot;]
-    out[&quot;动作序列&quot;]
-    loss_act[&quot;动作MSE损失&quot;]
-    loss_int[&quot;意图BCE损失&quot;]
-    joint[&quot;联合优化&quot;]
-
-    in --&gt; enc
-    in --&gt; ctx
-    enc --&gt; ctx
-    ctx --&gt; intent
-    label -.-&gt;|弱监督| intent
-    intent --&gt; agg
-    agg --&gt; route
-    route --&gt; fuse
-    enc --&gt; ca_g
-    enc --&gt; ca_l
-    act --&gt; ca_g
-    act --&gt; ca_l
-    ca_g --&gt; fuse
-    ca_l --&gt; fuse
-    fuse --&gt; res
-    res --&gt; policy
-    policy --&gt; out
-    policy --&gt; loss_act
-    intent --&gt; loss_int
-    label -.-&gt;|监督| loss_int
-    loss_act --&gt; joint
-    loss_int --&gt; joint</pre></div>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 4）</span>
+    <a href="/assets/figures/2610.31423.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31423.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31423.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31423.png'">
+    <img src="/assets/figures/2610.31423.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31423.png'" alt="FocusVLA Figure 4 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多模态输入与骨干编码</strong>：系统接收多视角图像、语言指令、机器人状态及动作历史，经 $\pi_{0.5}$ 骨干提取视觉-语言特征。这些特征作为上下文基础，同时流向意图预测分支与动作生成主干，为后续动态路由提供原始表征。</li>
+<li><strong>Future Intent Bridge（未来意图桥接）</strong>：利用跨模态注意力编码上下文，预测未来 $H$ 步动作意图序列 $I_t$。每个时间步意图值 $i_t^{(k)} \in [0,1]$ 量化局部交互导向概率。通过弱监督标签（基于夹爪闭合或低速运动自动生成）以 BCE 损失训练，并将意图聚合为 Chunk 级 Token $z_{\mathrm{intent}}$，经线性映射 $f_{\mathrm{route}}$ 生成全局/局部路由权重 $\alpha^{(k)} = [\alpha_g^{(k)}, \alpha_l^{(k)}]$。</li>
+<li><strong>Action-Side Dynamic Routing（动作侧动态路由）</strong>：在动作生成阶段实施非侵入式调制。动作特征作为 Query，分别与全局和局部视觉特征进行 Cross-Attention 得到上下文 $c_g^{(k)}$ 和 $c_l^{(k)}$。利用预测权重 $\alpha^{(k)}$ 加权融合为 $c^{(k)} = \alpha_g^{(k)} c_g^{(k)} + \alpha_l^{(k)} c_l^{(k)}$，并通过残差连接注入动作特征流，实现自适应多视角特征调制。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 4 Caption）</summary><div class="arch-cap-text">Architecture of FocusVLA. Given multi-view observations, language instructions, robot states, and action history, FocusVLA predicts future action intent and uses it to guide action-side dynamic view routing for adaptive multi-view feature modulation.</div></details>
+</div>
 <ul>
 <li><strong>整体 Pipeline</strong>：FocusVLA 由两个轻量级模块组成，挂载在 $\pi_{0.5}$ 骨干之上：<strong>Future Intent Bridge</strong>（未来意图桥接）和 <strong>Action-Side Dynamic Routing</strong>（动作侧动态路由）。输入为多视角图像、语言指令、机器人状态及短期动作历史。</li>
 <li><strong>Future Intent Bridge</strong>：</li>
@@ -542,7 +619,6 @@ details.fold .fold-body {
 </article>
 <footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
 </div>
-<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";mermaid.initialize({startOnLoad:true,theme:"neutral",securityLevel:"loose"});</script>
 <script>
 (function(){
   const sec = document.getElementById('paper-qa');

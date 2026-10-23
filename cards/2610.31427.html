@@ -170,6 +170,109 @@ details.fold .fold-body {
   padding: 0 var(--card-pad) 1.05rem;
   border-top: 1px solid var(--line-soft);
 }
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
 /* Local Qwen Paper Q&A Section */
 .qa-section {
   padding: 1.15rem var(--card-pad) 1.25rem;
@@ -417,13 +520,28 @@ details.fold .fold-body {
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31427" rel="noopener noreferrer" target="_blank">arXiv 2610.31427</a></span><span class="badge">深读</span></div>
 <h1>深读｜FastHarness</h1>
-<div class="links"><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31427" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31427" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li>智能体式机器人把VLA与语言模型结合做执行监控与失败恢复；GPT-as-Policy用π0.5配GPT-6 Astra，但每个动作块都审查开销大。</li>
 <li>熟悉阶段重复审查冗余；抓取失败等错误又需要多轮纠正——需要用跨episode经验区分这两种情况。</li>
 <li>目标：在策略权重冻结前提下，用审查结果更新记忆与审查日程，降低冗余监督同时保留恢复能力。</li>
-</ul></section><section class="section"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2610.31427.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31427.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31427.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31427.png'">
+    <img src="/assets/figures/2610.31427.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31427.png'" alt="FastHarness Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>GPT-as-Policy 主干（Gray, Middle）</strong>：作为基线执行核心，接收视觉观测 $o_t$ 与本体感觉 $s_t$，由策略网络 $\pi_\theta$ 生成动作序列 $a_{t:t+H}$。该模块负责常规控制流，但在高延迟场景下需依赖后续路径优化效率或鲁棒性。</li>
+<li><strong>经验驱动快路径（Top, Fast Path）</strong>：针对新鲜 VLA 提案，利用记忆引导调度器计算保守置信分数 $C_t$。若上下文匹配历史成功样例且满足审查间隔 $\Delta k$，则直接执行动作前缀并刷新观测，绕过冗余的 GPT-6 审查；未知状态或邻近错误触发强制审查以保障安全。</li>
+<li><strong>航点恢复路径（Bottom, Recovery Path）</strong>：在终端故障时激活，持续运行审查器检测异常。优先尝试局部修复（如重抓），失败则回溯至当前 Episode 内已验证的航点 $w^*$ 进行状态重置。确认故障消除后，系统恢复常规调度并保留错误记录以更新经验库。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">FastHarness system overview. FastHarness adds two paths around the original GPT-as-Policy execution backbone (gray, middle): an experience-driven fast path (top) that routes fresh VLA proposals through a memory-guided scheduler to bypass redundant GPT-6 review, and a waypoint-based recovery path (bottom) that restores execution when terminal failures occur.</div></details>
+</div>
+<ul>
 <li>阶段识别与结果记忆：审查器标注approaching/grasping/placing等阶段；用降采样RGB+本体感觉存样例，按最近邻匹配；仅对审查前的普通策略转移记成功/失败。</li>
 <li>经验驱动审查调度：由阶段成败计数算保守置信分数与审查间隔；未知/歧义上下文、邻近历史错误、阶段切换、随机审计等触发强制审查。</li>
 <li>双路径：快路径在合格时执行策略提案前缀并刷新观测；恢复路径持续审查，先局部修复（如重抓），失败则导向本episode已验证航点；审查确认故障消除后恢复常规调度并保留错误记录。</li>
