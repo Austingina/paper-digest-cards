@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Progress Probes P²</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31613" rel="noopener noreferrer" target="_blank">arXiv 2610.31613</a></span><span class="badge">深读</span></div>
+<h1>深读｜Progress Probes P²</h1>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>VLA仍有语言接地失败、死锁与突发错误；部署需要运行时监测。</li>
+<li>现有方案多用外部VLM（Sentinel、Robometer）或需失败标签的激活分类器（SAFE），成本高或数据难。</li>
+<li>机制可解释性显示VLA激活可线性读出位姿、物体状态与任务阶段——作者假设进度也可被线性探针读出，目标是在仅用成功示教、不依赖外部VLM的前提下做轻量运行时失败监测。</li>
+</ul></section><section class="section"><h2>方法</h2><ul>
+<li>在成功轨迹上把归一化剩余时间ζ_t=1−t/T标为进度；对π0.5各层激活做线性回归得φ(z^i)。</li>
+<li>运行时监测分数s=ζ̂(o_t)−(1−t/μ_T)，μ_T为成功轨迹平均长度；仅当估计进度落后于标称（s&gt;δ）报警，不惩罚更快执行。</li>
+<li>探针训练只需成功数据；推理复用策略前向已算好的激活，不改策略权重、不训失败分类头，额外开销极小。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>仿真：Episode/State AUROC 0.909/0.788；未见任务划分上0.900/0.794。推理延迟2.6×10⁻² ms（0.026ms），快于SAFE与Robometer（后者约550ms）。</li>
+<li>相对Robometer-FT可比判别力但参数与延迟远低；相对需失败标签的SAFE仍有竞争力。</li>
+<li>真机：P²平均State AUROC 0.78，未见任务0.81，整体优于多数基线；Coffee Bean等细微失败上较弱。</li>
+<li>消融：在π0.5激活上探针进度R²=0.83，高于PaliGemma/Robometer激活探针——动作数据训练的表示更利进度解码。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>进度标签用时间归一化，默认成功轨迹近单调推进；高度随机或可恢复失败可能信号弱。</li>
+<li>Coffee Bean类细微视觉失败上AUROC明显偏低。</li>
+<li>主要探VLM骨干激活，未系统探连续动作专家（扩散/流匹配）内部；未与π0-FAST等其他动作头结构系统对比，跨VLA族迁移待验证。</li>
+<li>可继续：在连续动作专家残差流上对比探针R²与AUROC；把进度滞后信号接入闭环重规划或条件重注入触发器。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>仿真：开源π0.5在VLABench微调后评测6个任务、600条对半成败rollout（含已见/未见任务划分）。</li>
+<li>真机：Franka机械臂+DROID相机配置，基于π0.5-DROID微调6个真实操作任务。</li>
+<li>基线对照：外部VLM监测器（Sentinel、Robometer / Robometer-FT）、需失败数据的内部激活分类器（SAFE），以及PaliGemma/Robometer特征探针消融。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐：证明开源π0.5内部激活已线性编码任务进度，仅靠成功示教即可做0.026ms级运行时失败监测，无需外挂重型VLM。</li>
+</ul>
+<h3 class="sub">与π系列的关系</h3>
+<ul>
+<li>策略与激活来源明确为开源π0.5（VLABench仿真微调与π0.5-DROID真机微调）。</li>
+<li>不改策略、不训失败分类头，只读内部表示；证明π0.5激活编码了可用于监测的进度。</li>
+<li>主要探VLM骨干激活，未系统探连续动作专家内部；未与π0-FAST等变体系统对比。</li>
+</ul>
+<h3 class="sub">对Austin研究的启发</h3>
+<ul>
+<li>在OpenPI上检验「策略是否持续跟随G」时，可用同类进度探针：成功示教上拟合期望进度，闭环中看G条件下进度是否滞后——成本远低于外挂VLM裁判。</li>
+<li>其「只罚落后不罚超前」与你的开放问题对齐：关注是否卡住/偏离目标，而非速度。</li>
+<li>可做实验：在G置零/反向/交换消融中，比较探针分数与任务成败的一致性，验证内部进度是否编码了条件遵循而非仅时间流逝。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>Progress Probes（P²）用线性探针从π0.5内部激活解码任务进度，以相对标称进度的滞后做运行时失败监测；仅需成功示教、无需失败数据或外部VLM。VLABench与Franka真机上失败检测AUROC约0.79/0.78，延迟约0.026ms，与SAFE、Robometer竞争或更优。作者来自CMU与Cornell。</p></div></details>
+</article>
+<p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
+</div>
+</body>
+</html>
