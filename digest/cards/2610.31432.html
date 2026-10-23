@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Sparse Topometric Graph</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31432" rel="noopener noreferrer" target="_blank">arXiv 2610.31432</a></span><span class="badge">深读</span></div>
+<h1>深读｜Sparse Topometric Graph</h1>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>跨会话复用室内地图面临场景家具变化、异质传感器、部分视野重叠与初始位姿未知；稠密度量图存储/匹配昂贵，纯外观图对光照视点敏感，语义图依赖稳定物体检测。</li>
+<li>室内走廊/房间重复结构使局部几何或外观匹配高度歧义，需要更广的空间拓扑连通上下文。</li>
+<li>目标：用单一稀疏拓扑度量图（Sparse Topometric Graph）同时支撑跨会话全局对齐与未知初位姿下的点目标导航。</li>
+</ul></section><section class="section"><h2>方法</h2><ul>
+<li>建图：从可达自由空间中轴/分支均匀采节点（间隔约0.25m），每节点在固定半径内聚合局部点云，用冻结BUFFER-X式旋转等变编码器提取几何描述子；边权为可通行测地距离。</li>
+<li>匹配：用IPCA-GM图匹配网络结合Sinkhorn部分分配联合节点几何与邻域连通，再用RANSAC滤内点估计2D刚体变换SE(2)；训练时对边权加噪声模拟里程计漂移。</li>
+<li>导航：跨会话对应把参考图上的目标分数传到当前在线图，结合前沿探索分数选航点，底层用FMM在局部占据栅格上执行；每K步重建当前图并重匹配。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>Gibson跨会话点目标导航：无噪声SR 77.14% / SPL 47.71，里程计噪声σ=1时SR 60%；均高于ANS、RnR、AnyLoc、ConceptGraph、ObjReact等基线。</li>
+<li>3D-FRONT场景布局变化（家具增删换）：SR 40.0% / SPL 20.18，在所有对比方法中仍为最高。</li>
+<li>HM3D大尺度场景：随参考起点与当前起点测地距离增大，成功率累积曲线衰减比基线更平缓。</li>
+<li>存储与真机：参考图内存约0.02MB（较点云/稠密特征图降两个数量级以上）；手持LiDAR与手机异周采集的办公室重复结构上，图结构匹配能消歧几何-only与DINOv2外观-only的多候选歧义。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>当前限于单层2D点目标设定；多层楼宇与楼梯/电梯等显式垂直连通尚未评测。</li>
+<li>严重拓扑破坏（如原本敞开的门关闭、走廊堵死改变连通性）未系统测试；真机部分为独立采集的跨会话对应验证，非在线闭环控车。</li>
+<li>里程计噪声下SPL下降比SR更明显，说明漂移导致对应延迟时会影响路径效率。</li>
+<li>可继续：将稀疏topometric图与高层语言/视觉子目标（如门牌、房间类型）耦合，并在真机轮式平台上跑通在线闭环。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>仿真基准：Gibson、3D-FRONT（含家具增删改的跨会话变化）、HM3D室内导航场景；评测未知初始位姿下的PointGoal导航（SR、SPL）及里程计噪声鲁棒性（σ=1）。</li>
+<li>图参数与骨干：自由空间节点采样间距约0.25m；局部几何编码采用冻结BUFFER-X式旋转等变3D描述子；图匹配采用IPCA-GM + Sinkhorn + RANSAC SE(2)。</li>
+<li>真机采集：手持3D LiDAR与智能手机在不同周次采集办公室部分重叠轨迹（异质传感器跨会话配准对比几何-only与DINOv2）。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐：用约0.02MB的稀疏几何+拓扑图解决跨会话未知初位姿导航，在不依赖外观/语义检测的前提下兼顾家具变动鲁棒性与极低存储。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>相对Neural Topological SLAM/外观拓扑：节点锚在可通行几何而非关键帧外观，对光照与跨设备更稳。</li>
+<li>相对ConceptGraph/ObjReact：不依赖物体检测稳定性，强调局部3D几何+邻域连通图匹配。</li>
+<li>相对稠密点云配准：描述子挂在稀疏可通行导航节点上，直接服务点目标导航而非纯重建精度。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li>「结构连通+局部几何」的紧凑接口可类比你用G表达可复用交互条件：存的是可迁移结构而非稠密观测。</li>
+<li>跨会话部分重叠下的图匹配，提醒组合泛化评测要在布局变化/传感器变化下测，而不仅是同会话重放。</li>
+<li>若导航侧要复用先验地图，稀疏topometric比点云更适合作为长期记忆层，再与语言/视觉目标接口对接。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>稀疏拓扑度量图用可通行锚点上的紧凑几何描述子与距离加权边表示室内结构，经图匹配网络联合节点几何与邻域连通做跨会话对应，支撑未知初位姿下的点目标导航。Gibson成功率77.1%、场景变化下40.0%，内存较点级表示降两个数量级以上。首尔国立大学。</p></div></details>
+</article>
+<p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
+</div>
+</body>
+</html>

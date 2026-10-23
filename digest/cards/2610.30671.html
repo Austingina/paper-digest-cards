@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Co^2Gen</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30671" rel="noopener noreferrer" target="_blank">arXiv 2610.30671</a></span><span class="badge">深读</span></div>
+<h1>深读｜Co^2Gen</h1>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li><strong>背景痛点</strong>：现有 VLA 模型（如 π0, OpenPI）主要在单臂非协作数据上预训练，即使经过单臂任务微调，在去中心化多机协作中仍因缺乏“基于对端状态的条件执行”能力而失败（例如右臂未等左臂开柜就尝试放物）。</li>
+<li><strong>现有缺口</strong>：收集高质量的多机协作示教数据成本极高，需要双遥操作或复杂的同步接口；且现有 VLA 多机工作（如 InterAct, TwinVLA）多依赖双臂间的显式信息交互（Cross-Attention），未探索完全去中心化、仅通过环境状态隐式协调的场景。</li>
+<li><strong>目标设定</strong>：提出 Co²Gen，一种无需人工遥操作、自动生成多机协作示教数据的框架。旨在证明用该数据微调的 VLA 在去中心化协作任务上能匹配人工遥操作数据的表现，并具备零样本人机协作能力。</li>
+</ul></section><section class="section"><h2>方法</h2><ul>
+<li><strong>整体 Pipeline</strong>：输入自然语言任务与环境状态 → 去中心化协作规划（生成可执行 Python 函数）→ 自动执行与人类验证器筛选 → 生成分布式示教数据 → 分别微调各机器人的 VLA。</li>
+<li><strong>去中心化协作规划 (Co²Gen)</strong>：</li>
+<li><strong>形式</strong>：将协作计划表示为可执行的 Pythonic 函数，包含子任务调度、分配及基于环境反馈的前置条件检查（Pre-condition Check）。</li>
+<li><strong>生成机制</strong>：采用<strong>协作蒙特卡洛树搜索 (Collaborative MCTS)</strong>。两个 VLM Agent 分别扮演 Actor（提议计划）和 Critic（评估打分），通过 UCT 策略迭代优化计划树。</li>
+<li><strong>评分标准</strong>：Critic 从进度、任务分配合理性、前置条件检查三个维度打分（1-5分，总分15）。</li>
+<li><strong>执行与数据生成</strong>：</li>
+<li><strong>感知与控制</strong>：使用 VLM 查询环境前置条件（如“柜子是否打开”）；底层通过 Blob Detection + YOLOv8 获取粗坐标，IK 求解器生成轨迹，腕部相机精调抓取。</li>
+<li><strong>人类验证器</strong>：引入人类作为任务成功与否的验证者，剔除执行失败的轨迹，避免 VLM 幻觉导致的错误数据污染训练集。</li>
+<li><strong>VLA 微调策略</strong>：</li>
+<li><strong>去中心化训练</strong>：将协作数据集 $\mathcal{D}_{task}$ 按角色拆分为各机器人的局部数据流（包含自身关节状态、腕部相机及共享的顶部相机），分别独立微调 VLA。</li>
+<li><strong>混合数据增强</strong>：提出 $VLA_{Co^2Gen+SA}$，将生成的协作数据与单臂人类示教数据混合，以兼顾轨迹多样性与协作协调性。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li><strong>主要结论</strong>：在去中心化协作任务（堆叠、存储）中，使用 Co²Gen 生成数据微调的 VLA ($VLA_{Co^2Gen}$) 表现显著优于仅用单臂数据微调的基线，且能匹配甚至超越基于人工遥操作协作数据微调的效果。</li>
+<li><strong>零样本泛化</strong>：经过 Co²Gen 数据训练的 VLA 在零样本人机协作（HRC）任务中也能保持较高的成功率，证明其学到了通用的协调行为而非过拟合于特定机器人伙伴。</li>
+<li><strong>消融对比</strong>：混合单臂人类数据的版本 ($VLA_{Co^2Gen+SA}$) 相比纯生成数据版本，在轨迹多样性和鲁棒性上通常表现更优（具体数值需参考原文表格，但趋势为混合数据提升稳定性）。</li>
+<li><strong>失败模式分析</strong>：未训练协作数据的 VLA 常因忽略对端状态（如对方手臂未移开就进入工作区）导致碰撞或任务停滞；Co²Gen 生成的计划通过显式的 <code>check_precondition</code> 语句有效缓解了此类时序错误。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li><strong>依赖人类验证器</strong>：数据生成闭环中仍需人类判断任务成功，未能实现完全无人化的自动数据飞轮（尽管比双遥操作成本低）。</li>
+<li><strong>规划器开销与实时性</strong>：MCTS 搜索和 VLM 前置条件检查在推理时可能引入延迟，虽然主要用于离线数据生成，但若用于在线重规划则效率较低。</li>
+<li><strong>感知模块的局限性</strong>：底层控制依赖 Blob/YOLO + IK，对遮挡、动态物体或复杂接触状态的鲁棒性不如端到端 VLA 直接输出动作，限制了生成的示教数据的上限。</li>
+<li><strong>可扩展性验证不足</strong>：目前仅在双臂（N=2）SO-101 低成本机械臂上验证，未测试异构机器人（如移动底盘+机械臂）或更多数量机器人的协作场景。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li><strong>硬件平台</strong>：两台 SO-101 低成本机械臂，配备顶部 Zed2 双目相机和腕部相机。</li>
+<li><strong>模型选择</strong>：</li>
+<li><strong>规划/验证 VLM</strong>：GPT-5.6 (gpt-5.6-sol)。</li>
+<li><strong>VLA 策略</strong>：SmolVLA (smolvla_base)，轻量级开源 VLA。</li>
+<li><strong>任务定义</strong>：</li>
+<li><strong>协作存储</strong>：一臂开柜，另一臂放物入柜并关柜。</li>
+<li><strong>协作堆叠</strong>：两臂分别抓取方块，在中心区域完成堆叠。</li>
+<li><strong>数据与训练</strong>：</li>
+<li>每个任务收集 50 个成功示教 episode。</li>
+<li>VLA 微调步数：20,000 steps。</li>
+<li>使用 DAgger 算法收集纠正数据以提升可靠性。</li>
+<li><strong>评测协议</strong>：去中心化执行，两个 VLA 独立运行不共享内部状态，仅通过环境交互协调；每任务 20 次试验，记录成功率及子任务得分（最大14分）。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><h3 class="sub">与π系列的关系</h3>
+<ul>
+<li><strong>非直接竞争/互补</strong>：本文未直接使用 π0 或 OpenPI，而是使用 SmolVLA。但其核心思想——<strong>“通过高层规划生成结构化示教数据来弥补 VLA 在特定行为（如协作）上的缺失”</strong>——与 π0.5 中利用高层语义推理辅助低层控制的思路有异曲同工之妙。</li>
+<li><strong>去中心化 vs 集中式</strong>：π 系列通常假设单一智能体或紧密耦合的双臂系统，而 Co²Gen 强调<strong>完全去中心化</strong>（Decentralized），各 VLA 仅通过环境状态隐式协调。这为 π 系列在多机场景下的部署提供了数据生成的新思路：即不修改模型架构（不加 Cross-Attention），而是通过数据分布的改变来涌现协调能力。</li>
+</ul>
+<h3 class="sub">对Austin研究的启发</h3>
+<ul>
+<li><strong>数据合成管线借鉴</strong>：Austin 若需扩展多机协作或复杂时序任务，可参考 Co²Gen 的 <strong>“VLM 生成 Python 计划 -&gt; 仿真/真机执行 -&gt; 人类/自动验证 -&gt; 微调 VLA”</strong> 闭环。特别是利用 LLM/VLM 生成带有 <code>if-else</code> 前置条件检查的代码作为“教师策略”，能有效解决 VLA 在长时序依赖上的弱点。</li>
+<li><strong>混合数据训练</strong>：Austin 可尝试将 OpenPI 执行器生成的合成轨迹与少量真实遥操作数据混合（类似 $VLA_{Co^2Gen+SA}$），以平衡分布偏移和任务多样性。</li>
+<li><strong>监控指标设计</strong>：在评测中引入“前置条件满足率”或“时序冲突检测”，而不仅仅看最终成功率，有助于定位 VLA 是感知错误还是协调逻辑缺失。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>Co²Gen 通过去中心化 MCTS 生成带前置条件检查的可执行协作计划，自动构建示教数据微调 SmolVLA，实现了无需双遥操作即可匹配人工数据的去中心化多机及零样本人机协作能力。</p></div></details>
+</article>
+<p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
+</div>
+</body>
+</html>

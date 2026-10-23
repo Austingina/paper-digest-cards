@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜KinoUAV</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30609" rel="noopener noreferrer" target="_blank">arXiv 2610.30609</a></span><span class="badge">深读</span></div>
+<h1>深读｜KinoUAV</h1>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>现有UAV VLN轨迹多用离散动作或几何插值，缺显式动力学约束，易产生高偏航率与碰撞。</li>
+<li>避障常依赖多源观测或显式障碍标注，采集成本高；纯目标描述又使大范围搜索低效。</li>
+<li>目标：构建带可执行动力学轨迹的UAV VLN基准，用仅RGB可学的安全中间量（DFD）解耦感知与动作，并以Cruise–Seek两阶段兼顾远距引导与局部探索。</li>
+</ul></section><section class="section"><h2>方法</h2><ul>
+<li>轨迹管线：几何A*得航点链→分层动力学A*在速度/加速度/jerk与空气阻力模型下搜加速度动作→跟踪采集前视/下视图像与运动状态；标注前/下方向自由空间距离DFD（射线到首占体素，上限100m）。</li>
+<li>任务设计：Cruise–Seek两阶段指令（先按方向距离区域巡航引导，再按目标描述局部搜索），兼顾大尺度导航效率与末端定位。</li>
+<li>KinoUAV-Agent：高层VLM预测体坐标系下一航点；低层ResNet编码前/下两视角→DFD预测头+加速度头，结合预测DFD把动作投影到离散安全加速度集。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>Test Seen：KinoUAV-Agent达SR 89.3%、碰撞率CR 6.0%、SPL 71.9%，显著优于AerialVLA（SR 52.3% / CR 28.3%）与TravelUAV；零样本大VLM几乎不可用，微调是关键。</li>
+<li>泛化：Unseen Object上SR 87.1%；Unseen Map上SR 64.6%，仍优于各对照基线。</li>
+<li>消融：加Auxiliary辅助轨迹使SR +18.1pp；显式监督DFD相对无DFD分支SR 89.3% vs 81.1%且CR更低；去掉距离引导或改为单阶段会升高碰撞并降低成功率。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>仅在AirSim仿真场景与简化动力学模型下验证；未来需引入更真实风扰、动态障碍与真机迁移。</li>
+<li>Unseen Map上成功率明显掉点（89.3%→64.6%），高层仍依赖微调VLM的场景泛化能力。</li>
+<li>DFD注入噪声增大时成功率下降、碰撞率上升，显示低层控制对中间几何量精度较敏感。</li>
+<li>可继续：把DFD不确定性估计纳入低层安全裕度；在未见地图上测试高层视觉提示或拓扑先验辅助。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>仿真器与数据：AirSim仿真，16个城市场景；包含Main（完整Cruise–Seek导航，约150K语言标注轨迹）与Auxiliary（随机航点动力学跟踪轨迹）。</li>
+<li>观测与动作：前视+下视双RGB相机与无人机运动状态；DFD射线距离上限100m；低层输出投影到离散6-DoF加速度动作集。</li>
+<li>模型与对照：高层采用Qwen3-VL-8B微调，低层为ResNet双视角编码器；对照含TravelUAV、AerialVLA及零样本闭源/开源大VLM。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐：把速度/加速度/jerk动力学约束真正放进UAV VLN的数据生成、中间感知（DFD）和评测指标（碰撞率/偏航率），工程与实验完整度高。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>相对AerialVLN/OpenFly/TravelUAV等，核心增量是动力学进数据生成与偏航率/碰撞等运动指标，而非新的语言接地架构。</li>
+<li>相对地面VLN图导航，动作是6-DoF加速度连续控制离散化，强调物理可执行性。</li>
+<li>不做显式度量SLAM建图；DFD是局部自由空间监督，非全局地图。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li>「中间几何量（DFD）监督→再决策动作」与你的G分工同构：先表达可通行/期望几何，再让低层策略执行。</li>
+<li>Cruise–Seek分阶段指令提醒：条件应随阶段切换（区域引导→目标描述），避免全程同一语言接口。</li>
+<li>评测同时报SR与碰撞/偏航，可迁移到你报告导航侧条件遵循时的安全指标，而不只看到达成功。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>KinoUAV把动力学约束写进UAV视觉语言导航的数据与评测：分层动力学A*按加速度动作生成轨迹并标注方向自由空间距离（DFD）；KinoUAV-Agent高层规划航点、低层用预测DFD选安全加速度，Cruise–Seek先区域后搜目标。Test Seen成功率89.3%、碰撞率6.0%。作者来自中科院空天信息创新研究院等。</p></div></details>
+</article>
+<p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
+</div>
+</body>
+</html>

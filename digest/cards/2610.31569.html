@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Echo</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31569" rel="noopener noreferrer" target="_blank">arXiv 2610.31569</a></span><span class="badge">深读</span></div>
+<h1>深读｜Echo</h1>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li><strong>背景痛点</strong>：现有 VLA 模型在闭环执行中缺乏对“任务完成”与“失败”的显式感知，导致机器人无法自主停止或在失败时触发恢复。现有方法通常依赖外部监控模型或复杂的架构设计，且往往需要细粒度的帧级进度标注（frame-level progress annotations），增加了数据收集难度和推理开销。</li>
+<li><strong>现有缺口</strong>：大多数工作仅将状态信号用于事后监控或奖励评估，未充分探索这些信号如何直接指导动作生成（action generation）。此外，同步去噪导致状态估计与动作更新耦合，未能利用早期收敛的状态信息来修正后续动作。</li>
+<li><strong>设定与目标</strong>：本文在真机操纵场景下，提出 Echo 框架。其核心目标是在不增加显著参数开销、无需帧级进度标注的前提下，通过联合去噪动作与状态信号，实现更鲁棒的闭环执行（包括成功停止、失败识别及恢复）。</li>
+</ul></section><section class="section"><h2>方法</h2><ul>
+<li><strong>联合表示与去噪</strong>：Echo 将任务状态编码为两个标量信号——停止信号（Stop Signal, SS）和失败信号（Failure Signal, FS）。这两个信号作为动作块（action chunk）的额外两维特征，与机器人动作一起通过 Flow Matching 进行联合去噪。</li>
+<li><strong>互补监督数据构造</strong>：为解决无帧级标注问题，Echo 利用四种数据类型提供互补监督：</li>
+<li><strong>成功演示</strong>：SS 在边界处由 padding mask 引导至 1，FS 始终为 0。</li>
+<li><strong>终端失败轨迹</strong>：SS 和 FS 均在边界处由 padding mask 引导至 1，动作不参与模仿学习。</li>
+<li><strong>干预前失败片段</strong>：仅监督 SS=0, FS=1（表示可恢复失败），动作不模仿。</li>
+<li><strong>恢复演示</strong>：提供从失败到成功的过渡监督。FS 目标随恢复进度线性下降（通过公式 $n_t$ 计算），SS 仅在非 padding 位置监督为 0，避免错误终止。</li>
+<li><strong>异步去噪机制（Asynchronous Denoising）</strong>：观察到状态信号比动作更早收敛，Echo 引入异步调度。信号的去噪时间 $\tau_q$ 快于动作时间 $\tau_A$（公式 12），使得在动作去噪的后半程，模型能基于更干净的状态估计进行条件生成，从而引导纠正性动作。</li>
+<li><strong>受控交互注意力</strong>：在 Transformer 内部，动作 Token 同时关注 SS 和 FS；SS 和 FS 也关注动作 Token。但为了防止语义混淆，<strong>阻断 SS 与 FS 之间的直接注意力交互</strong>，保持“终止”与“失败”语义的独立性。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li><strong>主指标提升</strong>：在五个真机操纵任务（Insert Flower, Capsule Toy, Insert Pen, Make Tanghulu, Open Drawer）上，Echo 相比仅动作基线（action-only baselines）显著提升了成功率。特别是在分布外（OOD）场景中，增益更大，表明状态信号增强了泛化能力。</li>
+<li><strong>状态预测准确性</strong>：Echo 能准确区分执行中、成功完成和失败状态。通过阈值 $\delta_s, \delta_f$ 划分状态，模型在未见过的干扰下仍能正确识别“可恢复失败”（低 SS，高 FS）并触发纠正行为。</li>
+<li><strong>消融实验验证</strong>：</li>
+<li><strong>异步去噪有效性</strong>：移除异步机制（即同步去噪）会导致性能下降，证实了利用早期干净状态引导后续动作更新的价值。</li>
+<li><strong>数据源贡献</strong>：单独使用成功演示无法学习失败信号；加入干预前失败和恢复数据后，模型不仅学会了识别失败，还学会了从失败中恢复的动作模式。</li>
+<li><strong>信号干预实验</strong>：在推理时人为修改 SS/FS 值，观察到动作生成随之改变（如强制高 FS 导致策略尝试纠正而非继续原计划），证明状态信号确实参与了动作决策而非仅作为监控输出。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li><strong>依赖人工边界标注</strong>：虽然无需帧级进度，但仍需手动标注子任务边界和成功/失败标签以构造 padding mask 监督。对于长程复杂任务，边界定义的模糊性可能影响 SS 信号的准确性。</li>
+<li><strong>恢复行为的局限性</strong>：Echo 的恢复能力依赖于“恢复演示”数据。如果策略遇到训练集中未出现过的新型失败模式，可能无法生成有效的纠正动作，仅能识别失败而无法恢复。</li>
+<li><strong>信号语义解耦假设</strong>：阻断 SS-FS 注意力基于二者语义独立的假设。在某些极端情况下（如任务因危险而紧急停止，既是失败也是终止），这种解耦可能导致状态判断滞后或冲突。</li>
+<li><strong>可跟进方向</strong>：</li>
+<li>探索自动化的子任务边界检测以替代人工标注。</li>
+<li>结合在线 RL 或自我模仿学习，让策略在识别到 FS=1 时自主探索恢复动作，减少对预定义恢复演示的依赖。</li>
+<li>研究 SS 和 FS 在不同任务类型（如动态 vs 静态）下的最优交互结构，是否在某些场景下需要允许二者交互。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li><strong>平台与硬件</strong>：真机操纵实验，具体机器人形态未在摘要中详述，但涉及抓取、精确插入等典型操作。</li>
+<li><strong>模型架构</strong>：基于 Flow Matching 的 VLA 策略。动作、SS、FS 分别投影为 Token 组，共享 Transformer 主干，使用独立的 MLP 和输出头。</li>
+<li><strong>数据构成</strong>：</li>
+<li>成功演示（Teleoperation）。</li>
+<li>终端失败 Rollouts（Policy testing）。</li>
+<li>干预前失败片段 &amp; 恢复演示（Human intervention during execution）。</li>
+<li><strong>超参细节</strong>：</li>
+<li>Flow time $\tau \in [0,1]$。</li>
+<li>异步去噪参数 $\tau_{\text{clean}}$ 控制信号提前收敛的程度。</li>
+<li>损失权重 $\lambda_A=1$，$\lambda_S, \lambda_F$ 用于平衡有/无 padding 样本的信号损失。</li>
+<li><strong>评测协议</strong>：五个真机任务，分别评估 ID（分布内）和 OOD（分布外）性能。对比基线为仅预测动作的 VLA 模型。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><h3 class="sub">与 π 系列的关系</h3>
+<ul>
+<li><strong>非直接继承但理念互补</strong>：Echo 并未直接基于 $\pi_0$ 或 $\pi_{0.5}$ 的代码库，但其核心思想——在 Flow Matching 框架内联合建模动作与辅助信号——与 $\pi_0$ 的多模态统一 Token 化思路高度一致。</li>
+<li><strong>对 OpenPI 的启发</strong>：OpenPI 强调执行器的鲁棒性。Echo 提出的“异步去噪”和“状态引导动作”机制，为 OpenPI 的执行器提供了一个轻量级的闭环监控接口。它不需要外部 VLM 进行昂贵的推理，而是利用策略内部的潜在空间信号来判断何时停止或重试，这与 $\pi_{0.5}$ 中可能涉及的内部推理链（Internal Reasoning）有异曲同工之妙，但更侧重于执行层面的状态感知。</li>
+</ul>
+<h3 class="sub">对 Austin 研究的启发</h3>
+<ul>
+<li><strong>执行监控通道设计</strong>：Austin 在构建 VLA 系统时，可参考 Echo 的 SS/FS 双信号机制。与其依赖外部分类器判断任务是否完成，不如在策略训练阶段就将“停止”和“失败”作为动作维度的扩展。这能显著降低闭环控制的延迟。</li>
+<li><strong>数据构造范式</strong>：Echo 的数据构造方法（利用 Padding Mask 自动生成边界监督）极具工程价值。Austin 团队在收集真机数据时，可以标准化“干预前片段”和“恢复演示”的采集流程，无需昂贵的帧级标注即可训练出具备自我纠错能力的策略。</li>
+<li><strong>异步推理优化</strong>：如果 Austin 的系统对实时性要求极高，Echo 的异步去噪思路值得借鉴。通过让状态信号先于动作收敛，可以在动作生成的早期阶段就过滤掉明显错误的轨迹分支，或者在检测到 FS=1 时提前中断当前动作块的执行并触发重规划，从而提升整体系统的响应速度。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>Echo 通过将停止和失败信号作为动作维度的扩展进行联合去噪，并利用异步调度让状态估计引导动作生成，在无帧级标注的真机实验中显著提升了 VLA 策略的闭环鲁棒性和恢复能力。</p></div></details>
+</article>
+<p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
+</div>
+</body>
+</html>
