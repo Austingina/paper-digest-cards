@@ -151,62 +151,66 @@ details.fold .fold-body {
 <div class="wrap">
 <article class="card">
 <header class="header">
-<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30786" rel="noopener noreferrer" target="_blank">arXiv 2610.30786</a></span><span class="badge">深读</span></div>
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.30786" rel="noopener noreferrer" target="_blank">arXiv 2610.30786</a></span><span class="badge">深读</span></div>
 <h1>深读｜EBV-CAN</h1>
 </header>
 <section class="section"><h2>问题</h2><ul>
-<li><strong>背景痛点</strong>：柔性内窥镜/连续体机器人在狭窄管腔中导航时，长被动轴段的运动高度依赖环境接触（Contact-Aided Navigation, CAN）。现有的视觉导航方法多关注局部感知或纯自由空间规划，难以处理“插入改变支撑构型、摩擦改变电机指令与尖端位移关系”这一耦合动力学问题。</li>
-<li><strong>现有缺口</strong>：缺乏一种机制，能在仅有一张初始全局鸟瞰图（Bird&#x27;s-Eye View, EBV）作为静态地图的情况下，利用演化的局部内镜观测（Endoscopic View, EV）和语言指令，实时推断尖端在地图上的位置、下一航点及目标，并据此生成受接触约束的控制指令。</li>
-<li><strong>设定与目标</strong>：真机平台（2 DoF：弯曲+插入），闭环控制。目标是实现基于视觉-语言接地的接触辅助导航，验证动作模仿（Action Imitation）与任务完成（Task Completion）在物理执行中的显著差异，并证明语言指令能动态改变空间注意力和电机输出。</li>
+<li><strong>背景痛点</strong>：柔性内窥镜/连续体机器人在狭窄腔道导航时，长被动轴与环境接触（Contact-Aided Navigation, CAN）会改变电机指令与末端位移的映射关系。现有方法多依赖力传感或仿真强化学习，缺乏在真实物理环境中结合视觉语言模型（VLM）进行闭环控制的有效方案。</li>
+<li><strong>现有缺口</strong>：传统模仿学习（如GRU-BC）虽能拟合专家动作分布（低离线MAE），但在闭环执行中因误差累积导致任务失败；且多数方法未将“全局场景理解”与“局部视觉反馈”有效解耦，难以处理长程路径规划。</li>
+<li><strong>设定</strong>：真机平台（2自由度柔性内窥镜），输入为初始全局鸟瞰图（EBV）+ 实时内镜视图（EV）+ 电机状态 + 语言指令；输出为弯曲/插入动作。</li>
+<li><strong>目标</strong>：提出一种视觉语言策略，利用缓存的全局静态地图作为空间参考，结合局部动态观测和语言指令，实现高精度的接触辅助导航，并验证模型对指令的语义遵循能力。</li>
 </ul></section><section class="section"><h2>方法</h2><ul>
-<li><strong>整体 Pipeline</strong>：输入为初始全局鸟瞰图 $G$、最近8帧内镜观测 $E_{t-7:t}$、因果电机状态 $s_t$ 和语言指令 $l$。输出为未来6步的2维动作（弯曲、插入），仅执行第一步。</li>
-<li><strong>静态地图缓存与动态查询</strong>：使用冻结的 DINOv2 提取初始 EBV 的特征并缓存，结合固定 2D 位置编码作为全局记忆。EV 历史序列和当前状态通过 CNN/Transformer 编码为动态特征 $h_t$。</li>
-<li><strong>三语义查询机制</strong>：引入三个可学习的查询向量（Tip, Waypoint, Target），分别用于在静态 EBV 特征上定位尖端、下一航点和指令目标。这些查询由动态特征 $h_t$ 和语言嵌入 $z_l$ 共同条件化。</li>
-<li><strong>残差表征控制</strong>：三个查询经过交叉注意力读取全局记忆后，其残差表征（Residual Representations）与动态特征拼接，通过动作头预测电机命令。这种设计将可解释的空间定位（如尖端在地图上的坐标）直接耦合到反馈控制中。</li>
-<li><strong>相对基线改动</strong>：不同于纯端到端 VLA 或仅依赖局部视觉的策略，EBV-CAN 显式引入了“初始全局图+语言查询”作为空间锚点，并监督中间的空间进度（Route Progress），而非仅监督最终动作。</li>
+<li><strong>整体Pipeline</strong>：采用“全局静态记忆 + 局部动态感知”架构。初始时刻捕获一张全局鸟瞰图（EBV），后续推理仅使用实时内镜视图（EV）和电机状态，通过查询机制在缓存的全局特征上定位当前尖端、下一航点和目标。</li>
+<li><strong>空间监督查询机制</strong>：引入三个可学习的语义查询向量（Tip Query, Waypoint Query, Target Query）。这些查询由局部观测特征 $h_t$ 和语言嵌入 $z_l$ 共同条件化，通过残差交叉注意力读取缓存的全局EBV特征，分别预测尖端坐标、下一航点位置和指令目标位置。</li>
+<li><strong>动作预测头</strong>：将动态特征 $h_t$ 与三个查询的最终Token拼接，输入MLP预测未来6步的2自由度电机命令（弯曲、插入），仅执行第一步。这种设计将可解释的空间定位结果直接耦合到控制输出中。</li>
+<li><strong>数据集构建 (VLCA)</strong>：构建了包含517个演示、7.5万动作样本的大规模数据集。关键创新在于标注了“剩余路径记录”（Remaining-route records），即每一帧对应的下一个必须经过的航点（Guide或Target），从而将稀疏的目标指令转化为密集的中间监督信号。</li>
+<li><strong>相对基线改进</strong>：相比纯端到端VLA（如GR00T, Qwen3-VL）或传统BC，EBV-CAN显式引入了全局空间记忆和中间路径监督，解决了局部视野受限导致的“迷路”问题，并通过语言条件化确保对特定目标（如Star vs Circle）的区分。</li>
 </ul></section><section class="section"><h2>实验与结果</h2><ul>
-<li><strong>主指标成功率</strong>：在1920次真机试验中，EBV-CAN 在自动蓝区评分下达到 <strong>76.25%</strong> (183/240) 的成功率，比最强基线高出 <strong>60.0个百分点</strong>。</li>
-<li><strong>空间定位精度</strong>：在50个留出测试集（held-out episodes）上，尖端坐标定位准确率为 <strong>97.5%</strong>，下一航点定位准确率为 <strong>94.8%</strong>。</li>
-<li><strong>动作模仿 vs 任务完成差异</strong>：GRU-BC 基线在离线动作平均绝对误差（MAE）上最低（0.056），但在真机执行中成功率仅为 <strong>1/240</strong>。这证明了低动作误差并不等同于物理环境中的鲁棒导航，特别是在接触辅助场景下。</li>
-<li><strong>语言干预实验</strong>：在17个双目标 episode 中，保持视觉观测不变仅交换语言指令（Star vs Circle），模型的目标注意力热图发生显著偏移，且电机输出产生可测量的差异，证实了语言对空间注意力和控制策略的有效条件化。</li>
+<li><strong>主指标成功率</strong>：在1920次真机试验中，EBV-CAN在自动蓝色区域评分下达到 <strong>76.25%</strong> (183/240) 的成功率，比最强基线（GRU-BC）高出 <strong>60.0个百分点</strong>。</li>
+<li><strong>离线与在线表现的背离</strong>：GRU-BC在测试集上拥有最低的离线动作MAE (0.056)，但物理成功率仅为 <strong>1/240</strong> (~0.4%)。这证明了单纯的动作模仿无法解决接触辅助导航中的闭环误差累积问题，验证了空间监督的重要性。</li>
+<li><strong>定位精度</strong>：在50个留出测试集上，尖端坐标定位准确率为 <strong>97.5%</strong>，航点定位准确率为 <strong>94.8%</strong>。这表明模型能准确地将局部视觉证据映射到全局地图上的相对位置。</li>
+<li><strong>指令遵循消融</strong>：在17个双目标（Star/Circle）测试片段中，保持视觉观测不变仅交换语言指令，模型的Target Attention热图显著改变，且电机输出产生明显差异（Fig. 6c）。这证实了模型并非仅仅记忆视觉模式，而是真正理解并遵循了语言指定的目标。</li>
+<li><strong>失败案例分析</strong>：主要失败模式包括视野遮挡导致无法定位航点、转向时机过晚导致撞击导引块、以及反向运动。</li>
 </ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
-<li><strong>作者自认局限</strong>：平台为平面2 DoF简化系统，未涉及3D复杂管腔或真实人体解剖结构的非刚性形变；评估主要依赖自动蓝区评分，缺乏更细粒度的接触力反馈验证。</li>
-<li><strong>设定外推风险</strong>：当前方法依赖“初始全局图”这一强假设（如外部相机或预建地图）。在完全未知、无先验全局视图的纯内镜导航场景中，该方法无法直接应用。</li>
-<li><strong>证据不足</strong>：虽然证明了语言能改变输出，但缺乏对“错误指令导致失败”的系统性鲁棒性分析；基线对比中部分模型（如GR00T）可能未针对此特定接触任务进行充分微调。</li>
-<li><strong>可以继续做的</strong>：</li>
+<li><strong>平台局限性</strong>：实验仅在平面2自由度（弯曲+插入）平台上进行，未涉及3D空间中的复杂扭转或侧向移动，且依赖固定的外部相机提供初始全局图，限制了在非结构化环境中的应用。</li>
+<li><strong>语言交互深度不足</strong>：虽然验证了目标选择的指令遵循，但语言仅用于区分Star/Circle和通用“使用导引”指令，未涉及复杂的自然语言路径描述（如“绕过红色块”）。</li>
+<li><strong>动态场景缺失</strong>：全局地图是静态缓存的，若环境中的导引块发生移动或形变，模型缺乏在线更新全局记忆的能力。</li>
+<li><strong>可跟进方向</strong>：</li>
 </ul>
 <ul>
-<li><strong>去全局图化</strong>：尝试用在线 SLAM 或增量式建图替代初始静态 EBV，探索局部观测如何逐步构建全局空间参考。</li>
+<li>引入在线SLAM或神经辐射场（NeRF）机制，允许模型在导航过程中动态更新全局地图，而非仅依赖初始快照。</li>
 </ul>
 <ul>
-<li><strong>力/触觉融合</strong>：在电机状态中引入力矩反馈，验证模型是否能更好地感知“接触”的发生时刻，从而优化 CAN 策略的时机。</li>
+<li>扩展语言指令的复杂度，测试模型对相对空间关系（如“在A之后，B之前”）的理解能力。</li>
 </ul>
 <ul>
-<li><strong>3D 扩展</strong>：将平面查询机制扩展到体素地图或点云地图，测试在三维管腔中的尖端定位与路径规划能力。</li>
+<li>探索将EBV-CAN的空间查询模块作为前端，接入更强大的通用机器人基础模型（如π0/OpenPI），利用其更强的泛化能力处理未见过的几何结构。</li>
 </ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
-<li><strong>平台硬件</strong>：工业柔性内窥镜，2 DoF（电机化弯曲旋钮 + 反向旋转摩擦辊插入）。</li>
-<li><strong>传感器</strong>：固定 overhead 相机（EBV, $640\times480$）+ 尖端照明相机（EV, $640\times480$，裁剪为 $480\times480$ 圆形掩码）。</li>
-<li><strong>数据集 VLCA</strong>：517 个示教 episode，74,693 个动作样本。包含 957,616 个空间条目（Guide/Object boxes, Tip entries）和 93,085 个剩余路径记录。</li>
+<li><strong>硬件平台</strong>：工业柔性内窥镜，2 DoF控制（电机旋钮控制远端弯曲，摩擦辊控制插入/回撤）。</li>
+<li><strong>传感器</strong>：固定顶部相机（EBV，640x480），尖端照明相机（EV，640x480，裁剪为480x480圆形掩码）。</li>
+<li><strong>数据集 VLCA</strong>：517个演示，74,693个动作样本。分为L0-L4.5共9个任务级别，涉及0-3个导引块及Star/Circle目标。训练/验证/测试集按Episode划分（417/50/50）。</li>
 <li><strong>模型架构</strong>：</li>
-<li>Backbone: DINOv2 (frozen) for EBV features.</li>
-<li>Text Encoder: Compact text encoder (specific type not fully detailed in snippet, implied lightweight).</li>
-<li>Action Head: MLP predicting $6 \times 2$ actions.</li>
-<li><strong>训练协议</strong>：Episode-disjoint split (417 train / 50 val / 50 test)。输入为最近8帧 EV + 初始 EBV。</li>
-<li><strong>评测指标</strong>：物理成功率（蓝区进入）、离线动作 MAE、尖端/航点定位误差（归一化坐标）。</li>
-</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><h3 class="sub">与现有VLN/SLAM对比</h3>
+<li>视觉编码器：DINOv2 (ViT-B/14) 用于提取EBV和EV特征，权重冻结。</li>
+<li>文本编码器：小型Transformer或预训练语言嵌入。</li>
+<li>查询模块：3个可学习Query，通过Cross-Attention读取EBV特征。</li>
+<li>动作头：MLP，预测6步x2维动作。</li>
+<li><strong>基线模型</strong>：GRU-BC, ACT (Action Chunking Transformer), Diffusion Policy, Qwen3-VL (Frozen/LoRA), GR00T (Frozen/LoRA)。</li>
+<li><strong>评测协议</strong>：真机闭环执行，每任务30次试验。成功定义为末端进入指定的蓝色目标区域。离线指标为动作MAE和定位误差。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><h3 class="sub">与本项目关系</h3>
 <ul>
-<li><strong>核心增量</strong>：传统 VLN (Vision-Language Navigation) 多用于移动机器人或离散图导航，强调语义拓扑；EBV-CAN 针对连续体机器人的<strong>接触动力学</strong>，将语言指令映射到<strong>连续控制空间</strong>中的具体几何约束（如“利用这个导引块”）。</li>
-<li><strong>工程权衡</strong>：相比纯端到端 VLA（如 RT-2, π0），EBV-CAN 显式解耦了“全局定位”与“局部控制”。它不依赖巨大的预训练视觉骨干进行隐式推理，而是通过 DINOv2 + 显式 Query 机制实现可解释的空间接地。这在计算资源受限的内镜嵌入式场景中更具优势。</li>
-<li><strong>SLAM 关联</strong>：不同于实时 SLAM 构建地图，EBV-CAN 采用“先验全局图 + 局部重定位”范式，类似于视觉里程计中的 Map-based Localization，但针对的是非刚性、接触变形的特殊场景。</li>
+<li><strong>接口差异显著</strong>：Austin项目核心是 <strong>G/A-F几何场</strong>（引导场/交互区域），强调物体级的运动方向约束；而EBV-CAN使用的是 <strong>空间查询向量</strong>（Tip/Waypoint/Target Query）在全局地图上的定位。前者关注“如何操作物体”，后者关注“机器人自身在环境中的位置”。</li>
+<li><strong>条件遵循的弱证据</strong>：EBV-CAN通过“交换指令-&gt;改变Attention和动作”证明了语言对目标选择的控制，这与Austin关注的“策略是否持续跟随G场”有逻辑相似性（即输入条件是否被真正执行）。但EBV-CAN未涉及物体交互中的接触力或形变约束，因此对G场的直接借鉴意义有限。</li>
+<li><strong>OpenPI/π0 关联弱</strong>：论文使用的是DINOv2 + 自定义Query头，未使用OpenPI或π0系列作为骨干网络。其价值在于证明了“全局静态记忆+局部动态查询”这一架构在长程导航中的有效性，而非VLA基座模型本身的能力。</li>
+<li><strong>组合泛化视角</strong>：EBV-CAN的数据集VLCA通过标注“剩余路径”实现了细粒度的中间监督，这类似于Austin项目中对“交互阶段”的划分。但它主要解决的是路径规划的组合（不同导引块序列），而非物体操作技能（如推、拉、旋转）的组合泛化。</li>
 </ul>
-<h3 class="sub">对Austin启发</h3>
+<h3 class="sub">启发</h3>
 <ul>
-<li><strong>空间几何表示</strong>：Austin 可借鉴其“静态全局特征缓存 + 动态查询交叉注意力”的设计。在 VLA 模型中，若存在预建地图或初始全景图，可将其作为 Key/Value 缓存，让语言指令和局部观测作为 Query 去检索空间信息，而非将所有图像 token 拼接送入 LLM，从而大幅降低推理延迟并增强空间一致性。</li>
-<li><strong>分层规划接口</strong>：EBV-CAN 的“Tip/Waypoint/Target”三查询机制为 VLA 提供了一个中间层监督信号。Austin 可在训练 π0 或类似模型时，增加辅助头预测“当前在地图上的位置”和“下一个子目标”，以缓解长程导航中的累积误差。</li>
-<li><strong>数据设计</strong>：VLCA 数据集的“剩余路径记录（Remaining-route records）”标注思路值得借鉴。对于 Austin 的导航任务，除了动作标签，应显式标注“当前帧距离下一个关键节点（如路口、物体）的图像空间进度”，以强化模型对序列进度的理解。</li>
+<li><strong>中间监督信号的构建</strong>：Austin项目可借鉴VLCA中“Remaining-route records”的思路，为G场或A-F接口添加更密集的中间状态监督。例如，不仅监督最终目标，还监督“当前应接近的交互区域”和“下一步期望的运动方向”，以缓解长程任务中的误差累积。</li>
+<li><strong>闭环消融实验设计</strong>：EBV-CAN通过固定视觉输入、仅改变语言指令来验证条件遵循。Austin项目可强化此类实验：在闭环执行中，动态切换G场的方向或目标物体，观察策略输出是否实时响应，以此区分“记忆关联”与“真实条件遵循”。</li>
+<li><strong>全局-局部特征解耦</strong>：对于需要长程记忆的导航任务，考虑引入类似EBV-CAN的“缓存全局图+查询机制”，避免将全部历史帧输入Transformer导致计算爆炸或注意力稀释。</li>
 </ul>
 <h3 class="sub">一句话总结</h3>
-<p>EBV-CAN 提出了一种基于初始全局鸟瞰图缓存与语言条件化查询的接触辅助内镜导航策略，在真机实验中实现了76.25%的任务成功率，并揭示了动作模仿误差与物理任务完成度之间的显著脱节。</p></div></details>
+<p>EBV-CAN提出了一种基于全局静态地图缓存和空间语义查询的视觉语言策略，在真机柔性内窥镜导航中实现了76.25%的成功率，并证明了通过中间路径监督可有效解决动作模仿中的闭环失败问题。</p></div></details>
 </article>
 <p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
 </div>
