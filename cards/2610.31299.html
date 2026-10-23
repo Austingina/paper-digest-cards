@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜PiHand</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31299" rel="noopener noreferrer" target="_blank">arXiv 2610.31299</a></span><span class="badge">深读</span></div>
+<h1>深读｜PiHand</h1>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>灵巧手–物体交互合成中，纯跟踪mocap轨迹难迁移到新物体几何；手-only生成先验不建模手物耦合接触，样本效率与接触保真度差。</li>
+<li>原始动作空间直接RL需复杂阶段奖励与课程设计，且动作常不自然。</li>
+<li>目标：把物理合理的手–物耦合交互蒸馏进以目标物体轨迹为条件的VAE潜空间先验，再通过有界潜空间残差探索，用单一物体跟踪奖励泛化到未见物体与新任务。</li>
+</ul></section><section class="section"><h2>方法</h2><h3 class="sub">表示/条件接口：是什么、如何获得</h3>
+<ul>
+<li>条件是目标物体轨迹（未来物体位姿序列），不是语言也不是G场；生成时不依赖参考手轨迹。</li>
+<li>Stage I（物理专家）：PPO专家在仿真中跟踪mocap，动作为相对参考的积分残差PD目标；观测含手/物体状态、接触、指尖到物体表面位移；采用接触感知奖励（表面采样、单向漏接触惩罚、关键点对齐）。</li>
+<li>Stage II（条件交互先验）：条件VAE——先验只看物体轨迹部分观测，特权编码器另看参考手；解码器输出逐步手姿更新；用DAgger式行为克隆+KL对齐蒸馏。</li>
+</ul>
+<h3 class="sub">策略如何使用该条件</h3>
+<ul>
+<li>Stage III（有界潜空间残差探索）：下游策略输出有界潜残差Δz（受界B约束）加在冻结先验均值上，经冻结解码器得手部动作；桌面操纵仅用单一物体表面采样跟踪奖励、无复杂课程。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><h3 class="sub">条件是否真的被遵循</h3>
+<ul>
+<li>闭环评测：物体偏离参考轨迹超阈值即提前终止，报告成功率SR、轨迹完成度TC与位姿误差；在更严终止阈值（10→5cm）下本方法掉点最少，说明真正贴合目标轨迹而非仅擦边完成。</li>
+<li>消融对比：直接开环滚先验SR仅30.8%；原始动作空间残差49.6%；去掉随机轨迹增强67.9%；完整PiHand达74.0%——证明潜空间交互先验与轨迹增强均关键。</li>
+<li>残差界B分析：B过松会导致潜空间漂移、抓取姿态多样性坍缩向双手捧持；B=5取得跟踪精度与自然手姿的最佳折中。无G式符号反向/交换消融。</li>
+</ul>
+<h3 class="sub">组合泛化与关键结果</h3>
+<ul>
+<li>桌面未见物体与轨迹：GRAB测试集SR 74.0%（最强基线约60%，+14.0pp）；先验仅在GRAB训练、零样本迁移到DexYCB未见物体达77.7%（基线约60%，+16.9pp）。</li>
+<li>跨任务迁移：同一冻结先验迁移到训练数据中极罕见的抛接物体（Catching，SR 87.0%）与双手交接（Handover，SR 51.9%），分别约为最强基线的2.0×与4.3×。</li>
+<li>Stage I专家质量：在GRAB50上跟踪成功率93.3%，显著高于ManipTrans的69.6%。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>Stage I物理专家在全量GRAB上仍未达100%，极高动态动作与mocap穿透噪声处失败集中。</li>
+<li>当前仅建模刚体物体，未覆盖ARCTIC类铰接/关节物体；只控制手部与手腕，未包含手臂–全身协调；仿真采用单一MANO手模型，上真机灵巧手需额外做形态重定向。</li>
+<li>条件接口依赖给定的目标物体6D轨迹（来自示教或上层规划器），尚未接通从单目视觉直接预测未来物体运动的前端。</li>
+<li>可继续：把Stage III中的真实物体轨迹条件替换为视觉预测的3D物体流或G场，检验同一交互潜空间先验对预测噪声的容忍度。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>数据集与评估划分：GRAB（训练先验+评测未见物体/轨迹）与DexYCB（跨数据集未见物体评测）；额外评测Object Catching与Bimanual Handover两项迁移任务。</li>
+<li>仿真与手模：物理仿真环境驱动MANO灵巧手模型，动作空间为积分残差PD目标；Stage III潜残差范数界设为B=5，轨迹偏离终止阈值测试10cm与5cm两档。</li>
+<li>基线对照：Stage I对比ManipTrans；下游策略对比动作空间直接RL探索、Hand-Only Prior（先验不看物体轨迹）以及无潜残差直接采样先验。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐：展示「手–物耦合接触蒸馏为条件潜先验 + 有界残差探索」如何仅靠单一物体跟踪奖励实现未见物体泛化与跨任务迁移（接物/交接），与本项目的条件接口设计高度呼应。</li>
+</ul>
+<h3 class="sub">与本项目关系</h3>
+<ul>
+<li>「交互先验作可复用条件接口→下游残差解决新任务」与你的目标同构；核心差别是他们的条件是显式目标物体6D轨迹，而你的是G / A-F交互表示。</li>
+<li>诚实差距：不涉及OpenPI执行器，也未做条件符号翻转/交换消融；对「放置/失败恢复」有接物与偏离提前终止相关线索，但非桌面放置协议。</li>
+</ul>
+<h3 class="sub">启发</h3>
+<ul>
+<li>可借鉴三阶段范式：先把接触丰富交互蒸馏进条件潜空间，再做有界残差微调，避免下游策略在原始动作空间从零探索接触；单一奖励能工作说明先验已承载交互结构。</li>
+<li>评测上用更严轨迹偏离阈值（10→5cm）看掉点斜率，类似你用反向/交换检验策略是否真读条件；可做实验：把物体轨迹条件换成视觉预测的G，看同一先验是否仍能迁移到未见物体×目标组合。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>PiHand先训跟踪mocap的物理手–物专家，再蒸馏为物体轨迹条件的交互VAE先验，最后在有界潜空间残差探索中用单一跟踪奖励生成桌面操纵；未见物体上相对最强基线GRAB/DexYCB成功率+14.0/+16.9pp，并迁移到接物与双手交接。作者来自图宾根大学、MPI-INF、Berkeley等。</p></div></details>
+</article>
+<p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠</p>
+</div>
+</body>
+</html>
