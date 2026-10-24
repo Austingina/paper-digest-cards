@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.31635",
+  "title": "HiP3R",
+  "fig_label": "Figure 2",
+  "source_file": "figures/framework.pdf",
+  "caption": "Overview of HiP3R. Frozen backends predict overlapping chunks. Stage I builds a chunk-level $\\mathrm{Sim}(3)$ graph from overlap and loop constraints to recover layout and scale. Stage II estimates one shared $\\mathrm{SE}(3)$ camera per frame under that layout.",
+  "walkthrough_zh": "- **分块前馈局部重建（Input & Local Reconstruction）**：输入长序列视频被划分为重叠窗口子块（Chunk $1,\\dots,K$），独立送入冻结的前馈3D重建后端（如 VGGT-$\\Omega$），输出各块局部坐标系下的相机位姿、稠密点图与像素级置信度。\n- **Stage I：块级 $\\mathrm{Sim}(3)$ 布局优化（Chunk Layout Optimization）**：以每个子块为节点维护相似变换 $A_c = (s_c, R_c, t_c) \\in \\mathrm{Sim}(3)$；相邻子块通过置信度加权 IRLS 建立重叠约束边（蓝色实线），同时底部分支通过视觉地点识别（VPR）、联合窗口推理与双端点配准构建长程回环边（粉色虚线），渐进式激活并优化全局布局与尺度一致性。\n- **Stage II：帧级共享相机 $\\mathrm{SE}(3)$ 精修（Shared-camera Refinement）**：固定全局块布局后，为每个物理帧 $i$ 分配唯一的共享相机位姿节点 $F_i = (R_i, t_i) \\in \\mathrm{SE}(3)$，联合 Stage I 投影的一元块位姿先验因子（蓝色虚线）与块内连续帧相对运动因子（橙色实线）进行非线性优化，消除重叠窗口间的位姿冲突并输出一致的相机轨迹与三维点云。",
+  "width": 3200,
+  "height": 1213,
+  "image_rel": "../assets/figures/2610.31635.png"
+}

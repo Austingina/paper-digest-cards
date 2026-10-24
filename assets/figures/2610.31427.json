@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.31427",
+  "title": "FastHarness",
+  "fig_label": "Figure 2",
+  "source_file": "figures/conference/system_overview.pdf",
+  "width": 2000,
+  "height": 1363,
+  "caption": "FastHarness system overview. FastHarness adds two paths around the original GPT-as-Policy execution backbone (gray, middle): an experience-driven fast path (top) that routes fresh VLA proposals through a memory-guided scheduler to bypass redundant GPT-6 review, and a waypoint-based recovery path (bottom) that restores execution when terminal failures occur.",
+  "walkthrough_zh": "- **GPT-as-Policy 主干（Gray, Middle）**：作为基线执行核心，接收视觉观测 $o_t$ 与本体感觉 $s_t$，由策略网络 $\\pi_\\theta$ 生成动作序列 $a_{t:t+H}$。该模块负责常规控制流，但在高延迟场景下需依赖后续路径优化效率或鲁棒性。\n- **经验驱动快路径（Top, Fast Path）**：针对新鲜 VLA 提案，利用记忆引导调度器计算保守置信分数 $C_t$。若上下文匹配历史成功样例且满足审查间隔 $\\Delta k$，则直接执行动作前缀并刷新观测，绕过冗余的 GPT-6 审查；未知状态或邻近错误触发强制审查以保障安全。\n- **航点恢复路径（Bottom, Recovery Path）**：在终端故障时激活，持续运行审查器检测异常。优先尝试局部修复（如重抓），失败则回溯至当前 Episode 内已验证的航点 $w^*$ 进行状态重置。确认故障消除后，系统恢复常规调度并保留错误记录以更新经验库。",
+  "image_rel": "../assets/figures/2610.31427.png"
+}

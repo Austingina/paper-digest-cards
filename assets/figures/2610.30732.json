@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.30732",
+  "title": "SmolVLA-MoE",
+  "fig_label": "Figure 1",
+  "source_file": "img/architecture.png",
+  "width": 1518,
+  "height": 822,
+  "caption": "Overview of the SmolVLA-MoE architecture. The frozen VLM backbone processes visual observations and language instructions to produce contextual representations. The action expert replaces dense FFN layers with MoE-FFN layers, each containing a shared expert with scaling adapter and N routed experts with top-K sparse gating.",
+  "walkthrough_zh": "- **冻结VLM骨干**：输入视觉观测与语言指令，经SmolVLM2-500M（含SigLIP编码器）处理生成上下文表征。该部分参数完全冻结以保留预训练知识，其Key-Value缓存作为后续动作专家的交叉注意力源。\n- **MoE-FFN动作专家**：替换原稠密SwiGLU FFN为稀疏MoE结构。每个模块包含$N$个并行路由专家、1个始终激活的共享专家$E_s$及Token级路由器。仅Top-$K$专家被激活，实现计算稀疏化。\n- **动态路由与缩放适配**：Router通过线性投影计算得分并选取Top-$K$专家；引入AdaMoE风格缩放适配器调整权重$\\hat{w}_k = w_k + s(x)$，解耦专家选择与权重分配，增强对复杂动作分布的适应性。\n- **加权融合输出**：最终特征由可调权重的共享专家与路由专家输出线性组合而成：$y = \\alpha \\cdot E_s(x) + y_{routed}(x)$。$\\alpha$平衡知识继承与任务特化，随后输入Flow Matching头生成机器人动作序列。",
+  "image_rel": "../assets/figures/2610.30732.png"
+}

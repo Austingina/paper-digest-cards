@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.30186",
+  "title": "SIGNN++",
+  "fig_label": "Figure 2",
+  "source_file": "figures/pipeline.pdf",
+  "caption": "SIGNN++ Architecture. It inputs a night sky image and outputs star IDs and the camera's attitude. We use the center-of-gravity (CoG) method for star centroiding. Since centroiding is not the focus of this work, we use the CoG method as a simple and widely adopted baseline and provide identical centroid inputs to all SID methods for fair comparison. Section III-B and Section III-C describe the FT module and Perspective Star Alignment, respectively.",
+  "walkthrough_zh": "- **端到端星图识别与定姿主干（中部）**：输入地基夜空图像经灰度重心法（CoG）提取星点质心并由孔径测光估算表观星等，构建以星点为节点、$1^\\circ\\text{--}4^\\circ$角距内星对为边的几何星图；先由 SIGNN+FT 图神经网络输出初步恒星目录 ID，再经 PSA 几何对齐模块滤除外点并输出精化星体 ID 与相机三维姿态。\n- **傅里叶边编码图注意力网络（底部绿色框 SIGNN+FT）**：节点星等特征经线性层映射为 100维向量，输入第1层16头 GATv2 卷积（拼接聚合为 1600维，配 LayerNorm、LeakyReLU 与 $p=0.4$ Dropout）；一维星间角距边特征 $x$ 经傅里叶正余弦位置编码 $PE(x)=\\{x, \\sin(2^0\\pi x), \\cos(2^0\\pi x), \\dots\\}$ 升维以消除深度网络谱偏差，与节点特征共同输入第2层16头 GATv2 卷积，最终由线性分类层预测 5053 类恒星 ID 概率分布。\n- **RANSAC透视星对齐精化（顶部橙色框 PSA）**：按 GNN 置信度采样星对并通过奇异值分解（SVD）求解初始三维旋转矩阵，将星表参考星投影至像平面检验内点一致性（Consensus）；若未达标则重新采样，若通过则联合非线性优化相机视场角（FOV）与旋转矩阵。",
+  "width": 3200,
+  "height": 1911,
+  "image_rel": "../assets/figures/2610.30186.png"
+}

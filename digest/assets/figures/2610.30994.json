@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.30994",
+  "title": "TRACE",
+  "fig_label": "Figure 1",
+  "source_file": "Figures/diagram2.pdf",
+  "caption": "Framework Overview. Block diagram of the proposed framework, where VLM-based confidence maps from positive and negative prompt sets are combined through evidential fusion to produce a dense traversability map. The map is then projected onto 3D to obtain traversability-annotated points, which are later used to extract the left and right traversable boundaries based on percentile binning and spline/regularized polynomial fitting. Finally, the resulting boundaries are incorporated as soft barrier constraints within the NMPC formulation.",
+  "walkthrough_zh": "- **正负提示VLM感知与证据融合（左上至中上）**：前视 RGB 图像输入视觉语言分割模型（VLM，如 CLIPSeg），分别结合正向提示词集（Positive Prompts，如小径、平地）与负向提示词集（Negative Prompts，如倒木、密植）生成多张像素级置信图；随后基于 Beta 分布证据融合机制累加正负证据 $\\alpha^+,\\alpha^-$，由期望概率 $E$ 与认知不确定性 $U$ 计算稠密可通行性得分图 $C = E(1-U)$。\n- **3D点云投影与分位数边界提取（右上至右下）**：将二维可通行性得分图与 3D LiDAR 点云配准融合，生成带权可通行点云（Traversability Point Cloud）；滤除低置信点后沿前进方向 $X$ 轴分箱（Edge Extraction），统计各箱横向 $Y$ 坐标的 5% 与 95% 分位数提取左右边界候选点，并通过三次样条或正则化多项式拟合（Polynomial Fitting）生成平滑路径轮廓曲线 $p_L(x), p_R(x)$。\n- **NMPC软障碍约束控制（左下）**：将拟合出的左右连续边界轮廓作为软障碍约束（Soft Barrier Constraints）嵌入非线性模型预测控制（NMPC）优化问题中，实时求解满足运动学约束的安全控制指令驱动无人车穿越复杂林道。",
+  "width": 3200,
+  "height": 788,
+  "image_rel": "../assets/figures/2610.30994.png"
+}

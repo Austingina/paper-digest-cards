@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.31166",
+  "title": "Memory before Goal",
+  "fig_label": "Figure 3",
+  "source_file": "figures/ral_pipeline.pdf",
+  "width": 2000,
+  "height": 661,
+  "caption": "Overview of MemoVLA. A VLM produces a recurrent memory state s_t via the Memory Weaver and a goal representation g_t via the Perceiver; the Action Expert (L=6 DiT blocks) attends to s_t first and g_t second in every block.",
+  "walkthrough_zh": "- **记忆编织器 (Memory Weaver)**：VLM 接收当前图像 $I_t$、本体状态 $s_t$ 及指令 $\\ell$，通过因果自适应选择机制筛选关键事件帧，生成循环记忆状态 $s_t$。该模块利用 SAM3 追踪物体并计算位移与掩码重叠率，在预算 $B_{max}=7$ 内动态填充首、中、当前及高分事件帧，确保仅使用 $t$ 之前的因果信息以保留短时线索。\n- **感知器 (Perceiver)**：并行处理视觉输入以提取目标表征 $g_t$。该模块聚焦于任务相关对象（如“blue cup”），将原始像素特征压缩为紧凑的目标 Token $\\mathbf{O}_t$，为动作生成提供显式的空间与语义引导，解决仅依赖当前视图无法响应已离开视野事件的问题。\n- **动作专家 (Action Expert)**：由 $L=6$ 个 DiT 块组成，采用分层交叉注意力机制读取记忆。在每个 DiT 块中，动作 Token 首先通过 Cross-Attention 关注循环记忆状态 $s_t$ 以获取历史上下文，随后关注目标表征 $g_t$ 以定位操作对象。最终结合 FiLM 调制层输出全身动作 $\\mathbf{a}_t=(a_t,\\dots,a_{t+H-1})$，涵盖上半身关节目标与下半身控制指令。",
+  "image_rel": "../assets/figures/2610.31166.png"
+}

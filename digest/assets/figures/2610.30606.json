@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.30606",
+  "title": "CMAR-search",
+  "fig_label": "Figure 2",
+  "source_file": "pipeline-final.png",
+  "caption": "Our CMAR-search framework continuously accumulates environmental memory and leverages commonsense to augment a hierarchical reasoning process across three stages: First, memory and commonsense augment the construction of a F3DSG that organizes the environment into functional areas with their associated containers; Second, F3DSG enables hierarchical action planning at both macro-area and micro-container levels, efficiently identifying and inspecting semantically relevant areas; Third, when environmental dynamics occur (e.g., object relocations), the framework augments relocalization by integrating historical memory with commonsense to prioritize original areas, then inferring alternative search paths based on functional semantics when necessary.",
+  "walkthrough_zh": "- **记忆与常识增强的F3DSG构建（左及中下）**：系统融合 RGB-D、语义分割与定位感知，结合历史记忆（Memory，记录目标曾出现位置与已排查容器）和常识库（Commonsense，区分容器与可移动物体角色及功能先验），构建“房间—功能区（Area 1餐饮存储、Area 2休闲娱乐）—容器—可移动物体”四层功能三维场景图（F3DSG），并通过两阶段区域优化（Area Optimization）合并单容器区及修正误分类节点。\n- **宏观—微观分层动作规划（中右）**：大语言模型（LLM）在宏观层（Macro-Area）从动作空间（`explore`、`open`、`inspect`、`done`）中推理目标区域级指令；微观层（Micro-Container）则结合路径距离 $\\tilde{D}_i$、SBERT 语义相似度 $\\tilde{P}_i$ 与漏检风险因子，按复合评分 $S_i = \\alpha\\tilde{D}_i + \\beta\\tilde{P}_i + \\gamma\\prod_{k\\neq i}(1-P_k)$ 排序区域内待检容器序列。\n- **动态环境响应与重定位（右侧）**：当目标因环境动态被移动时，智能体优先回访历史记忆中的原始区域与容器；若未命中则利用功能语义常识外推至次优关联区域与邻近容器，并实时更新 F3DSG 完成高效重定位。",
+  "width": 3200,
+  "height": 1519,
+  "image_rel": "../assets/figures/2610.30606.png"
+}
