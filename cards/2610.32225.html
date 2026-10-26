@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜RoboCode</title>
+<title>RoboCode: Learning Reusable Action Primitives for Robot Manipulation</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32225" rel="noopener noreferrer" target="_blank">arXiv 2610.32225</a></span><span class="badge">深读</span></div>
-<h1>深读｜RoboCode</h1>
+<h1>RoboCode: Learning Reusable Action Primitives for Robot Manipulation</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32225" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,22 @@ details.fold .fold-body {
 <li><strong>离散化与语义化的局限</strong>：现有的 Token 化方法将动作维度独立分箱，破坏了动作维度的协调性；而高层规划算子虽具语义但缺乏底层控制细节，且依赖庞大的任务特定词汇表，泛化能力受限。</li>
 <li><strong>单一原语表达力不足</strong>：传统运动基元往往假设一个动作块对应单一技能，但实际短时程动作常包含多种运动因子的混合（如边移动边旋转），硬分配难以捕捉这种复合性。</li>
 <li><strong>目标设定</strong>：作者旨在构建一种“软门控原语代码本”作为中间动作接口，通过两阶段训练（先学共享原语重构动作，再冻结接口学状态到原语的映射），在不依赖人工设计基元或任务标签的情况下，提升闭环控制的成功率与可解释性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32225.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32225.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32225.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32225.png'">
+    <img src="/assets/figures/2610.32225.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32225.png'" alt="RoboCode: Learning Reusable Action Primitives for Robot Manipulation Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>Stage I：动作编码器与共享原语接口学习</strong>：该阶段从多任务池化的动作块（action chunks）中联合训练动作编码器 $E_a$ 和共享原语动作接口 $\mathcal{P}$。模型将原始动作序列映射至潜在空间，提取具有跨任务泛化能力的基元特征表示，确立后续状态-动作对齐的基准流形结构。</li>
+<li><strong>Stage II：任务特定状态编码与冻结接口</strong>：在保持 Stage I 训练好的原语接口 $\mathcal{P}$ 参数完全冻结的前提下，针对每个具体任务独立训练状态编码器 $E_s$。该模块将视觉观测或本体感知数据映射至共享潜在空间，通过最小化预测动作块与真实动作块的分布差异，实现观测到基元动作的精准对齐。</li>
+<li><strong>推理阶段：滚动时域执行机制</strong>：部署时，系统采用滚动时域控制（receding-horizon）策略。当前时刻 $t$ 的状态经 $E_s$ 编码后，通过冻结接口 $\mathcal{P}$ 解码生成未来时间步的动作块预测 $\hat{a}_{t:t+H}$。仅执行动作块中的首个动作 $a_t$，随后滑动窗口并重复上述过程，确保控制的实时性与鲁棒性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of the \textsc{RoboCode} framework. Stage 1 learns an action encoder and a shared primitive action interface from pooled multi-task action chunks. Stage 2 trains task-specific state encoders to map observations into the shared latent space while keeping the primitive interface frozen. At inference time, predicted action chunks are executed in a receding-horizon manner.</div></details>
+</div>
+<ul>
 <li><strong>整体 Pipeline</strong>：采用两阶段框架。Stage 1 为“共享原语自编码器”，从多任务演示中联合训练动作编码器、相似性门控算子和动作解码器；Stage 2 为“观测到门控的策略”，冻结 Stage 1 学到的原语接口，仅训练特定任务的状态编码器将当前状态映射至共享潜空间。</li>
 <li><strong>软门控机制（Soft-Gated Gating）</strong>：不同于 VQ-VAE 的硬分配，RoboCode 使用基于余弦相似度的 Sigmoid 门控。每个动作块被表示为代码本中多个原语向量的加权和（$\mathbf{c}_t = \sum g_{t,k}\mathbf{e}_k$），允许一个动作激活多个原语，从而表达复合运动模式。</li>
 <li><strong>损失函数设计</strong>：Stage 1 使用重构损失（MSE）、投影一致性损失、稀疏性正则化（鼓励少用原语）和多样性正则化（防止代码本坍缩）。Stage 2 训练状态编码器以匹配由专家动作推导出的目标门控向量，并附加动作一致性约束。</li>
@@ -590,12 +605,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>RoboCode 提出了一种基于软门控原语代码本的中间动作表示，通过两阶段训练在 ManiSkill 上以仅 0.6M 参数实现了 75.6% 的平均闭环成功率（优于 ACT），证明了结构化动作分解对提升控制效率与可解释性的价值。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32225" data-title="RoboCode">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32225" data-title="RoboCode: Learning Reusable Action Primitives for Robot Manipulation">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32225 · RoboCode</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32225 · RoboCode: Learning Reusable Action Primitives for Robot Manipulation</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -605,7 +620,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《RoboCode》</strong>（arXiv: 2610.32225）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《RoboCode: Learning Reusable Action Primitives for Robot Manipulation》</strong>（arXiv: 2610.32225）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

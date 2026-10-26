@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜TTT in VLA Models</title>
+<title>TTT in VLA Models: Exploring Training with Human Demonstrations</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,30 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32094" rel="noopener noreferrer" target="_blank">arXiv 2610.32094</a></span><span class="badge">深读</span></div>
-<h1>深读｜TTT in VLA Models</h1>
+<h1>TTT in VLA Models: Exploring Training with Human Demonstrations</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32094" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>长程任务的记忆瓶颈</strong>：现有 VLA 模型（如 $\pi_{0.5}$）主要依赖上下文窗口或固定长度的历史帧，难以在长程任务中高效保留和检索早期关键信息。随着序列变长，计算开销线性增加且注意力机制容易稀释早期信号。</li>
 <li><strong>测试时训练（TTT）的潜力与缺口</strong>：TTT 通过将历史压缩进“快速权重”（Fast Weights），实现了恒定内存占用下的在线记忆更新。然而，目前缺乏在主流 VLA 架构（特别是 $\pi_{0.5}$ 和 InternVLA-A1）中集成 TTT 的详细实现细节、训练稳定性分析以及针对人类演示（Human Demonstrations）作为条件输入的有效性验证。</li>
 <li><strong>目标设定</strong>：作者旨在探索将 TTT 机制引入 VLA，利用“人类演示+机器人轨迹”配对数据进行训练，以增强模型基于视觉提示进行长程目标选择和动作生成的能力，并记录其在当前规模下的实际表现（包括负面结果）。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32094.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32094.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32094.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32094.png'">
+    <img src="/assets/figures/2610.32094.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32094.png'" alt="TTT in VLA Models: Exploring Training with Human Demonstrations Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入预处理与投影</strong>：原始输入经归一化（Normalization）及线性投影层映射为查询向量 $Q$、键向量 $K$ 和值向量 $V$。图中省略了批处理维度、多头拆分及内部残差细节，聚焦于核心张量变换流程，确保数据流清晰指向后续的记忆更新与检索模块。</li>
+<li><strong>右路：快速权重更新机制</strong>：该路径利用两层 GELU MLP（红色模块）作为内层模型，通过最小化内层损失函数 $\mathcal{L}_{inner}$ 来预测 $V$ 并更新快速权重 $\theta_{fast}$。此过程模拟测试时训练（TTT），使模型参数能根据当前上下文动态适应，实现从静态慢权重到动态快权重的即时演化。</li>
+<li><strong>左路：动态查询与输出生成</strong>：利用更新后的内层模型对 $Q$ 进行前向推理以获取增强特征，随后通过输出投影层映射回原始维度。最终结果经由门控残差连接（Gated Residual Connection）与初始输入融合，有效缓解梯度消失并保留原始信息，完成从上下文感知到特征重构的闭环。</li>
+<li><strong>双MLP结构语义</strong>：图中左右两个 MLP 模块实质代表同一内层模型在更新前后的两次调用状态。左侧对应参数更新后的推理阶段，右侧对应基于 $K, V$ 的梯度下降更新阶段，直观展示了 TTT 架构中“预测-更新-查询”的核心迭代逻辑。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">TTT layer architecture and memory operations. Green modules contain slow weights, while red modules represent a two-layer GELU MLP parameterized by fast weights. Normalization and projections transform the input into \(Q\), \(K\), and \(V\). The right path predicts \(V\) from \(K\) and updates fast weights using the inner loss. The left path queries the updated model with \(Q\), then applies an output projection and a gated residual connection. The two MLPs depict two calls to the same inner model, before and after the update. The batch dimension, head splitting, and inner normalization and residual details are omitted for clarity.</div></details>
+</div>
+<ul>
 <li><strong>整体架构与插入位置</strong>：</li>
 <li><strong>$\pi_{0.5}$ (OpenPI)</strong>：在 Action Expert 的全部 18 层中插入 TTT 层。位于 Attention 输出投影及残差连接之后、Feedforward 网络之前。保留原有的视觉编码器和语言前缀结构。</li>
 <li><strong>InternVLA-A1</strong>：在 Generation Expert 和 Action Expert 的每一层中插入 TTT 层（Attention 子层后，FFN 子层前）。理解专家（Understanding Expert）保持不变。</li>
@@ -581,12 +597,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>本文详细记录了将测试时训练（TTT）机制集成到 $\pi_{0.5}$ 和 InternVLA-A1 中的实现细节与训练配置，但在当前数据规模下，该机制未能显著提升基于人类演示的长程目标选择一致性，主要贡献在于提供了可复现的工程基线与负面结果分析。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32094" data-title="TTT in VLA Models">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32094" data-title="TTT in VLA Models: Exploring Training with Human Demonstrations">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32094 · TTT in VLA Models</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32094 · TTT in VLA Models: Exploring Training with Human Demonstrations</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -596,7 +612,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《TTT in VLA Models》</strong>（arXiv: 2610.32094）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《TTT in VLA Models: Exploring Training with Human Demonstrations》</strong>（arXiv: 2610.32094）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

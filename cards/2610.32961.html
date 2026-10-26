@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue</title>
+<title>Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue: 3D Representations for Data-Driven Closed-Loop Shape Control</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,29 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32961" rel="noopener noreferrer" target="_blank">arXiv 2610.32961</a></span><span class="badge">深读</span></div>
-<h1>深读｜Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue</h1>
+<h1>Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue: 3D Representations for Data-Driven Closed-Loop Shape Control</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32961" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>背景痛点</strong>：在微尺度医疗机器人操作中，软体组织的局部形变难以通过传统视觉（如RGB）精确观测，且基于物理的模型计算昂贵、难以适应真实环境。现有方法多依赖2D图像轮廓或稀疏点云进行目标条件控制，缺乏对组织内部3D结构及深度信息的利用。</li>
 <li><strong>现有缺口</strong>：虽然光学相干断层扫描（OCT）能提供高分辨率体积感知，但如何将OCT捕获的复杂体积数据转化为有效的“当前状态”与“目标状态”表示，并让策略真正理解两者差异以执行闭环控制，尚缺乏系统性研究。</li>
 <li><strong>设定与目标</strong>：本文在真机平台（UR5e + OCT）上，通过用户引导的示教学习闭环策略。目标是验证不同3D几何/强度表示及残差条件对数据驱动形状控制的影响，实现从当前组织形态到目标形态的精确、可泛化控制。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32961.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32961.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32961.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32961.png'">
+    <img src="/assets/figures/2610.32961.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32961.png'" alt="Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue: 3D Representations for Data-Driven Closed-Loop Shape Control Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>闭环控制与策略预测</strong>：系统以预形变OCT扫描 $V_{\mathrm{pre}}$ 生成的目标体积 $G=\mathcal T(V_{\mathrm{pre}};\eta)$ 为条件，接收观测历史 $V_{t-H_o+1:t}$ 及工具位姿 $\mathbf p_{t-H_o+1:t}$。策略网络 $\pi_\theta$ 输出动作序列 $\widehat{\mathbf A}_t \in \mathbb R^{H_a\times6}$，包含归一化的平移与旋转增量，经反归一化后执行首个动作以闭合控制回路。</li>
+<li><strong>多模态表征与目标生成</strong>：输入端整合全强度体积、组织掩码稀疏体积或体素化点云作为OCT表征，确保当前状态与目标 $G$ 在空间校准上的一致性。该模块支持显式（Explicit）与扩散（Diffusion）两种策略架构，并引入残差条件化机制（标记为 $R$），以增强对软组织形变的建模能力。</li>
+<li><strong>性能评估与基准对比</strong>：右侧图表量化了形状精度与可靠性，核心指标包括最终形状RMSE均值及HD95。紫色虚线带标示人类演示的端点均值及 $\pm1$ 标准差范围，作为性能上限参考；不同符号（圆形/菱形）区分策略类型，灰色散点展示目标平均部署扫描结果，直观呈现模型在缩小与人类演示差距方面的有效性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Phantom shape accuracy and reliability. Large symbols show mean final shape RMSE; three gray dots and their range show target-averaged deployment sweeps. Adjacent columns report mean final HD95 (details in Appendix) and per-rollout RMSE reduction. Purple dashed lines and bands show human endpoint means and reported $\pm1$ sample SD of final Shape RMSE across individual human demonstrations. Circles: Explicit; diamonds: Diffusion; filled: residual conditioning ($R$).</div></details>
+</div>
+<ul>
 <li><strong>整体Pipeline</strong>：</li>
 </ul>
 <ul>
@@ -608,12 +623,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>本文通过对比OCT体积、稀疏体积和点云表示及显式残差条件，证明了在闭环软体组织形状控制中，<strong>纯几何点云结合显式当前-目标差异编码（Residual Conditioning）</strong> 能显著降低方向性误差（0.748mm→0.555mm）并提升对未见目标的泛化能力，为机器人交互中的“条件遵循”提供了强有力的几何表示证据。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32961" data-title="Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32961" data-title="Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue: 3D Representations for Data-Driven Closed-Loop Shape Control">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32961 · Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32961 · Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue: 3D Representations for Data-Driven Closed-Loop Shape Control</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -623,7 +638,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue》</strong>（arXiv: 2610.32961）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Robotic Optical Coherence Tomography-Guided Geometric Modeling of Soft Tissue: 3D Representations for Data-Driven Closed-Loop Shape Control》</strong>（arXiv: 2610.32961）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

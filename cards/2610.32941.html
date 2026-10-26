@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜If at First You Don&#x27;t Succeed, Backtrack</title>
+<title>If at First You Don&#x27;t Succeed, Backtrack: Lightweight Recovery for Frozen VLAs</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,30 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32941" rel="noopener noreferrer" target="_blank">arXiv 2610.32941</a></span><span class="badge">深读</span></div>
-<h1>深读｜If at First You Don&#x27;t Succeed, Backtrack</h1>
+<h1>If at First You Don&#x27;t Succeed, Backtrack: Lightweight Recovery for Frozen VLAs</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32941" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>VLA 的分布外脆弱性</strong>：即使经过大规模预训练，VLA 模型在遇到训练数据未覆盖的状态（如相机视角变化、物体位移）时表现脆弱。更关键的是，VLA 自身的错误动作（如掉落物体）会将其带入“自我制造”的分布外状态，而模仿学习数据集通常只包含成功演示，缺乏恢复轨迹。</li>
 <li><strong>现有恢复方案的开销与局限</strong>：传统的恢复方法需要收集昂贵的失败/恢复演示数据、重新训练策略或引入额外的推理时模型（如 VLM 裁判）。简单的增加执行时间步长对提升成功率效果甚微（在 LIBERO-Long 上仅提升 2.3–3.7 pp）。</li>
 <li><strong>本文目标</strong>：提出一种无需重新训练骨干网络、无需额外恢复演示数据、且计算开销极低的“即插即用”失败检测与回溯机制，旨在通过轻量级干预提升冻结 VLA 在长程任务中的鲁棒性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32941.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32941.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32941.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32941.png'">
+    <img src="/assets/figures/2610.32941.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32941.png'" alt="If at First You Don&#x27;t Succeed, Backtrack: Lightweight Recovery for Frozen VLAs Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>冻结VLA主干与特征提取</strong>：系统以预训练且参数冻结的视觉-语言-动作（VLA）模型为核心，接收当前观测并生成候选动作序列。同时，该主干网络内部已计算的多模态中间特征被旁路引出，作为后续故障预测模块的唯一输入源，确保不引入额外推理开销。</li>
+<li><strong>轻量级故障预测头</strong>：一个小型化的故障预测头（Failure Prediction Head）读取上述冻结VLA的特征，实时估计当前回合失败的概率 $p_{\text{fail}}$。该模块旨在通过低计算成本识别潜在的风险状态，其输出作为控制逻辑切换的关键判据。</li>
+<li><strong>基于阈值的回溯控制器</strong>：Backtrack控制器依据预测概率与预设阈值 $t$ 的比较结果执行分支决策。若 $p_{\text{fail}} &gt; t$，控制器抑制VLA提出的动作，转而触发回溯机制；否则，正常执行策略动作。此机制实现了风险感知的动态控制流切换。</li>
+<li><strong>运动缓冲区与状态更新</strong>：系统维护一个存储近期已实现机械臂运动的缓冲区（Buffer）。在正常执行阶段，实际达成的运动被写入缓冲区；而在回溯阶段，控制器从缓冲区检索并重放历史轨迹以恢复稳定状态，且回溯期间的运动不被记录，从而保证数据分布的纯净性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of Backtrack. A small failure prediction head reads features already computed by the frozen VLA and estimates the probability that the current episode will fail. When the predicted failure probability exceeds the threshold $t$, the Backtrack controller suppresses the policy&#x27;s proposed actions and instead retraces recent achieved arm motion stored in a buffer. Otherwise, the policy&#x27;s actions are executed normally. The resulting state is observed by the unchanged VLA and the control loop continues. Achieved motion is added to the buffer during normal policy execution; motion executed during backtracking is not. The diagram abstracts over differences in action generation between the evaluated VLAs.</div></details>
+</div>
+<ul>
 <li><strong>整体架构（Backtrack）</strong>：由一个轻量级的<strong>失败预测头（Failure Prediction Head, FPH）</strong>和一个<strong>回溯控制器（Backtracking Controller）</strong>组成。FPH 读取冻结 VLA 的内部特征估计当前回合的失败概率；当概率超过阈值时，控制器暂停策略执行，反向重放机械臂近期的运动轨迹以重置状态，随后将控制权交还给未修改的策略。</li>
 <li><strong>失败预测头 (FPH)</strong>：</li>
 <li><strong>输入</strong>：复用 VLA 前向传播中已计算的特征（如 VLM 输出表示 <code>post</code>），无需额外的骨干网络前向传播。</li>
@@ -583,12 +599,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>本文提出 Backtrack，一种仅增加 &lt;1% 参数量的轻量级失败预测头与回溯控制器，在不重新训练冻结 VLA（包括 $\pi$ 0.5 和 $\pi$ 0-FAST）的前提下，通过反向重放机械臂运动，在 LIBERO-Long 上将失败率降低 19%-48%，为 VLA 的分布外鲁棒性提供了高效的即插即用解决方案。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32941" data-title="If at First You Don&#x27;t Succeed, Backtrack">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32941" data-title="If at First You Don&#x27;t Succeed, Backtrack: Lightweight Recovery for Frozen VLAs">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32941 · If at First You Don&#x27;t Succeed, Backtrack</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32941 · If at First You Don&#x27;t Succeed, Backtrack: Lightweight Recovery for Frozen VLAs</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -598,7 +614,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《If at First You Don&#x27;t Succeed, Backtrack》</strong>（arXiv: 2610.32941）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《If at First You Don&#x27;t Succeed, Backtrack: Lightweight Recovery for Frozen VLAs》</strong>（arXiv: 2610.32941）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

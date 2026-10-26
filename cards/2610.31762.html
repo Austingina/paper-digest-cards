@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜See What I Need, Dream What I Want</title>
+<title>See What I Need, Dream What I Want: A Navigation Foundation Model on a Self-Constructed Representation Space</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,29 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31762" rel="noopener noreferrer" target="_blank">arXiv 2610.31762</a></span><span class="badge">深读</span></div>
-<h1>深读｜See What I Need, Dream What I Want</h1>
+<h1>See What I Need, Dream What I Want: A Navigation Foundation Model on a Self-Constructed Representation Space</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31762" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>背景痛点</strong>：现有基于视觉基础模型（VFM）的导航策略通常直接采用预训练模型的最终层输出或固定中间层，导致“任务导向”缺失——编码器决定了机器人“看什么”，而非任务需求决定。这造成策略虽能理解语义，却常误判自由空间、碰撞障碍物或在动态场景中丢失目标。</li>
 <li><strong>现有缺口</strong>：微调编码器会侵蚀通用先验；简单拼接多模型输出无法利用深层结构差异；现有的世界模型预测（如像素或文本）与导航动作空间脱节，缺乏“按需所见”的紧凑表示。</li>
 <li><strong>设定与目标</strong>：在仿真（VLNVerse, EVT-Bench等）及真机闭环环境中，冻结视觉基础模型骨干，通过构建自构造表示空间（Self-Constructed Representation Space），实现“按需所见”（See What I Need）和“预想未来”（Dream What I Want），以提升导航成功率、减少碰撞并增强动态场景鲁棒性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.31762.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31762.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31762.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31762.png'">
+    <img src="/assets/figures/2610.31762.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31762.png'" alt="See What I Need, Dream What I Want: A Navigation Foundation Model on a Self-Constructed Representation Space Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多源视觉特征聚合（\mixres）</strong>：输入为 $N$ 路相机观测 $I_{1:t}^{1:N}$，动态跨越 DINOv3 等三个冻结视觉基础模型的全深度层进行注意力交互。该模块构建策略自建的共享表示空间，并通过可学习的 <code>[CLS]</code> token 对每个视图的特征进行摘要，实现“看所需”（See what I need）的语义、几何与动态结构提取。</li>
+<li><strong>潜在思维链预测（Latent CoT）</strong>：在规划前执行“想所欲”（Dream what I want）机制。模型在当前表示空间中展开潜在思维链，预测未来时刻观测的 <code>[CLS]</code> token 序列。此过程受 VISReg 正则化约束，确保潜在状态演化的平滑性与物理一致性，为后续动作生成提供前瞻性上下文。</li>
+<li><strong>统一策略与多任务输出</strong>：基于预测的未来潜在状态，规划头直接输出当前机器人坐标系下的八个航点 $\tau=\{(x_i,y_i,\theta_i)\}_{i=1}^{8}$（含位置与偏航角）。该共享骨干网络同时支持图像/视频问答（QA）的自回归生成，解码后的潜在变量仅用于可视化分析，不直接参与控制回路。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">See what I need, dream what I want. \ours learns a shared visual interface over frozen visual priors and rolls out latent predictions before generating waypoints. Left: real-world person tracking and post-hoc readouts of semantics, occupancy, and motion. Right: model overview and benchmark results.</div></details>
+</div>
+<ul>
 <li><strong>整体 Pipeline</strong>：输入多视角RGB图像与语言指令 → <strong>Representation Residuals (RR)</strong> 模块从多个冻结VFM的全深度特征中构建任务导向表示 → <strong>Latent Chain-of-Thought (JEPA)</strong> 在动作前预测未来场景的潜在表示 → LLM骨干（Qwen3-VL）结合当前与预测表示输出8个航点。</li>
 <li><strong>Representation Residuals (RR)</strong>：一个紧凑的三层Transformer，通过注意力机制动态聚合来自三个互补VFM（DINOv3语义、Depth Anything 3几何、OpenD4RT动态）的全深度特征。它不依赖固定层，而是由任务误差反向传播决定权重，生成包含[CLS]全局向量和空间Token的表示。</li>
 <li><strong>Latent Chain-of-Thought (JEPA)</strong>：在RR构建的空间内进行潜在推理。模型预测未来0.4s至1.6s（5Hz下2-8步）的场景[CLS]表示。采用联合嵌入预测架构（JEPA），使用MSE损失预测目标表示，并引入VISReg正则化防止空间坍缩（约束均值、方差和形状）。</li>
@@ -566,12 +581,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>RepresentNav通过Representation Residuals构建任务导向表示空间并结合JEPA潜在思维链预测未来，在VLNVerse和EVT-Bench上刷新SOTA（SR +20.05% / +10.1%），显著提升了导航的语义理解与动态鲁棒性。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.31762" data-title="See What I Need, Dream What I Want">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.31762" data-title="See What I Need, Dream What I Want: A Navigation Foundation Model on a Self-Constructed Representation Space">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.31762 · See What I Need, Dream What I Want</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.31762 · See What I Need, Dream What I Want: A Navigation Foundation Model on a Self-Constructed Representation Space</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -581,7 +596,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《See What I Need, Dream What I Want》</strong>（arXiv: 2610.31762）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《See What I Need, Dream What I Want: A Navigation Foundation Model on a Self-Constructed Representation Space》</strong>（arXiv: 2610.31762）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

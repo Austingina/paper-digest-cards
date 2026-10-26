@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜TravSUITE</title>
+<title>TravSUITE: Traversability via Self-Supervised, Uncertainty-Aware IRL and Terrain Estimation</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,29 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32130" rel="noopener noreferrer" target="_blank">arXiv 2610.32130</a></span><span class="badge">深读</span></div>
-<h1>深读｜TravSUITE</h1>
+<h1>TravSUITE: Traversability via Self-Supervised, Uncertainty-Aware IRL and Terrain Estimation</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32130" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>越野导航的核心痛点</strong>：在高速越野场景下，传感器噪声、遮挡及观测稀疏导致局部地图质量下降；同时，人工设计可通行性规则（Cost Function）难以兼顾机器人能力、操作员偏好及复杂环境几何语义，且缺乏对感知不确定性的建模。</li>
 <li><strong>现有方法的缺口</strong>：主流方法依赖特权数据（如仿真、手动标注或事后回溯）进行监督，导致泛化困难；基于学习的方法在输入表示（几何 vs 语义 vs VFM特征）上缺乏共识，且往往忽略感知不确定性对下游规划的影响。</li>
 <li><strong>设定与目标</strong>：针对越野高速导航场景，提出一种完全无标注（Annotation-free）、自监督的系统。旨在通过结合视觉基础模型（VFM）建图、逆强化学习（IRL）及不确定性感知机制，实现比现有SOTA更低的导航错误率和更高的自主行驶速度。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32130.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32130.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32130.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32130.png'">
+    <img src="/assets/figures/2610.32130.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32130.png'" alt="TravSUITE: Traversability via Self-Supervised, Uncertainty-Aware IRL and Terrain Estimation Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>CVaR 风险度量计算模块</strong>：该模块接收并行轨迹规划（Parallel Trav.）生成的候选轨迹集合 $\tau$ 及其对应的累积成本 $f_\theta(\tau)$。通过排序与加权聚合，计算条件风险价值（Conditional Value-at-Risk, CVaR），旨在量化尾部风险而非仅关注期望成本，从而在不确定性环境中实现更鲁棒的自主导航决策。</li>
+<li><strong>行为地图约束注入机制</strong>：输入为 BEV 空间的行为地图 $\Pi_t = [C_t, S_t]$，其中 $C_t$ 表示通行代价，$S_t$ 表示最大允许速度。模块依据公式 $f_\theta(\tau) = \sum_{x \in \tau} [ C_t(x) + K_1 \mathbbm{1}[||x_v||_2 &gt; S_t(x)] ] + K_2 ||x_T - x_G||$ 对轨迹进行评分，利用硬约束 $K_1 \approx \infty$ 确保轨迹不超速，并平衡终点距离与路径代价。</li>
+<li><strong>自主导航运行状态可视化</strong>：图表横轴代表时间步或迭代次数，纵轴展示 CVaR 值的动态变化曲线。该部分直观反映了在“Parallel Trav. + CVaR”策略下，随着机器人对环境观测 $O_{0:t}$ 的积累及规划优化，系统对潜在高风险路径的规避能力增强，表现为风险度量值的收敛或稳定下降，验证了方法在长程导航中的安全性与有效性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Plot of the CVaR value during the Parallel Trav. + CVaR autonomy run.</div></details>
+</div>
+<ul>
 <li><strong>整体 Pipeline</strong>：系统分为两大模块：1) 基于 VFM 的高效体素映射器（Voxel Mapper），将多模态传感器数据聚合为几何-语义局部地图；2) 统一神经网络，在 BEV 视角下联合预测几何、语义、速度及成本图。</li>
 <li><strong>自监督训练策略</strong>：</li>
 <li><strong>行为学习（IRL）</strong>：采用 MaxEnt IRL 框架，利用专家轨迹通过 LEARCH-like 过程优化成本函数梯度，无需人工标注成本标签。</li>
@@ -566,12 +581,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>TravSUITE 通过结合 VFM 体素建图、自监督 IRL 及不确定性感知风险适应，在真实越野实验中实现了导航错误减少 80% 和速度提升 5%，为无标注高速自主导航提供了高效且鲁棒的解决方案（CMU &amp; Field AI）。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32130" data-title="TravSUITE">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32130" data-title="TravSUITE: Traversability via Self-Supervised, Uncertainty-Aware IRL and Terrain Estimation">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32130 · TravSUITE</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32130 · TravSUITE: Traversability via Self-Supervised, Uncertainty-Aware IRL and Terrain Estimation</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -581,7 +596,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《TravSUITE》</strong>（arXiv: 2610.32130）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《TravSUITE: Traversability via Self-Supervised, Uncertainty-Aware IRL and Terrain Estimation》</strong>（arXiv: 2610.32130）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

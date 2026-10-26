@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜OWLS</title>
+<title>OWLS: Open-world Language-conditioned Speed Fields for Zero-Shot Rover Navigation</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,29 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32596" rel="noopener noreferrer" target="_blank">arXiv 2610.32596</a></span><span class="badge">深读</span></div>
-<h1>深读｜OWLS</h1>
+<h1>OWLS: Open-world Language-conditioned Speed Fields for Zero-Shot Rover Navigation</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32596" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>语义与物理的鸿沟</strong>：行星车导航需依赖地形物理属性（如承载力、滑移），但相机仅能获取外观。现有方法要么依赖昂贵的几何传感器（LiDAR/立体视觉）和逐平台工程调优，要么依赖固定标签集的分类器，无法处理未见过的开放世界地形。</li>
 <li><strong>VLM 应用的局限</strong>：现有基于 VLM 的导航系统通常将 VLM 用于目标选择、路径重排序或语义标注，而实际的可通行性判断仍依赖深度图或占据栅格，未能直接利用 VLM 对“可行驶区域”的密集像素级理解。</li>
 <li><strong>零样本与跨平台适配难题</strong>：不同机器人（如地球探测车与火星车）尺寸、相机位姿差异巨大，传统方法需重新训练或复杂标定。作者旨在实现一种无需任务特定训练、无持久地图、仅凭单目相机和文本提示即可跨平台部署的局部导航方法。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32596.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32596.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32596.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32596.png'">
+    <img src="/assets/figures/2610.32596.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32596.png'" alt="OWLS: Open-world Language-conditioned Speed Fields for Zero-Shot Rover Navigation Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>VLM密集特征评分</strong>：系统以单帧相机图像为输入，利用开放词汇视觉语言模型（VLM）对“可通行地形”文本提示进行像素级对齐响应。输出连续的特征图 $H \in [0,1]^{h\times w}$ 而非二值掩码，保留像素与提示匹配的置信度强度，作为后续规划的基础感知信号。</li>
+<li><strong>地面投影与形态学适配</strong>：基于平面假设及相机内外参矩阵 $\mathbf{K}$，通过单应性变换 $\mathbf{M}$ 将 $H$ 映射至机器人坐标系下的俯视价值图 $V:\Omega\to[0,1]$。随后应用两次灰度形态学操作调整 $V$，以适配特定机器人的尺寸与运动能力，生成最终的速度场。</li>
+<li><strong>最小时间规划与轨迹跟踪</strong>：基于适配后的速度场构建最小时间规划器，直接输出通往目标（蓝色）的局部航点序列（绿色）。控制器在控制频率下沿这些航点进行实时跟踪，实现从感知到动作的闭环，无需维护持久化地图即可在新图像到来时重新规划。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">OWLS plans directly over the dense feature map of a VLM: the VLM scores a single camera image against a description of traversable terrain (green), and the scores become the speed field of a minimum-time planner whose waypoints (green) the rover follows to the goal (blue).</div></details>
+</div>
+<ul>
 <li><strong>VLM 密集特征图规划</strong>：直接利用开放词汇 VLM（如 Grounded SAM 2）对单张 RGB 图像进行像素级评分，生成连续的特征图 $H$，而非二值掩码，以保留地形匹配程度的置信度信息。</li>
 <li><strong>地面投影与形态学适配</strong>：</li>
 <li><strong>地面投影</strong>：假设平坦地面，通过平面单应性矩阵将 VLM 特征图投影至机器人坐标系的俯视价值图 $V$。</li>
@@ -578,12 +593,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>OWLS 通过将开放词汇 VLM 的密集像素评分经地面投影和形态学适配后直接作为最小时间规划器的速度场，实现了无需训练、无持久地图的单目零样本行星车导航，在真实及模拟火星/月球环境中验证了其跨平台泛化能力（真机静态障碍成功率100%）。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32596" data-title="OWLS">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32596" data-title="OWLS: Open-world Language-conditioned Speed Fields for Zero-Shot Rover Navigation">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32596 · OWLS</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32596 · OWLS: Open-world Language-conditioned Speed Fields for Zero-Shot Rover Navigation</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -593,7 +608,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《OWLS》</strong>（arXiv: 2610.32596）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《OWLS: Open-world Language-conditioned Speed Fields for Zero-Shot Rover Navigation》</strong>（arXiv: 2610.32596）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

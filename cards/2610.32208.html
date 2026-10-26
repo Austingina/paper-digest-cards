@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Do VLAs Know They Will Fail? Interpretable Success and Failure Patterns in Physical AI Systems</title>
+<title>Do VLAs Know They Will Fail? Interpretable Success and Failure Patterns in Physical AI Systems</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,29 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32208" rel="noopener noreferrer" target="_blank">arXiv 2610.32208</a></span><span class="badge">深读</span></div>
-<h1>深读｜Do VLAs Know They Will Fail? Interpretable Success and Failure Patterns in Physical AI Systems</h1>
+<h1>Do VLAs Know They Will Fail? Interpretable Success and Failure Patterns in Physical AI Systems</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32208" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>背景痛点</strong>：VLA模型（如OpenVLA）虽具备通用策略能力，但其内部表征难以诊断成功或失败的具体原因。现有故障预测研究（如SAFE, FPC-VLA）通常以“回合结束”为基准衡量预警时间，忽略了机器人可能已陷入不可恢复状态的事实，导致预警滞后且缺乏可解释性。</li>
 <li><strong>现有缺口</strong>：缺乏一种机制，既能基于“不可恢复点（Point of No Return, PNR）”提供具有行动价值的早期预警，又能将预测结果映射到具体的、可解释的行为模式上。</li>
 <li><strong>设定与目标</strong>：在仿真环境（LIBERO）中运行OpenVLA策略，不修改策略权重，通过外挂稀疏自编码器（SAE）分析激活值。目标是实现基于PNR的故障预测，并自动识别导致成功或失败的关键行为特征。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32208.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32208.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32208.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32208.png'">
+    <img src="/assets/figures/2610.32208.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32208.png'" alt="Do VLAs Know They Will Fail? Interpretable Success and Failure Patterns in Physical AI Systems Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>数据分布与基线对比</strong>：图中左侧展示了不同任务难度下的准确率分布直方图，横轴为模型预测准确率 $Acc$，纵轴为样本频率。通过叠加“多数类基线”（Majority Baseline）虚线，直观揭示了在类别极度不平衡场景下，仅靠预测高频类即可获得的性能下限，从而界定模型需超越的统计基准。</li>
+<li><strong>留出集评估机制</strong>：右侧散点图或箱线图呈现了模型在未见过的测试集（Held-out set）上的泛化表现。每个数据点代表一次独立实验或特定子任务的准确率 $Acc_{test}$，通过对比训练集与测试集的分布差异，量化模型的过拟合程度及真实泛化能力。</li>
+<li><strong>性能阈值分析</strong>：图中关键垂直参考线标示了显著优于基线的性能阈值 $\tau$。若模型输出准确率分布主体位于 $\tau$ 右侧且远离基线，表明其具备有效的特征提取与决策能力；反之则说明模型未能捕获有效语义信息，仅依赖先验概率进行猜测。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Held-out accuracy and majority baseline.</div></details>
+</div>
+<ul>
 <li><strong>整体Pipeline</strong>：输入为OpenVLA在LIBERO任务中的轨迹数据 $\rightarrow$ 提取Layer-0残差流激活 $\rightarrow$ TopK SAE分解为稀疏特征 $\rightarrow$ 逻辑回归预测故障概率 $\rightarrow$ 定位关键激活区间 $\rightarrow$ VLM生成行为描述并验证。</li>
 <li><strong>SAE特征分解</strong>：使用TopK稀疏自编码器（2,048个特征，$K=64$）将OpenVLA的密集、多义性激活值分解为稀疏、潜在可解释的特征激活 $\mathbf{a}_{i,t}$，以保留结果预测信息并提升可解释性。</li>
 <li><strong>不可恢复点（PNR）定义</strong>：通过恢复仿真器状态并采样策略延续来估计状态的可恢复性 $\hat{R}$。将最早使得后续所有探测点 $\hat{R} \leq 0.1$ 的时间步定义为PNR，以此作为预警的“行动截止线”，而非回合结束时间。</li>

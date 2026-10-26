@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜FlexGlue</title>
+<title>FlexGlue: Sparse-to-Dense Feature Matching and Visual Disambiguation</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32976" rel="noopener noreferrer" target="_blank">arXiv 2610.32976</a></span><span class="badge">深读</span></div>
-<h1>深读｜FlexGlue</h1>
+<h1>FlexGlue: Sparse-to-Dense Feature Matching and Visual Disambiguation</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32976" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li><strong>视觉对称性导致的灾难性失败</strong>：现有学习型匹配器仅在共视（covisible）图像对上训练，缺乏拒绝非共视对的能力。在面对视觉对称结构（如建筑物正反面、室内重复走廊）时，模型会生成高置信度的错误匹配，导致 SfM 或 SLAM 中的场景崩溃（Scene Collapse）。</li>
 <li><strong>现有消歧方法的冗余与低效</strong>：现有的解决方案通常是在匹配后引入独立的分类器（如 DG++）进行二次验证。这不仅增加了架构冗余和推理开销，而且由于局部匹配与全局共视性判断本质上是同一任务（寻找重叠上下文），分离处理限制了性能上限。</li>
 <li><strong>目标设定</strong>：作者旨在设计一种非对称的稀疏到密集（Sparse-to-Dense）网络，在保持稀疏查询效率的同时实现亚像素级精度，并通过联合训练实现高精度的视觉消歧与早期退出机制。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32976.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32976.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32976.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32976.png'">
+    <img src="/assets/figures/2610.32976.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32976.png'" alt="FlexGlue: Sparse-to-Dense Feature Matching and Visual Disambiguation Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>特征编码与Token构建</strong>：输入图像 $\imga, \imgb$ 经冻结的 ConvNeXt-B (DINOv3) 提取多尺度密集特征。各阶段特征重采样至统一步长 $\patchsize$，线性投影为初始 Token 网格 $\toksa^0, \toksb^0 \in \mathbb{R}^{\numtokens{\times}\tokdim}$，并附加归一化坐标 $\gridpt$，实现局部结构与高层语义的融合。</li>
+<li><strong>Transformer上下文聚合</strong>：$\numlayers$ 层 Transformer 交替执行自注意力（Self-Attention）以聚合单图上下文，及交叉注意力（Cross-Attention）以建立跨图关联，输出增强后的 Token $\toksa^l, \toksb^l$。同时，协视性头（Covisibility Head）逐层预测图像对重叠概率，若判定不可匹配则提前终止推理。</li>
+<li><strong>粗匹配与可匹配性预测</strong>：轻量级头从增强 Token 中读取每个查询关键点 $\kptsa$ 的对应坐标 $\corrab$、置信度 $\confid$ 及可匹配性信号 $\matchability$（指示可见性），生成稀疏到密集的初步对应关系。</li>
+<li><strong>亚像素精修与几何验证</strong>：针对可匹配点，通过特征插值、密集相关计算及匹配细化模块，将粗坐标优化至亚像素精度。最终结合几何距离推导关键点间的点对点分配，并输出场景一致性评分以排除视觉对称等误匹配。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Architecture of FlexGlue. Each of the two images is encoded by a CNN backbone. The resulting dense tokens are fused by a Transformer that outputs context-augmented tokens. These tokens are decoded into overlap heatmaps and classify whether the image pair is unmatchable, in which case the inference stops. Otherwise, a query point in one image is turned into a sub-pixel coordinate in the other by interpolation of its feature, dense correlation, and match refinement.</div></details>
+</div>
+<ul>
 <li><strong>整体架构（Sparse-to-Dense）</strong>：</li>
 <li><strong>输入</strong>：两张图像及第一张图像中的稀疏关键点坐标。</li>
 <li><strong>特征提取</strong>：使用冻结的 ConvNeXt-B (DINOv3) 骨干网络提取多尺度密集特征，重采样至 stride 8 形成 Token 网格。</li>
@@ -592,12 +608,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>FlexGlue 通过非对称稀疏到密集匹配架构与联合视觉消歧机制，在 ETH3D 等基准上实现了精度与吞吐量的帕累托最优提升，为 SLAM 前端提供了高效且鲁棒的对应关系估计方案。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32976" data-title="FlexGlue">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32976" data-title="FlexGlue: Sparse-to-Dense Feature Matching and Visual Disambiguation">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32976 · FlexGlue</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32976 · FlexGlue: Sparse-to-Dense Feature Matching and Visual Disambiguation</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -607,7 +623,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《FlexGlue》</strong>（arXiv: 2610.32976）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《FlexGlue: Sparse-to-Dense Feature Matching and Visual Disambiguation》</strong>（arXiv: 2610.32976）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

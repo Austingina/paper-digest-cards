@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜RynnUnify</title>
+<title>RynnUnify: Towards Unified Embodied Brain</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32965" rel="noopener noreferrer" target="_blank">arXiv 2610.32965</a></span><span class="badge">深读</span></div>
-<h1>深读｜RynnUnify</h1>
+<h1>RynnUnify: Towards Unified Embodied Brain</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32965" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,22 @@ details.fold .fold-body {
 <li><strong>缺乏“视频生成辅助推理”的有效机制</strong>：现有方法多将视频生成视为独立任务或仅用于可视化，未充分利用其作为“世界模型”来推演不可见状态（如遮挡后的物体位置）和交互后果的能力。</li>
 <li><strong>具身智能的“理解-预测-行动”割裂</strong>：传统 VLA 模型侧重动作策略，缺乏显式的长时程视觉规划能力；而视频生成模型缺乏具身物理常识。现有工作难以在一个统一框架内协调空间推理、物理预测与机器人控制。</li>
 <li><strong>目标设定</strong>：构建一个统一的具身大脑（RynnUnify），通过交错视频-语言推理（Interleaved Video-Language Reasoning）连接具身理解与长时程视觉规划，并进一步扩展至世界动作模型（WAM）以支持真实机器人控制。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32965.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32965.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32965.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32965.png'">
+    <img src="/assets/figures/2610.32965.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32965.png'" alt="RynnUnify: Towards Unified Embodied Brain Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>统一多模态输入编码</strong>：系统接收视觉观测 $o_t$、语言指令 $l$ 及本体状态 $s_t$，通过共享的视觉-语言骨干网络（如 ViT + LLM）提取高维语义特征 $h_{vis}$ 与动作潜变量 $z_a$。该模块实现了具身理解与智能体推理的特征对齐，将离散的自然语言意图映射至连续的机器人操作空间，为后续规划提供统一的上下文表征 $\mathcal{C}_t$。</li>
+<li><strong>分层视觉规划与推理</strong>：基于特征 $\mathcal{C}_t$，模型执行层级化决策。高层通过自回归生成中间子目标序列或思维链（CoT）$\tau_{sub}$，实现长程任务分解；底层结合世界模型预测未来状态分布 $p(s_{t+1}|s_t, a_t)$，在隐空间中进行视觉规划以评估动作可行性，确保推理过程具备物理一致性与因果逻辑性。</li>
+<li><strong>统一动作生成与执行</strong>：最终阶段将规划结果解码为具体机器人动作序列 $\mathbf{a}_{t:t+k}$。模型采用扩散策略或自回归头直接输出连续控制信号，涵盖末端位姿、夹爪开合等维度。该过程无缝衔接理解、规划与行动，形成从感知到执行的闭环，验证了 RynnUnify 在单一架构下统一多任务能力的有效性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">RynnUnify unifies embodied understanding, visual planning, agentic reasoning, and robot action.</div></details>
+</div>
+<ul>
 <li><strong>混合 Transformer 架构 (MoT)</strong>：基于 Cosmos3 的 Mixture-of-Transformers 架构，包含一个 8B 自回归推理器（Reasoner）和一个 8B 扩散生成器（Generator）。两者拥有独立的 Transformer 参数，通过联合注意力机制交互。</li>
 <li><strong>交错视频-语言推理流程</strong>：</li>
 <li><strong>输入</strong>：任务目标、初始/当前观测、前序子任务历史。</li>
@@ -577,12 +592,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>阿里达摩院提出 16B 统一具身模型 RynnUnify，通过交错视频-语言推理实现长时程规划，在 RoboCasa365 仿真中达到 51.5% 成功率，并在真实机器人上验证了世界动作模型的有效性。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32965" data-title="RynnUnify">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32965" data-title="RynnUnify: Towards Unified Embodied Brain">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32965 · RynnUnify</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32965 · RynnUnify: Towards Unified Embodied Brain</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -592,7 +607,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《RynnUnify》</strong>（arXiv: 2610.32965）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《RynnUnify: Towards Unified Embodied Brain》</strong>（arXiv: 2610.32965）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

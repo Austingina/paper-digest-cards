@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜MAST-VLA</title>
+<title>MAST-VLA: Skill-Conditioned Adaptation with Trajectory-Affordance Priors for Multi-Skill Robot Manipulation</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32312" rel="noopener noreferrer" target="_blank">arXiv 2610.32312</a></span><span class="badge">深读</span></div>
-<h1>深读｜MAST-VLA</h1>
+<h1>MAST-VLA: Skill-Conditioned Adaptation with Trajectory-Affordance Priors for Multi-Skill Robot Manipulation</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32312" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li><strong>动作监督的空间稀疏性</strong>：传统的低维动作回归仅约束最终动作块，缺乏对视觉表征中任务相关几何结构（如未来夹爪轨迹附近的表面）的直接监督，难以显式引导策略关注正确的接触区域和运动趋势。</li>
 <li><strong>专家容量与技能语义不对齐</strong>：现有的参数高效微调（如共享 LoRA 或任务级模块）通常按任务域而非原语操作类型分配专家容量，导致在单一策略内难以有效分离不同物理交互模式（如滑动 vs 堆叠）的控制偏好。</li>
 <li><strong>目标</strong>：构建一个双条件框架，通过显式的技能条件路由和轨迹衍生的空间先验，增强多技能 VLA 在未见场景下的长程序列执行鲁棒性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><p>MAST-VLA 提出了一种双路径条件化框架，分别作用于 LLM 骨干网络（处理技能语义）和动作头（处理交互几何）。</p>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32312.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32312.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32312.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32312.png'">
+    <img src="/assets/figures/2610.32312.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32312.png'" alt="MAST-VLA: Skill-Conditioned Adaptation with Trajectory-Affordance Priors for Multi-Skill Robot Manipulation Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入与条件编码</strong>：模型接收视觉观测 $\mathbf{o}_t$、语言指令 $\mathbf{l}$ 及粗粒度技能条件 $s_t$。其中 $s_t$ 通过词汇匹配从指令中提取，仅用于索引技能查询和路由偏置库，不改变原始指令语义，为后续多技能解耦提供基础。</li>
+<li><strong>LLM骨干网中的LoRA-MoE适配</strong>：在LLM的FFN/MLP子层嵌入LoRA-MoE模块。技能条件 $s_t$ 调制专家路由机制，引入技能相关的偏置（skill-conditioned routing bias），使共享策略能根据当前任务动态激活特定专家路径，实现技能感知的特征表示与参数高效适配。</li>
+<li><strong>动作头中的轨迹-可供性空间先验</strong>：动作解码器利用演示数据生成的抓取运动与场景几何信息，监督预测可供性热力图（affordance heatmap）。该热力图被转换为补丁级空间先验（patch-level spatial prior），直接引导动作生成过程，增强模型对交互区域的注意力聚焦。</li>
+<li><strong>联合优化目标</strong>：整体架构通过耦合技能级专业化（LoRA-MoE）与交互感知空间定位（空间先验）进行端到端训练。损失函数包含动作回归、可供性热力图监督及MoE路由正则化项，确保策略在多技能序列操作中兼顾语义理解精度与空间执行鲁棒性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of MAST-VLA. MAST-VLA introduces two complementary conditioning paths for multi-skill VLA policies: skill-conditioned LoRA-MoE adaptation in the LLM backbone and a trajectory-affordance spatial prior in the action head. The expanded LLM-block view shows FFN-side LoRA-MoE routing with skill-conditioned routing bias, while the action-head view shows how the predicted affordance heatmap is converted into a patch-level spatial prior for action generation.</div></details>
+</div>
+<p>MAST-VLA 提出了一种双路径条件化框架，分别作用于 LLM 骨干网络（处理技能语义）和动作头（处理交互几何）。</p>
 <ul>
 <li><strong>技能条件 LoRA-MoE 适配（LLM 侧）</strong>：</li>
 <li>在 LLM 的 FFN/MLP 子层中替换为 LoRA-Mixture-of-Experts (LoRA-MoE) 适配器。</li>
@@ -592,12 +608,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>MAST-VLA 通过 LLM 侧的技能条件 LoRA-MoE 路由和动作头侧的轨迹衍生热力图注意力偏置，在 CALVIN ABC-&gt;D 上实现了 4.65 Avg. Len 的 SOTA 性能，为 Austin 项目提供了将几何引导场（G）注入 VLA 策略并验证其有效性的具体技术路径。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32312" data-title="MAST-VLA">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32312" data-title="MAST-VLA: Skill-Conditioned Adaptation with Trajectory-Affordance Priors for Multi-Skill Robot Manipulation">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32312 · MAST-VLA</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32312 · MAST-VLA: Skill-Conditioned Adaptation with Trajectory-Affordance Priors for Multi-Skill Robot Manipulation</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -607,7 +623,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《MAST-VLA》</strong>（arXiv: 2610.32312）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《MAST-VLA: Skill-Conditioned Adaptation with Trajectory-Affordance Priors for Multi-Skill Robot Manipulation》</strong>（arXiv: 2610.32312）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

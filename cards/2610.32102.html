@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Coupling Execution Horizon and Sampling Depth in Flow-Matching VLA Policies</title>
+<title>Coupling Execution Horizon and Sampling Depth in Flow-Matching VLA Policies</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,29 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32102" rel="noopener noreferrer" target="_blank">arXiv 2610.32102</a></span><span class="badge">深读</span></div>
-<h1>深读｜Coupling Execution Horizon and Sampling Depth in Flow-Matching VLA Policies</h1>
+<h1>Coupling Execution Horizon and Sampling Depth in Flow-Matching VLA Policies</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32102" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>背景痛点</strong>：Flow-Matching VLA（如 $\pi_0$）部署时，执行视野（Execution Horizon, $s$）与采样深度（Sampling Depth, $N$）通常被解耦处理。传统观点认为 $N$ 仅决定数值积分精度，需保持高位以保真；而 $s$ 用于摊销推理延迟。这种解耦导致在长开环执行时，高精度采样反而可能因轨迹分散度累积漂移而降低成功率。</li>
 <li><strong>现有缺口</strong>：现有的加速方法（如蒸馏、截断）主要在短视野下评估，忽略了数值截断对动作分布几何形态（特别是方差/分散度）的影响，未意识到浅层采样在长开环场景下的潜在正则化优势。</li>
 <li><strong>核心目标</strong>：揭示 $s$ 与 $N$ 之间的符号反转耦合效应，证明通过联合调整这两个参数，可在无需重新训练模型的情况下，同时实现推理加速（最高5.6倍）和任务成功率提升。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32102.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32102.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32102.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32102.png'">
+    <img src="/assets/figures/2610.32102.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32102.png'" alt="Coupling Execution Horizon and Sampling Depth in Flow-Matching VLA Policies Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>核心耦合机制</strong>：图示揭示执行时域 $s$ 与采样深度 $N$ 间的符号反转耦合关系。浅层采样（$N=2$）在快速重规划（小 $s$）下因离散化误差导致性能退化，但在扩展开环执行（大 $s$）中通过降低计算延迟获得系统性增益。</li>
+<li><strong>流匹配动作生成</strong>：策略基于观测 $o_t$ 利用条件流匹配合成动作块 $\mathbf{a}_t \in \mathbb{R}^{H \times D_a}$。通过反向积分概率流 ODE，从噪声 $x^{(0)} \sim \mathcal{N}(0, I)$ 出发，经 $N$ 步欧拉更新 $x^{(k+1)} = x^{(k)} - \Delta\tau v_\theta(x^{(k)}, \tau_k, o_t)$ 得到终端状态 $x^{(N)}$。</li>
+<li><strong>滚动时域执行策略</strong>：采用滚动时域控制平衡闭环反馈与计算负载。图中对比不同 $s$ 下的性能曲线，展示在 LIBERO-Long 基准上，配对边际对比 $Y_{s,2} - Y_{s,N_0}$ 随 $s$ 变化的趋势，实线标记表示所有种子间符号一致的区域。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Sign-reversing coupling between execution horizon $s$ and sampling depth $N$. Shallow sampling ($N{=}2$) degrades performance under rapid replanning but yields systematic gains under extended open-loop execution. Curves show paired marginal contrasts $Y_{s,2} - Y_{s,N_0}$ on LIBERO-Long across matched seeds (mean $\pm$ sample SD), where solid markers indicate horizons with unanimous sign agreement across all three seeds.</div></details>
+</div>
+<ul>
 <li><strong>整体机制</strong>：基于冻结的 Flow-Matching VLA 骨干网络（如 $\pi_0, \pi_{0.5}$），不修改模型权重或架构，仅调整部署时的两个超参数：执行视野 $s$（开环执行的动作前缀长度）和采样深度 $N$（ODE求解器的步数/NFE）。</li>
 <li><strong>几何解释</strong>：Forward Euler 截断在数值上收缩了围绕条件质心的轨迹分散度。</li>
 <li><strong>短视野 ($s$ 小)</strong>：高频闭环反馈能利用浅层采样带来的高多样性绕过障碍，此时深层采样 ($N$ 大) 更优。</li>

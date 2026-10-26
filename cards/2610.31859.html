@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Full-Weight VLA Fine-Tuning Without an fp32 Master Copy Silently Erases Most Updates</title>
+<title>Full-Weight VLA Fine-Tuning Without an fp32 Master Copy Silently Erases Most Updates</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.31859" rel="noopener noreferrer" target="_blank">arXiv 2610.31859</a></span><span class="badge">深读</span></div>
-<h1>深读｜Full-Weight VLA Fine-Tuning Without an fp32 Master Copy Silently Erases Most Updates</h1>
+<h1>Full-Weight VLA Fine-Tuning Without an fp32 Master Copy Silently Erases Most Updates</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.31859" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,22 @@ details.fold .fold-body {
 <li><strong>广泛存在的配置缺陷</strong>：审计发现 12 个开源 VLA 代码库中有 9 个存在此问题，包括 LeRobot 的 SmolVLA 默认配置及 $\pi_{0}$ / $\pi_{0.5}$ 指南、openpi 的 PyTorch 训练器等。Hugging Face Hub 上 99% 的 SmolVLA 全量微调和 84% 的近期 $\pi_{0.5}$ 微调均受此影响。</li>
 <li><strong>损失曲线误导</strong>：由于大部分更新被丢弃，模型可能仅通过少量有效权重或偏置项降低 Loss，导致训练 Loss 下降但实际任务成功率极低（如 SmolVLA 在低学习率下 Loss 正常下降但成功率仅 4.3%）。</li>
 <li><strong>目标</strong>：量化 bf16 无主副本导致的更新擦除比例，验证修复方案（保持 fp32 权重）对模型性能的提升，并提供具体的代码修正建议。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.31859.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31859.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.31859.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.31859.png'">
+    <img src="/assets/figures/2610.31859.png" onerror="this.onerror=null;this.src='../assets/figures/2610.31859.png'" alt="Full-Weight VLA Fine-Tuning Without an fp32 Master Copy Silently Erases Most Updates Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>理论预测基线（Lines）</strong>：图中实线与虚线分别展示了基于发布权重计算的理论擦除率 $E(u)$。实线对应 SmolVLA 的动作专家模块，虚线对应 $\pi_{0.5}$ 在 bf16 精度下存储的权重矩阵。该基线量化了若存在 fp32 副本时，由权重更新导致的参数变化预期份额，作为衡量实际优化行为的参照系。</li>
+<li><strong>实测擦除率（Markers）</strong>：散点标记记录了 AdamW 优化器每 100 步执行后，权重保持不变的百分比。针对 $\pi_{0.5}$，测量范围涵盖所有接收梯度的 bf16 张量（含 Token Embedding），而虚线基线未包含此部分。数据直观显示，在缺乏 fp32 主副本的情况下，实测擦除率始终高于理论预测值 $E(u)$，揭示了低精度训练中的数值截断效应。</li>
+<li><strong>实验对比与排除项</strong>：图注指出 SmolVLA 在 LeRobot 配方下的运行结果同样高于 $E$，但为保持图表清晰度未予展示。该结构图核心在于通过对比“理论预测”与“实测不变率”，论证了 bf16 训练中因缺少 fp32 精度保护而导致的额外信息擦除现象，强调了高精度副本对维持模型学习动态的重要性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Without an fp32 copy, measured erasure always exceeds the share predicted from the weights. Lines: $E(u)$ from released weights (solid: SmolVLA&#x27;s action expert in \texttt{smolvla\_base}; dashed: the weight matrices that $\pi_{0.5}$&#x27;s documented recipe stores in bf16, in \texttt{pi05\_libero\_finetuned\_v044}). Markers: the share of those weights unchanged after an AdamW step, every 100 steps, at that step&#x27;s learning rate; for $\pi_{0.5}$, the bf16 weights in tensors that received a gradient, including the token embedding, which the dashed line leaves out. SmolVLA&#x27;s runs of LeRobot&#x27;s recipe, also above $E$, are left out for legibility.</div></details>
+</div>
+<ul>
 <li><strong>理论分析 (Erased Share)</strong>：定义 $E(u)$ 为无法改变权重的更新比例下界。对于 AdamW ($\beta=(0.9, 0.95)$)，若步长不超过 $c\eta_t$，则至少 $E(c\eta_t)$ 比例的权重保持不变。计算表明在典型学习率下，bf16 存储会导致 79%-99% 的更新被擦除。</li>
 <li><strong>代码库审计</strong>：检查 LeRobot, openpi, RLinf 等 12 个主流 VLA 框架的训练入口点，确认优化器构建时权重的 dtype 及是否存在 fp32 master copy。通过运行时探针（每 100 步检查权重变化）验证理论预测。</li>
 <li><strong>实验对比设置</strong>：在 LIBERO-Object 基准上对比三种权重存储策略：</li>

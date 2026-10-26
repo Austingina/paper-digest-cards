@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜HGWM</title>
+<title>HGWM: Hierarchical Graph-Guided World Model for Zero-Shot Object Navigation via Graph Matching</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,29 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32554" rel="noopener noreferrer" target="_blank">arXiv 2610.32554</a></span><span class="badge">深读</span></div>
-<h1>深读｜HGWM</h1>
+<h1>HGWM: Hierarchical Graph-Guided World Model for Zero-Shot Object Navigation via Graph Matching</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32554" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>零样本目标导航的痛点</strong>：现有基于基础模型（VLM/LLM）的代理在面对模糊观测和不完整空间记忆时，容易陷入无效搜索；且常将“常识先验”误当作“已验证地图”，导致在非常规布局场景中决策失误。</li>
 <li><strong>现有方法的缺口</strong>：传统语义地图或信念图往往缺乏对“目标可能存在的房间/锚点关系”的显式建模；而纯视觉评分难以区分“看起来像目标区域”与“逻辑上应存在目标的区域”。</li>
 <li><strong>设定与目标</strong>：在 HM3D 和 MP3D 仿真环境中，针对零样本物体导航任务（Zero-Shot ObjectNav），旨在通过结合 LLM 生成的层次化先验与持久空间语义记忆，提升成功率（SR）并优化路径效率（SPL）。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32554.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32554.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32554.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32554.png'">
+    <img src="/assets/figures/2610.32554.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32554.png'" alt="HGWM: Hierarchical Graph-Guided World Model for Zero-Shot Object Navigation via Graph Matching Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>目标先验生成模块</strong>：LLM基于目标类别$c$生成假设性房间-锚点先验图$G_{goal}=\mathrm{LLM}_{prior}(c,\text{prompt})$，作为类别条件化的场景假设而非真实地图；该模块输出结构化语义知识，为后续推理提供初始搜索空间约束。</li>
+<li><strong>感知与记忆构建模块</strong>：智能体接收RGB-D观测$O_t=(I_t,D_t)$及平面位姿$P_t\in SE(2)$，将视觉特征转化为符号化信息并填充至空间-语义记忆库$M_t$中；此过程实现从原始像素到高层语义状态的映射，形成预测性导航状态的核心组成部分。</li>
+<li><strong>图引导决策模块</strong>：基于世界模型状态$\mathcal W_t=(G_{goal},M_t,\{(c_t^\alpha,f_t^\alpha)\}_{\alpha\in\mathcal A})$进行推理，其中$c_t^\alpha\in[0,10]$为粗粒度视觉评分，$f_t^\alpha\in[0,1]$为符号兼容性分数；系统通过比较候选航向$\alpha\in\{30,\dots,330\}^{\circ}$的得分，指导高层搜索方向选择与局部导航器执行短视距位移。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">HGWM architecture. The LLM generates a hypothetical room--anchor prior, observations populate spatial-semantic memory, and graph-guided reasoning informs navigation. Hallucinated Prior and Structural Verification denote prior generation and heuristic compatibility checks; neither establishes scene truth. System 1/2 labels are conceptual analogies.</div></details>
+</div>
+<ul>
 <li><strong>整体架构</strong>：采用“预测-接地”（Predict-then-Ground）设计。首先由 LLM 生成包含房间、锚点对象及连接关系的层次化目标图先验 $G_{goal}$；导航过程中，RGB-D 观测填充持久空间语义记忆 $M_t$；最后通过两阶段决策机制融合两者信息选择动作。</li>
 <li><strong>粗粒度视觉语义评分</strong>：VLM（Gemini-1.5-Pro）接收全景图、目标类别和先验上下文，对6个相对航向（30°间隔）输出 0–10 的视觉语义分数 $c_t^\alpha$。10分代表可见目标，0分代表死胡同，中间值表示潜在机会。</li>
 <li><strong>细粒度符号兼容性匹配</strong>：计算观测记忆与目标先验之间的符号兼容性分数 $f_t^\alpha \in [0,1]$。该分数基于五个特征加权求和：房间重叠（Jaccard）、对象匹配、空间关系一致性、语义一致性及深度分布相似度。此过程不涉及学习到的图嵌入网络，而是显式的集合/关系比较。</li>
@@ -574,12 +589,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>HGWM 通过耦合 LLM 生成的层次化房间-锚点先验与持久空间语义记忆，利用两阶段（视觉评分+符号兼容）决策机制，在 HM3D v0.1 上实现了 62.6% SR 和 31.5% SPL，显著优于基线 WMNav。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32554" data-title="HGWM">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32554" data-title="HGWM: Hierarchical Graph-Guided World Model for Zero-Shot Object Navigation via Graph Matching">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32554 · HGWM</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32554 · HGWM: Hierarchical Graph-Guided World Model for Zero-Shot Object Navigation via Graph Matching</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -589,7 +604,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《HGWM》</strong>（arXiv: 2610.32554）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《HGWM: Hierarchical Graph-Guided World Model for Zero-Shot Object Navigation via Graph Matching》</strong>（arXiv: 2610.32554）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

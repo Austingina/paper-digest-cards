@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Retiming Robot Demonstrations with a Learned Speed Prior</title>
+<title>Retiming Robot Demonstrations with a Learned Speed Prior</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,14 +519,29 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32676" rel="noopener noreferrer" target="_blank">arXiv 2610.32676</a></span><span class="badge">深读</span></div>
-<h1>深读｜Retiming Robot Demonstrations with a Learned Speed Prior</h1>
+<h1>Retiming Robot Demonstrations with a Learned Speed Prior</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32676" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
 <li><strong>遥操作演示的“节奏继承”痛点</strong>：机器人策略常因模仿遥操作员的犹豫或慢速动作而执行迟缓，且不同操作员导致同一任务速度差异大，现有方法多依赖人工标注、固定加速比或外部指令来调整节奏，缺乏通用性。</li>
 <li><strong>现有加速方法的局限</strong>：传统重定时（Retiming）方法通常基于单一演示数据本身进行压缩（如信息熵、VLM标签），无法利用“更快演示者”（如手持设备）的节奏先验；且执行层常忽略机器人动力学限制，导致高速执行时出现跟踪滞后或安全急停。</li>
 <li><strong>设定与目标</strong>：本文提出一种基于学习速度先验的重定时方法，在仿真（RoboLab）和真机（Franka Research 3）上验证。目标是利用手持演示的快速节奏重定时遥操作数据，微调 $\pi_{0.5}$ 策略，并配合实时最优控制层，实现比原始策略更快、更平滑且成功率不降的执行效率。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2610.32676.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32676.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32676.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32676.png'">
+    <img src="/assets/figures/2610.32676.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32676.png'" alt="Retiming Robot Demonstrations with a Learned Speed Prior Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>任务场景与指令映射</strong>：图示左侧展示了五种真实世界操作任务（堆叠杯子、折叠毛巾、清理垃圾、放置香蕉、放置方块）的初始状态 $(1)$ 与目标状态 $(2)$，并对应自然语言指令。该模块确立了多模态输入空间，将视觉观测 $o_t$ 与文本指令 $l$ 作为策略 $\pi_{0.5}$ 的条件输入，定义了从当前场景到目标配置的映射边界。</li>
+<li><strong>基于手持演示的策略微调</strong>：针对堆叠、折叠及清理任务，模型利用手持 YUBI 机器人采集的示教数据 $\mathcal{D}_{demo}$ 进行监督微调（SFT）。此阶段通过最小化动作预测误差 $\mathcal{L} = \mathbb{E}_{(o,a,l) \sim \mathcal{D}} [\| a - \pi_{0.5}(o, l) \|^2]$，使策略网络学习从视觉特征到连续控制信号 $a_t$ 的精确映射，实现特定技能的闭环执行。</li>
+<li><strong>零样本泛化能力验证</strong>：右侧展示的放置香蕉与方块任务未使用任何示教数据，直接由预训练模型 $\pi_{0.5}$ 进行零样本（Zero-shot）推理。这证明了模型在大规模异构数据上习得的通用表征 $z_t$ 具备强大的跨物体、跨场景泛化能力，无需额外微调即可处理未见过的操作指令与物体几何结构。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Real-world tasks and their instructions, each shown at its initial scene (1) and its goal (2). The policies for stacking cups, folding towel and cleaning trash are fine-tuned on handheld YUBI demonstrations, and placing bananas and placing cubes are performed zero-shot (Appendix).</div></details>
+</div>
+<ul>
 <li><strong>速度先验模型（Speed Prior）</strong>：训练一个 Transformer 模型，输入为任务指令、末端执行器路径（每2cm重采样）及腕部相机图像，输出沿路径的速度分布。通过域标签（源/目标演示）区分不同演示者的节奏，利用分类交叉熵损失预测对数速度的类别分布。</li>
 <li><strong>基于分位数的重定时</strong>：读取源演示路径时，结合目标演示的标签和 classifier-free guidance 机制，预测目标演示者 traversing 该路径的速度分布。选取特定分位数（如中位数）作为时钟，保持路径几何形状不变，仅替换时间戳，从而生成“快速版”演示数据。</li>
 <li><strong>策略微调与 Tempo Channels</strong>：在重定时后的数据上微调 $\pi_{0.5}$ 模型。除了预测动作块（Action Chunks），策略还额外预测“Tempo Channels”，即不同分位数下的相对速度对数，允许部署时动态调整执行速度。</li>

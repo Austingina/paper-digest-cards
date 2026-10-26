@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜When to Stop Penalizing Actions? Martingale GRPO for VLA Reinforcement Learning</title>
+<title>When to Stop Penalizing Actions? Martingale GRPO for VLA Reinforcement Learning</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32431" rel="noopener noreferrer" target="_blank">arXiv 2610.32431</a></span><span class="badge">深读</span></div>
-<h1>深读｜When to Stop Penalizing Actions? Martingale GRPO for VLA Reinforcement Learning</h1>
+<h1>When to Stop Penalizing Actions? Martingale GRPO for VLA Reinforcement Learning</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32431" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,22 @@ details.fold .fold-body {
 <li><strong>现有缺口</strong>：现有的方法如 Temporal GRPO 需要任务阶段检测，PCM 依赖分块采样，而 LLM RL 中的 $\mu$-GRPO 或 ESPO 等虽涉及截断或掩码，但缺乏针对 VLA 视觉场景中“可见错误”与“恢复行为”的显式、基于事件语义的截断机制。</li>
 <li><strong>设定</strong>：仿真环境（RoboTwin 2.0），使用 OpenVLA-OFT 作为基线策略。采用闭环 RL 训练，不冻结策略权重，但引入一个冻结的 VLM 作为辅助模块进行离线/在线的事件定位。</li>
 <li><strong>目标</strong>：提出一种基于鞅分析（Martingale Analysis）的理论框架，确定何时停止对失败轨迹施加惩罚，以保留梯度期望的同时降低方差，从而提升多任务成功率并保护恢复行为。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.32431.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32431.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32431.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32431.png'">
+    <img src="/assets/figures/2610.32431.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32431.png'" alt="When to Stop Penalizing Actions? Martingale GRPO for VLA Reinforcement Learning Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>反馈消融实验设置</strong>：该图展示了在更新步数 $t=40$ 时的成功率对比，以虚线标示 Full GRPO 基准性能。横轴为不同消融配置，纵轴为任务成功率，柱状图上方的百分比数值直观呈现了各变体相对于 Full GRPO 的性能增减（单位：百分点），旨在量化特定反馈机制对策略优化的贡献度。</li>
+<li><strong>负系数质量保留分析</strong>：柱体内部嵌入的百分比数据揭示了关键机制——“观测到的保留负系数质量”（retained negative coefficient mass）。该指标在全部 40 次更新中池化计算，反映了算法在梯度更新过程中对负向优势信号（negative advantage）的利用效率与稳定性，是评估 GRPO 变体鲁棒性的核心统计量。</li>
+<li><strong>性能与机制关联</strong>：通过对比不同消融项下的成功率下降幅度与内部保留质量的变化，图示建立了反馈完整性与最终策略性能之间的因果联系。若移除特定反馈组件导致保留质量显著降低且成功率大幅下滑，则证明该组件在维持梯度方向正确性及防止策略退化中起决定性作用。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Feedback ablations. Success at update 40, with dashed Full GRPO references and percentage-point changes relative to Full GRPO above the bars. Percentages inside the bars show each run&#x27;s observed retained negative coefficient mass, pooled over all 40 updates.</div></details>
+</div>
+<ul>
 <li><strong>整体 Pipeline</strong>：输入为完整的失败 rollout 视频及元数据 -&gt; 微调后的 VLM 定位“最后一次可见错误且无恢复”的区间 -&gt; 生成截断边界 $B$ -&gt; GRPO 仅保留 $0$ 到 $B$ 的负反馈，掩码后续动作 -&gt; 更新策略。</li>
 <li><strong>鞅分析理论基础</strong>：作者证明，在理想停止条件下（剩余条件信用为零），截断后的梯度估计量是完整 GRPO 梯度的条件投影。这意味着截断保持了参考梯度的期望不变，且协方差不会增加（即方差降低或持平）。</li>
 <li><strong>事件引导的截断机制 (MART-GRPO)</strong>：</li>

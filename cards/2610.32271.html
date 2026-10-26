@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜From Tabletop to Walking Bot</title>
+<title>From Tabletop to Walking Bot: Deploying a VLA Model on a Legged Manipulator Robot</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.32271" rel="noopener noreferrer" target="_blank">arXiv 2610.32271</a></span><span class="badge">深读</span></div>
-<h1>深读｜From Tabletop to Walking Bot</h1>
+<h1>From Tabletop to Walking Bot: Deploying a VLA Model on a Legged Manipulator Robot</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.32271" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,22 @@ details.fold .fold-body {
 <li><strong>数据采集与部署的接口不一致</strong>：传统腿式遥操作往往将底盘控制交给自主策略或使用全身动捕，导致数据中缺乏“人主动决策底盘位置”的信号；且若训练用关节角而部署用底层力控/RL 控制器，存在严重的分布偏移（Sim-to-Real gap）。</li>
 <li><strong>闭环控制的实时性与动作视界冲突</strong>：在动态平衡平台上，过长的动作预测（Action Chunking）会导致指令过时或执行卡顿，过短则无法覆盖完整的抓取-放置周期。</li>
 <li><strong>目标</strong>：验证预训练 VLA 模型能否通过统一的数据采集/部署接口和适当的数据增强，在 Unitree Go2 + Piper 机械臂上实现稳定的闭环移动操作（Loco-manipulation），并量化数据覆盖度对性能的影响。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2610.32271.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32271.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.32271.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.32271.png'">
+    <img src="/assets/figures/2610.32271.png" onerror="this.onerror=null;this.src='../assets/figures/2610.32271.png'" alt="From Tabletop to Walking Bot: Deploying a VLA Model on a Legged Manipulator Robot Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>共享机器人端感知与运动控制模块</strong>：图示左侧至中部展示了部署阶段（Deployment）的核心执行链路。该部分包含视觉感知、足式/轮式运动控制及机械臂操作三大子系统，其输入为多模态观测流 $\mathcal{O}_t = \{I_t, P_t, S_t\}$（图像、本体状态等）。这些模块在数据采集与部署阶段完全复用，确保了策略执行环境的一致性，输出底层关节力矩或速度指令 $\tau_t$。</li>
+<li><strong>VLA推理替换Leader接口</strong>：图右侧对比了数据采集与部署的关键差异。在数据采集时，人类通过Leader端设备提供动作监督；而在部署阶段，视觉-语言-动作（VLA）模型 $\pi_\theta$ 直接替代Leader接口。该模块接收共享的感知特征 $z_t = f_{\text{enc}}(\mathcal{O}_t)$ 及自然语言指令 $l$，通过自回归或扩散过程生成高层动作序列 $a_{t:t+H}$，实现端到端的自主决策。</li>
+<li><strong>闭环数据流与模块解耦</strong>：整体结构呈现清晰的“感知-决策-执行”闭环。VLA模型输出的动作经运动规划器映射为底层控制信号，驱动机器人完成操作任务。这种设计强调了高层语义推理（VLA）与低层物理控制（Locomotion/Arm Control）的模块化解耦，使得同一套底层硬件栈既能支持人类示教数据采集，又能无缝切换至自主VLA推理部署。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Collection and deployment share the robot-side perception, locomotion, and arm-control modules. At deployment, VLA inference replaces the leader-side interface.</div></details>
+</div>
+<ul>
 <li><strong>统一的 11D 动作空间与共享控制栈</strong>：</li>
 <li>定义动作向量 $a = [v_x, v_y, \omega_z, \theta_{pitch}, q_{arm}^{1..6}, g]^\top$，包含机体坐标系下的底盘速度、身体俯仰角参考值、机械臂绝对关节位置和夹爪指令。</li>
 <li><strong>关键设计</strong>：数据采集（遥操作）和模型推理使用完全相同的机器人侧控制栈（MUSE 状态估计 + BinWalker RL 运动策略 + 关节轨迹控制器）。操作员直接输出这些高层命令，而非底层腿部力矩或 IK 解，确保训练数据与部署执行物理上的一致性。</li>
@@ -585,12 +600,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>IIT 团队通过在 Unitree Go2 上部署 MolmoAct2 VLA，证明了通过统一高层动作接口和扩展数据覆盖度（而非模型容量），可将末端执行器误差降低 30% 并实现稳定的全身协调移动操作。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.32271" data-title="From Tabletop to Walking Bot">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.32271" data-title="From Tabletop to Walking Bot: Deploying a VLA Model on a Legged Manipulator Robot">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.32271 · From Tabletop to Walking Bot</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.32271 · From Tabletop to Walking Bot: Deploying a VLA Model on a Legged Manipulator Robot</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -600,7 +615,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《From Tabletop to Walking Bot》</strong>（arXiv: 2610.32271）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《From Tabletop to Walking Bot: Deploying a VLA Model on a Legged Manipulator Robot》</strong>（arXiv: 2610.32271）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">
