@@ -518,16 +518,16 @@ details.fold .fold-body {
 <div class="wrap">
 <article class="card">
 <header class="header">
-<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.39543" rel="noopener noreferrer" target="_blank">arXiv 2610.39543</a></span><span class="badge">深读</span></div>
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.39543" rel="noopener noreferrer" target="_blank">arXiv 2610.39543</a></span><span class="badge">深读</span></div>
 <h1>深读｜From Reasoning to Action</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.39543" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
-<li>现有 ECoT-VLA 通常把文本计划、运动描述或空间目标作为动作生成的条件，但主要依靠示范学习隐式建立“推理—动作”对应关系；模型即使说对了，也可能执行出与所述运动不一致的动作。</li>
-<li>另一类失败是“预测后果—实际动作”脱节：ECoT 给出的 waypoint 合理，但动作所导致的预测未来状态并不能到达该空间目标。</li>
-<li>部署时采样多个动作，再借助模拟器、VLM verifier 或 learned verifier 逐一筛选，会引入重复策略推理和外部验证开销；论文希望把多样本验证转移到离线训练阶段。</li>
-<li>论文同时覆盖 RoboCasa、VLABench 仿真任务与真实机器人操作；第二阶段冻结联合建模主干，只训练动作流初始噪声上的轻量条件策略，部署时以单样本方式生成动作。</li>
-<li>作者的目标是：显式提高 ECoT 意图、生成动作和预期空间后果之间的一致性，在不保留部署期多样本验证开销的前提下提升任务成功与新场景泛化。</li>
+<li>现有 ECoT-VLA 会先生成文本计划、空间目标或动作意图，再把这些中间推理作为动作生成条件；但“把推理输入策略”并不保证动作真正遵循推理，两者的对应关系通常只靠示范学习隐式形成。</li>
+<li>具体失败模式包括：模型描述了正确的运动方向，实际动作却发生偏离；或者给出了合理的空间 waypoint，但执行后的物理后果并未到达该位置。语义上连贯的推理因此可能与控制行为脱节。</li>
+<li>部署时多次采样、借助模拟器或外部验证器筛选动作可以缓解这一问题，但会增加在线采样和验证开销。论文希望把这种多候选验证蒸馏进训练阶段，使部署时只需一次动作采样。</li>
+<li>论文同时覆盖 RoboCasa、VLABench 仿真环境与真实机器人操作；采用离线两阶段训练，第二阶段冻结统一 MoT 主干，只优化轻量的条件噪声策略。所给原文未披露评测时是否采用完整闭环重规划协议。</li>
+<li>作者的目标是显式提升“推理—动作—预期后果”的一致性，从而提高任务成功率、泛化能力以及借助外部 VLM 推理适应新场景的能力。</li>
 </ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
   <div class="arch-figure-bar">
     <span class="arch-badge">📐 论文原版模型结构图（Figure 3）</span>
@@ -554,58 +554,58 @@ details.fold .fold-body {
   <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 3 Caption）</summary><div class="arch-cap-text">Framework of CoRAct. (a) CoRAct jointly models ECoT reasoning, action generation, and action-conditioned future prediction in a unified Mixture-of-Transformers, coupling actions with intent and consequence. (b) It then freezes the backbone and optimizes a conditional noise policy with movement and consequence rewards, steering action sampling toward better reasoning--execution alignment.</div></details>
 </div>
 <ul>
-<li>CoRAct 是“联合建模 + 后对齐”的两阶段离线训练框架：输入视觉观测、机器人状态和语言指令，先生成结构化 ECoT，再生成动作块，并根据动作预测未来图像；随后利用 ECoT 中可验证的物理信号优化动作采样。</li>
-<li>第一阶段采用包含三个专门 Transformer expert 的统一 Mixture-of-Transformers：VLM expert 自回归生成 ECoT，action expert 通过 flow matching 生成连续动作块，image-generation expert 通过 flow matching 预测动作条件未来视觉 latent。三个 expert 参数分离，通过 attention mask 进行受控交互。</li>
-<li>训练包含两条交错数据流：reasoning–action 流学习 \(p(C,A\mid o)=p(C\mid o)p(A\mid o,C)\)；action–world 流只根据当前观测与干净示范动作预测后续图像，刻意不向未来预测器提供 ECoT waypoint，避免其直接读取待验证答案。</li>
-<li>ECoT 中的 <code>movement</code> 由相对末端执行器位姿和夹爪动作规则化生成，作为动作意图；<code>waypoints</code> 由未来夹爪位置投影到相机图像获得，作为预期空间后果。</li>
-<li>第二阶段冻结 MoT 主干，把基础训练使用的上下文无关标准高斯噪声替换为上下文条件对角高斯策略。对同一观测与 ECoT 采样一组初始噪声，经冻结的 action expert 生成候选动作，再计算组内相对优势来优化该噪声策略。</li>
-<li>奖励由两部分组成：movement reward 比较动作块端点的平移、旋转和夹爪命令与 ECoT movement；consequence reward 则先预测候选动作对应的未来图像，再用冻结的 Grounding DINO-based waypoint localizer 提取夹爪位置，并与 ECoT waypoint 比较。部署时只从学到的噪声策略采样一次，不需要在线候选筛选。</li>
+<li>整体流程为：视觉观测、机器人状态和语言指令输入统一 Mixture-of-Transformers（MoT）→ VLM expert 生成结构化 ECoT → action expert 生成动作块 → image-generation expert 根据当前观测与候选动作预测未来图像 → 用运动一致性和 waypoint 后果一致性奖励优化动作噪声分布。</li>
+<li>作者从 ECoT 中选取两类可验证信号：<code>movement</code> 表示预期运动，包括平移、旋转和夹爪命令；<code>waypoints</code> 表示执行后预期到达的图像空间位置。二者均由示范通过规则构造，而非依赖人工逐条奖励标注。</li>
+<li>第一阶段联合训练三个专门的 Transformer expert：VLM expert 自回归预测 ECoT；action expert 通过 flow matching 学习条件动作块；image-generation expert 通过 flow matching 学习动作条件的未来视觉 latent。专家参数相互分离，并通过 attention mask 控制信息交互。</li>
+<li>未来预测流只接收当前观测与干净示范动作，不接收 ECoT token，避免预测器直接读取目标 waypoint。候选动作的预测未来图像因此可以作为独立于文字目标的后果估计，再与 ECoT waypoint 比较。</li>
+<li>第二阶段冻结 MoT 主干，把原本与上下文无关的标准高斯动作噪声先验替换为上下文条件的对角高斯策略。对同一观测和 ECoT 采样一组噪声，经冻结的 action expert 生成多个动作候选，再按组内相对奖励优化该噪声策略。</li>
+<li>总奖励由两部分组成：movement reward 衡量动作块末端的平移、旋转和夹爪变化与 ECoT movement 的归一化误差；consequence reward 将候选动作生成的未来图像送入冻结的 Grounding DINO waypoint localizer，比较预测位置与 ECoT waypoint。相较普通 ECoT 条件策略，CoRAct 没有在部署时外挂多轮候选筛选器，而是把候选间的偏好学习进噪声分布，推理时保留单次采样。</li>
 </ul></section><section class="section"><h2>实验与结果</h2><ul>
-<li>论文报告 CoRAct 在 RoboCasa、VLABench 和真实机器人操作三类评测中，相比强 ECoT-based VLA 基线持续提高任务成功率与泛化能力。</li>
-<li>所给原文节选没有包含实验表格、具体基线名称、成功率、绝对提升或相对提升百分比，因此无法核对并列出数值结果。</li>
-<li>分析实验表明，CoRAct 改善了推理与执行之间的一致性；但节选没有给出 movement error、waypoint error 或相关消融指标的具体数值。</li>
-<li>CoRAct 还能把外部强 VLM 提供的 ECoT 转换为可执行动作，据作者报告可在不额外训练策略的情况下适应新场景；节选未披露外部 VLM 名称、任务数量和零样本成功率。</li>
-<li>方法层面的效率结论是将训练期的组内多候选验证蒸馏进条件噪声策略，使部署仅需单个动作样本；原文节选未报告端到端延迟、吞吐量或相对加速比。</li>
+<li>作者报告 CoRAct 在 RoboCasa、VLABench 和真实机器人操作任务上，相比强 ECoT-VLA 基线持续提高任务成功率，并在泛化设置中取得更好表现。</li>
+<li>分析实验显示，提升不只体现在任务成功上，生成动作与 movement、预测后果与 waypoint 之间的一致性也更强，支持“显式对齐优于仅把 ECoT 当条件”的核心主张。</li>
+<li>CoRAct 可以接收外部强 VLM 提供的 ECoT，并将其转化为可执行行为；作者据此展示了面向新场景的零样本适应，且不需要针对这些场景额外训练策略。</li>
+<li>所给论文节选没有包含实验表格、具体基线名称、各任务成功率、绝对提升、相对提升、方差或显著性检验，因此无法核对或报告任何数值结果。</li>
+<li>节选也未给出 movement-only、consequence-only、联合奖励及普通高斯噪声之间的完整消融数字，因而目前只能确认作者报告了整体一致性提升，不能判断两类奖励各自贡献的大小。</li>
 </ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
-<li>证据不足：当前节选止于方法章节，未包含完整实验协议和数值表，因而不能判断改进幅度、统计显著性、方差、失败率或是否在所有任务类别上稳定成立。</li>
-<li>设定外推风险：奖励依赖规则生成的 movement、相机标定得到的 waypoint、未来图像生成质量以及 Grounding DINO-based localizer；任一环节在遮挡、视角变化、标定漂移或快速运动下产生误差，都可能使奖励偏离真实执行效果。</li>
-<li>未来图像是模型预测而非真实 rollout，consequence reward 衡量的是“预测后果与 waypoint 一致”，不等价于真实机器人执行后必然到达该位置。可补做真实 rollout waypoint error 与预测 reward 的校准曲线，并报告高奖励但执行失败的反例。</li>
-<li>可在 OpenPI 风格执行接口上进行受控迁移：保持同一 VLA/动作解码器不变，只比较标准高斯采样、CoRAct 条件噪声策略和部署期 best-of-\(N\) verifier，在相同计算预算下报告成功率、控制延迟及恢复能力。</li>
-<li>可增加闭环压力测试：主动注入相机外参扰动、waypoint localizer 噪声、物体遮挡和中途环境变化，分别消融 movement reward 与 consequence reward，检验该方法是否会被错误的预测后果“自洽地”引向错误动作。</li>
+<li>consequence reward 验证的是学习到的未来图像预测及 waypoint localizer 所估计的空间后果，而不是候选动作在真实环境中实际执行后的后果；世界模型误差、图像解码伪影或定位器偏差都可能产生奖励误判。</li>
+<li>waypoint 来自未来夹爪位置的二维相机投影，主要约束末端执行器到达哪里，并不等价于物体是否发生了期望变化。对于抓取后放置、铰接物体操作或接触失败，仅对齐夹爪 waypoint 可能仍不足以保证任务完成。</li>
+<li>movement 由相对末端位姿和夹爪动作规则生成，可能更接近动作描述而非对象中心的交互结果；论文节选没有证明其能表示接触区域、物体运动轴、多阶段时序或复杂失败恢复。</li>
+<li>现有证据覆盖两个仿真基准和真实机器人，但节选未披露任务数量、真实机器人试验次数、置信区间和失败类型，难以判断收益对平台、相机视角和任务分布的稳健性。</li>
+<li>可以继续做的实验包括：把 future gripper waypoint 替换或扩展为物体/部件的未来 mask、关键点、位姿或 A/F 场；分别测试目标置零、方向反转、跨任务交换和冲突条件；并在真实闭环中统计“条件遵循但任务失败”与“未遵循条件”的比例，以区分接口错误、预测器错误和执行器能力不足。</li>
 </ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
-<li>评测环境：RoboCasa、VLABench，以及真实机器人操作任务。</li>
-<li>输入：视觉观测 \(I\)、机器人状态 \(s\) 和语言指令 \(\ell\)。</li>
-<li>输出：结构化 ECoT、长度为 \(H\) 的连续动作块，以及动作条件未来图像。</li>
-<li>主干：统一 Mixture-of-Transformers，包含 VLM、动作生成和图像生成三个专门 Transformer expert。</li>
-<li>动作与未来视觉建模：均采用 flow matching；未来图像 latent 使用 JanusFlow 的 VAE 编码与解码。</li>
-<li>标注：movement 根据相对末端执行器位姿和夹爪动作规则生成；waypoint 根据未来夹爪位置及相机内外参投影到图像坐标。</li>
-<li>第一阶段：reasoning–action 与 action–world 两条训练流按概率 \(\eta\) 和 \(1-\eta\) 交错采样；节选未给出 \(\eta\) 的具体值。</li>
-<li>第二阶段：冻结 MoT 主干，训练上下文条件对角高斯噪声策略；每个候选初始噪声由冻结的 action expert 经过 10 个去噪步骤生成动作。</li>
-<li>consequence verifier：基于 Grounding DINO 训练 waypoint localizer，并在对齐阶段冻结。</li>
-<li>优化：同一上下文采样 \(G\) 个候选，以组平均奖励作为无 critic baseline，且不进行组内方差归一化；节选未给出 \(G\)、奖励权重、归一化尺度和训练步数。</li>
-<li>部署：使用学习后的条件噪声策略生成单个动作样本。</li>
-<li>节选未披露机器人型号、传感器配置、任务数、episode 数、评测重复次数、训练数据规模、硬件、优化器、学习率及完整基线检查点名称。</li>
+<li>环境：RoboCasa、VLABench，以及真实机器人操作任务。</li>
+<li>输入：视觉观测 \(I\)、机器人状态 \(\mathbf{s}\) 和语言指令 \(\ell\)。</li>
+<li>输出：结构化 ECoT、长度为 \(H\) 的连续动作块，以及动作条件的未来视觉预测。</li>
+<li>ECoT 标注：movement 由相对末端执行器位姿和夹爪动作通过规则获得；waypoint 由未来夹爪位置结合相机内外参投影到图像平面获得。</li>
+<li>主干：统一 Mixture-of-Transformers，包含 VLM、动作生成和图像生成三个专门的 Transformer expert。</li>
+<li>动作与图像训练：均采用 flow matching；未来图像编码和解码使用 JanusFlow 的 VAE。</li>
+<li>数据流：reasoning–action 流训练 ECoT 与动作生成；action–world 流训练动作条件未来预测，两类样本以概率 \(\eta\) 和 \(1-\eta\) 交替采样。</li>
+<li>第二阶段：冻结 MoT 主干，训练上下文条件的对角高斯动作噪声策略；同一上下文采样 \(G\) 个候选，并以组平均奖励作为无 critic 的相对基线。</li>
+<li>候选生成：冻结的 action expert 对每个噪声初始化执行 10 个去噪步骤。</li>
+<li>waypoint 验证器：基于 Grounding DINO 训练，并在对齐阶段冻结。</li>
+<li>部署：使用学习后的条件噪声策略进行单次动作采样，不需要在线生成多组候选再由外部验证器筛选。</li>
+<li>所给节选未披露机器人型号、传感器配置、数据集规模、任务数、episode 数、真实机器人重复次数、动作块长度 \(H\)、候选组大小 \(G\)、交替概率 \(\eta\) 及各奖励权重和阈值的具体取值。</li>
 </ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
-<li>推荐这篇的核心原因不是它提出了另一种更大的 VLA，而是它把 ECoT 从“供动作网络参考的上下文”改造成可以逐候选验证的训练信号，直接处理 VLA 中常见的“推理正确、执行不一致”问题。</li>
-<li>它还给出一个有实际部署意义的设计：昂贵的多样本生成与后果验证只在离线对齐阶段使用，最终压缩为单样本条件噪声策略。</li>
+<li>推荐这篇论文的核心原因不是它又加入了一种 ECoT，而是它直接处理“条件被提供了，但策略是否真的遵循”这一问题：movement 和 waypoint 从普通条件升级为可计算奖励。</li>
+<li>它还给出了一条兼顾训练成本与部署效率的路线：训练时对多个动作候选进行后果验证，部署时将选择能力压缩到条件噪声策略中，只采样一次动作。</li>
 </ul>
-<h3 class="sub">与π系列的关系</h3>
+<h3 class="sub">与本项目关系</h3>
 <ul>
-<li>CoRAct 与 π0、π0-FAST、π0.5 和 OpenPI 处于同一类通用 VLA/连续动作生成研究语境，也使用 flow matching 式动作生成；但本文的核心增量是 ECoT—动作—预测后果的显式对齐，而不是提出新的 π 系列基础模型。</li>
-<li>所给原文没有证明 CoRAct 以 π0、π0-FAST 或 π0.5 检查点为主干，也没有报告对这些模型的直接数值比较，因此不能把文中的“强 ECoT-based VLA 基线”直接等同于 π 系列。</li>
-<li>本文采用三 expert MoT，把语言推理、动作流和未来视觉流放在统一架构中；第二阶段冻结该主干，仅外挂并优化条件噪声策略。它没有在已给节选中声称修改 π 系列的预训练配方、动作 tokenizer、执行器或 OpenPI 代码库。</li>
-<li>没有证据表明该方法已集成进 OpenPI，或由 π 系列团队提出；作者机构包括北京大学、北京人形机器人创新中心、中国人民大学和北京林业大学。</li>
+<li>这与 Austin 项目中“把 G 输入策略不等于策略理解并遵循 G”的发现高度一致。CoRAct 的 movement 可类比 G/F 所表达的期望运动，waypoint 则提供了一个粗粒度的预期空间后果；区别是 Austin 的 A/F 接口面向物体交互区域与物体期望运动，而本文主要使用末端执行器运动和未来夹爪二维位置，尚未覆盖对象中心的接触几何。</li>
+<li>对 OpenPI（π0/π0.5）执行器的直接关系有限：论文使用自建的 MoT、flow-matching action expert 和条件噪声策略，节选未显示在 π0、π0.5 或 OpenPI 检查点上验证。不过，“冻结主干、只训练轻量噪声策略”的思路可作为外挂式后训练方案，检验预训练执行器能否更可靠地遵循 G 或 A/F 条件。</li>
+<li>论文报告了新场景零样本适应，但节选没有给出物体×目标×场景的交叉覆盖矩阵，也没有说明是否采用同一初始场景配不同目标、留出未见组合等协议。因此它支持“外部推理可以驱动新行为”，却不足以单独证明策略获得了严格的组合泛化。</li>
+<li>对“抓到物体却未送到正确目标”和“是否持续跟随目标”两个开放问题，waypoint consequence reward 提供了初步工具；但单个未来夹爪 waypoint 无法证明物体被正确放置，也未证明整段闭环执行持续遵循目标。论文节选同样没有披露针对失败恢复的专门训练或评测。</li>
 </ul>
-<h3 class="sub">对Austin研究的启发</h3>
+<h3 class="sub">启发</h3>
 <ul>
-<li>可把 CoRAct 做成 OpenPI 执行器前的可插拔采样层：冻结现有 flow-based VLA，仅由观测、指令和结构化 ECoT 生成条件噪声分布，从而隔离验证“对齐收益来自采样先验还是主干重训”。</li>
-<li>若 Austin 使用引导场 \(G\)，可把 movement、waypoint 和约束条件拆成独立可审计字段，并分别记录动作端点误差、预测后果误差与真实 rollout 误差，避免只用任务成功率判断条件遵循。</li>
-<li>评测应加入三组严格对照：原始单样本策略、部署期 best-of-\(N\) verifier、训练期多样本蒸馏后的 CoRAct-style 单样本策略；同时固定采样数或总推理时间，报告成功率、延迟和 verifier 调用成本。</li>
-<li>闭环监控可比较“ECoT waypoint—预测 waypoint—真实观测 waypoint”三者偏差；当预测与真实后果持续分离时触发重规划，而不是继续信任世界模型给出的自洽奖励。</li>
-<li>数据设计上可从现有轨迹自动提取相对末端 movement 与图像 waypoint，但应保留标定置信度、可见性和遮挡标签，并对低可信 waypoint 降权或屏蔽，减少错误奖励进入噪声策略优化。</li>
+<li>在 OpenPI 执行器上冻结 π0/π0.5 主干，先训练一个轻量条件噪声或动作残差模块；对每个观测与 G/A-F 条件采样多个动作块，用“动作方向遵循度＋预测对象后果一致性”做组内相对优化，再比较单次采样部署与在线多候选筛选的性能和延迟。</li>
+<li>将本文的 gripper-waypoint reward 改成对象中心后果：从候选动作预测未来物体 mask、部件关键点或 6D 位姿，再计算其与 F 所描述的目标运动之间的一致性。这样可避免把“机械臂去了哪里”误当成“物体发生了什么变化”。</li>
+<li>建立条件因果消融矩阵：对同一初始观测分别输入正确 G、置零 G、反向 G、交换自另一任务的 G，以及语言与 G 冲突的条件；同时测量动作方向、接触位置、对象位移、最终放置成功率和恢复率。只有输出随几何条件发生可预测变化，才能排除策略仅把 G 当任务 ID。</li>
+<li>在数据设计上显式构造物体×目标×方向×场景的交叉覆盖，并留出未见组合；训练集还应包含同一场景下的多个目标和失败后恢复轨迹。评测时分别报告熟悉配对、未见配对和全新对象，避免把视觉泛化误写成组合泛化。</li>
+<li>对“目标持续跟随”增加逐时间步指标，而非只看动作块终点：计算每个控制周期中预测对象速度与 F 的夹角、到 A 区域的距离，以及重规划后是否继续朝同一目标收敛；再将这些过程指标与最终任务成功率联合报告。</li>
 </ul>
 <h3 class="sub">一句话总结</h3>
-<p>CoRAct 由北京大学、北京人形机器人创新中心等机构作者提出，以 movement 和 waypoint 奖励在冻结 MoT 主干后对齐 ECoT、动作与预测后果，并把训练期多候选验证蒸馏为部署期单样本生成；论文报告在 RoboCasa、VLABench 和真机任务上持续优于强 ECoT-VLA 基线，但所给节选未披露可核对的成功率或提升数字。</p></div></details>
+<p>CoRAct 由北京大学、北京人形机器人创新中心、中国人民大学和北京林业大学的作者提出，通过 movement 与 waypoint 两类可验证奖励在冻结 MoT 主干后优化条件动作噪声策略，并在 RoboCasa、VLABench 和真实机器人上报告了相对强 ECoT-VLA 基线的一致成功率与泛化提升，但所给原文节选未披露具体数值。</p></div></details>
 <section id="paper-qa" class="qa-section" data-arxiv="2610.39543" data-title="From Reasoning to Action">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
