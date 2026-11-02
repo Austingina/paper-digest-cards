@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Self-Labeled Preference Transfer for Steerable Robot Manipulation</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.38000" rel="noopener noreferrer" target="_blank">arXiv 2610.38000</a></span><span class="badge">深读</span></div>
+<h1>深读｜Self-Labeled Preference Transfer for Steerable Robot Manipulation</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.38000" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>现有 VLA 通常只接收“完成什么任务”的指令，而不明确“如何执行”：例如抓杯子的高低位置、绕障远近、放置在托盘中心还是角落。即使多种执行方式都能完成任务，用户也无法按需切换。</li>
+<li>给每个新任务的示范人工补充执行偏好标签成本高；传统偏好学习又通常学习一个固定的“更优”行为，而不是让策略根据命令在多个同样有效的具名偏好之间切换。</li>
+<li>论文研究从有偏好标签的源任务迁移到无偏好标签的目标任务：目标示范已经包含不同偏好行为，但标签被移除；偏好词汇固定，超出既有词汇或数据中未出现的行为不在设定内。</li>
+<li>目标任务仍需用示范微调策略。直接用不含偏好的裸任务指令微调虽然能恢复任务成功率，却会削弱源模型已经学到的偏好控制。</li>
+<li>作者目标是在不新增目标域人工偏好标注的前提下，同时保持目标任务成功率和对指定执行偏好的遵循能力，并支持跨物体乃至跨任务类型迁移。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.38000.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.38000.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.38000.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.38000.png'">
+    <img src="/assets/figures/2610.38000.png" onerror="this.onerror=null;this.src='../assets/figures/2610.38000.png'" alt="Self-Labeled Preference Transfer for Steerable Robot Manipulation Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><p>该图为论文《Self-Labeled Preference Transfer for Steerable Robot Manipulation》的Figure 1。</p>
+<p>图注要点：Motivation and overview. A task can be completed in several valid ways. SPT learns to follow and recognize execution preferences on labeled source tasks. It then labels target demonstrations so that the adapted policy can respond to the same preference commands. Target demonstrations are required; their preference labels are not. The examples illustrate the intended interface, not additional evaluated tasks.</p>
+<p>方法上下文摘录：【LaTeX 方法章节片段】</p>
+<p>\label{sec:methods}</p>
+<p>SPT has two stages (Fig.~\ref{fig:method}). Stage~A jointly trains a model on the labeled source tasks to act on a stated preference and to recognize the preference shown in a demonstration. Stage~B freezes the Stage-A recognizer to label the target demonstrations, then adapts a trainable copy of the Stage-A policy on the self-labeled target data.</p>
+<p>\textbf{Architecture.}</p>
+<p>The action branch and the recognition branch share one pretrained vision-language backbone. The action head predicts a chunk of actions from the current observation and the instruction, to which we append `<code>Preference: $w(c)$&#x27;&#x27;, where $w(c)$ is a fixed phrase such as </code>`grasp low&#x27;&#x27;. The recognition branch reuses the VLM&#x27;s language head instead of adding a classifier. It receives a short</p>
+<p>（本地 Qwen 暂不可用，本 walkthrough 为图注/方法摘录占位，待模型恢复后可用 --force 重生成模块化解读。）</p></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Motivation and overview. A task can be completed in several valid ways. SPT learns to follow and recognize execution preferences on labeled source tasks. It then labels target demonstrations so that the adapted policy can respond to the same preference commands. Target demonstrations are required; their preference labels are not. The examples illustrate the intended interface, not additional evaluated tasks.</div></details>
+</div>
+<ul>
+<li>SPT 分为两个阶段：Stage A 在带偏好标签的源任务上联合学习“按偏好行动”和“从示范识别偏好”；Stage B 用冻结的识别器为目标示范生成偏好标签，再以这些自标注示范微调策略。</li>
+<li>动作分支与偏好识别分支共享一个预训练视觉—语言骨干。动作分支根据当前视觉观测、 proprioception、任务指令及追加的 <code>Preference: w(c)</code> 文本预测动作块；识别分支复用 VLM 的语言头，根据短示范片段、proprioception 和固定问题输出偏好类别，而非另加分类器。</li>
+<li>Stage A 混合动作样本与识别样本，联合优化动作回归损失和带权交叉熵识别损失：前者建立“偏好命令→动作”的对应，后者建立“示范行为→偏好词汇”的对应。</li>
+<li>Stage B 冻结 Stage-A 识别器，对每条目标示范预测并缓存偏好标签；随后从 Stage-A 策略初始化一个可训练副本，只用目标动作损失进行适配。目标域真实偏好标签不会提供给识别器或策略。</li>
+<li>部署时用户仍使用源任务中定义的偏好词汇控制策略；识别分支不参与推理，因此不会增加部署时的额外模型调用。</li>
+<li>多偏好扩展对每个偏好轴分别提问和预测，再把多个偏好短语共同追加到指令中；识别损失取各轴负对数似然的平均值。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>在 RoboTwin 2.0 的五类偏好迁移中，Stage-A 识别器对目标示范的平均识别准确率为 <strong>96.4%</strong>，明显高于二元分类的 50% 随机水平，说明从源任务学到的偏好语义能够迁移到留出的物体—容器组合。</li>
+<li>摘要报告 SPT 在仿真中达到 <strong>84.8% 偏好遵循率、89.2% 任务成功率</strong>，Naive FT 分别为 <strong>59.4% 和 88.0%</strong>：偏好遵循绝对提高 <strong>25.4 个百分点</strong>，同时任务成功率保持相近。正文引言另写平均偏好遵循率从 59.4% 提升至 <strong>83.8%</strong>，与摘要的 84.8% 存在 1 个百分点的不一致；所给原文截断在实验部分，无法据完整表格消解。</li>
+<li>在放置位置和接触高度两项消融中，目标适配前的 Stage-A 策略已有 <strong>80%/88%</strong> 的偏好遵循率，但目标任务成功率较低；用裸指令微调后遵循率降至 <strong>52%/50%</strong>，SPT 则在适配后保留 <strong>83%/90%</strong>。这表明只继承源检查点不足，关键是目标微调时继续保留“行为—偏好”对应。</li>
+<li>打乱目标示范的自标注标签会得到与裸指令微调相近的较差偏好遵循率，说明增益并非来自简单追加偏好文本，而依赖标签与示范行为的正确配对。</li>
+<li>双偏好命令实验中，SPT 的完整偏好遵循率为 <strong>93.8%</strong>，基线为 <strong>42.5%</strong>，表明方法能够组合两个已定义的偏好轴；原文所给片段未包含对应任务成功率或 joint success 的具体数值。</li>
+<li>UR5e 真机的两类跨任务迁移中，SPT 将平均偏好遵循率从 Naive FT 的 <strong>52.5% 提升至 92.5%</strong>，且不需要新增人工偏好标签；所给片段仅称任务成功率相近，未披露各任务的完整成功率数字。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>SPT 只能恢复目标示范中已经存在的偏好行为：它移除的是标签而不是行为。如果目标数据没有某种绕障、接触或放置方式，自标注无法创造该技能，也不能解决未见接触技能的组合。</li>
+<li>偏好空间是预先定义的有限词汇，单轴实验还是二元分类。方法尚未证明能处理连续几何条件、新增偏好词、模糊偏好，或源域中从未定义的交互方式。</li>
+<li>自标注依赖识别器跨任务泛化。平均 96.4% 准确率较高，但缓存标签后不再更新，也未见置信度过滤、人工复核或噪声鲁棒训练；在视觉差异更大或行为边界模糊的目标域中，错误可能直接进入策略微调。</li>
+<li>多偏好证据仅覆盖两个偏好轴，不能据此推断更多条件同时组合时仍然稳定；论文也未在所给片段中报告未见偏好组合、同一初始场景切换目标或系统性交叉留出的结果。</li>
+<li>可继续做的实验是把离散语言识别器替换或扩展为几何条件估计器：从示范中预测 A/F 或 G，按置信度筛选伪标签，并比较缓存标签、迭代重标注和人工少量校准三种方案。</li>
+<li>应进一步设置“行为缺失”压力测试：刻意从目标示范中移除某一接触或放置方式，以区分标签迁移、已有技能重组与真正的新技能泛化，而不是只在两种行为都已出现在数据中时评测。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>仿真平台：RoboTwin 2.0；任务形式为不同物体与容器组合上的拾取—放置。</li>
+<li>仿真偏好轴共五类，均为二元：抓取接触高度（低/高）、释放高度（低/高）、绕障间距（窄/宽）、抓取方向（侧面/顶部）、放置位置（中心/角落）。</li>
+<li>每个偏好轴包含 8 个源任务；每个源任务、每个偏好值各 100 条示范，即每轴共 1,600 条源示范。每轴另设 1 个留出目标任务，共 100 条示范，两个偏好值各 50 条。</li>
+<li>真机平台：UR5e。绕障偏好从带障碍物的拾取—放置迁移到推碗，偏好为近路径/远路径；击打策略从空气曲棍球迁移到台球，偏好为直接击打/库边反弹。</li>
+<li>每个真机源任务和目标任务各有 100 条示范，两个偏好值各 50 条；拾取—放置和推碗示范使用 FastUMI 采集。每种方法对每个偏好命令评测 10 次。</li>
+<li>动作输入由当前观测、proprioception、任务指令和可用时追加的偏好短语构成；识别器输入短示范片段、对应 proprioception 和每个偏好轴的固定二选一问题。</li>
+<li>Naive FT 与 SPT 从同一个 manipulation-pretrained checkpoint 开始，并采用相同的源—目标优化日程；原文片段未给出该检查点的具体名称。</li>
+<li>Naive FT 在带偏好标签的源示范上仅用动作损失训练 10,000 步，再用 100 条目标示范的裸任务指令适配 1,500 步；它不使用识别损失或目标自标注。</li>
+<li>Stage B 冻结偏好识别器，缓存所有目标伪标签，只微调从 Stage-A 策略初始化的可训练副本；部署时不运行识别器。真机 rollout 使用 discreteRTC 执行动作。</li>
+<li>偏好指标与任务成功分开统计；多偏好实验还定义 joint success，即任务完成且全部偏好同时满足。</li>
+<li>仿真偏好判定阈值由源示范校准并在目标评测前固定：接触高度 6.83 cm、释放高度 12.45 cm、绕障偏移 15.01 cm、抓取方向 41.22°、放置距离 5.36 cm。</li>
+<li>所给原文未披露识别损失权重 λ、动作块长度、优化器、学习率、相机配置、仿真 rollout 次数及完整模型检查点信息。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的核心原因不是它提出了新的操作骨干，而是它把“任务完成”与“条件是否被遵循”拆成两个独立闭环指标，并展示了高任务成功率可能掩盖条件控制在微调中退化。</li>
+<li>它还给出了一条可复用的数据路线：先在有标签任务中学习行为识别，再为含目标行为但缺少条件标签的示范自动补标；这比假设每个新任务都有人工作偏好标注更接近大规模组合数据建设。</li>
+</ul>
+<h3 class="sub">与本项目关系</h3>
+<ul>
+<li>SPT 与 Austin 项目最直接的联系是“条件是否被策略真正遵循”。裸指令微调把偏好遵循率降至 52%/50%，而正确自标注可保留 83%/90%；打乱标签后性能再次变差，这与对 G 做置零、反向或交换消融的目的相同：排除策略只是把条件当作无意义附加文本或任务 ID。</li>
+<li>两者的条件表示仍有实质差异。SPT 使用固定的离散语言偏好词汇，识别器回答 low/high、near/far 等类别；A/F 或 G 表达的是交互区域与期望物体运动等连续几何条件。论文没有证明其识别器能够从视觉示范恢复稠密引导场、接触点、运动轴或阶段信息。</li>
+<li>SPT 可以外挂在 OpenPI/π0/π0.5 执行器的数据适配流程之前，但论文并未在这些骨干上验证。可借鉴的是“冻结条件识别器→自动标注目标示范→带条件微调”的训练结构，而不是直接继承其具体模型能力。</li>
+<li>论文要求目标示范已经覆盖所有偏好行为，因此它主要解决“行为与条件如何正确配对”，没有解决 Austin 当前的关键缺口：未见物体×目标组合、抓取后送错目标、持续目标跟随、失败恢复，以及数据中缺失的放置或接触技能。</li>
+</ul>
+<h3 class="sub">启发</h3>
+<ul>
+<li>为 G/A-F 增加与 SPT 对齐的双头训练：动作头执行几何条件，识别头从示范片段预测 A、F 或离散化后的方向/目标区域；迁移到 LIBERO 或新物体—目标组合时冻结识别头，为无几何标注示范生成伪标签，再微调 OpenPI 策略。</li>
+<li>复刻论文的因果消融，但适配几何接口：比较正确 G、置零 G、反向 G、跨 episode 交换 G、随机 G，以及只追加“有 G”标记但不提供正确值。除任务成功外，分别报告目标选择正确率、物体运动方向一致率、条件持续跟随率和最终放置正确率。</li>
+<li>将数据拆成物体×目标×场景×交互方向的交叉矩阵，明确留出未见组合；同时保留“同一初始场景、不同目标或相反 F”的成对样本，防止策略依赖熟悉的物体—目标关联来猜条件。</li>
+<li>对视觉预测的 G 使用置信度门控：高置信伪标签直接训练，低置信样本保留多候选或进入少量人工复核；再比较一次性缓存、周期性重标注与置信度加权训练，检查错误自标注是否被 OpenPI 放大。</li>
+<li>增设“目标示范不含某项行为”的对照组。如果策略只能在行为已出现时遵循 G，就应将结论限定为条件恢复与重组；只有在留出接触或放置方式后仍成功，才可声称产生了更强的技能组合泛化。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>SPT 由 UIUC、UC Berkeley、Harvard、Stanford 与 UIC 的作者合作提出，通过冻结源任务学到的偏好识别器为无标签目标示范自标注，在仿真中取得摘要所报 84.8% 偏好遵循率、对比 Naive FT 的 59.4%，并在 UR5e 真机上将该指标从 52.5% 提升到 92.5%，但其能力仍限于固定偏好词汇和目标数据中已经存在的行为。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2610.38000" data-title="Self-Labeled Preference Transfer for Steerable Robot Manipulation">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.38000 · Self-Labeled Preference Transfer for Steerable Robot Manipulation</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Self-Labeled Preference Transfer for Steerable Robot Manipulation》</strong>（arXiv: 2610.38000）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
