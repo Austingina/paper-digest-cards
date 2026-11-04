@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜When Delay Meets Drift</title>
+<title>深读｜2611.02101</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.02101" rel="noopener noreferrer" target="_blank">arXiv 2611.02101</a></span><span class="badge">深读</span></div>
-<h1>深读｜When Delay Meets Drift</h1>
+<h1>深读｜2611.02101</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.02101" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>机器人闭环执行的是基于旧观测生成的动作：视角偏移可能先造成动作不稳定，推理延迟再使动作进一步过时；碰撞、过大接触力或无关物体扰动因此不是模型单层属性，而是环境、模型、计算平台与执行耦合后的结果。</li>
 <li>本文在闭环仿真中评测经 LIBERO 微调的 π0.5，交叉改变相机视角与推理延迟；策略本身不因实验条件重新训练，延迟通过旧观测动作块模拟，而非在真机上测量硬件延迟。</li>
 <li>作者目标是建立“跨层变化传播”的安全分析框架，找出联合扰动产生超加性风险的区域，并据此提出可预测、可在线调节的物理智能研究议程。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.02101.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02101.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.02101.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02101.png'">
+    <img src="/assets/figures/2611.02101.png" onerror="this.onerror=null;this.src='../assets/figures/2611.02101.png'" alt="2611.02101 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>受控输入（Initial State &amp; Sampling Noise）</strong>：四个面板复用同一 LIBERO-Spatial 任务、相同初始状态 $s_0$ 与采样噪声 $\epsilon$，仅改变执行延迟和相机视点，从而排除场景与随机性差异，形成严格的单回合对照。</li>
+<li><strong>视觉观测（Policy Camera Observation）</strong>：策略始终接收自身相机图像 $o_t=I_t$；Viewpoint Shift（视点偏移）改变成像映射 $I_t=\mathcal{R}(s_t,T_{\mathrm{cam}})$，使相同机器人状态对应不同视觉特征，但单独出现时未破坏任务执行。</li>
+<li><strong>策略与时延（Policy $\pi_{0.5}$ and Delay）</strong>：策略由当前观测生成动作 $a_t\sim\pi_{0.5}(a\mid o_t)$；Delay（延迟）使动作在 $t+\Delta$ 才作用于环境。单独延迟或单独视点偏移均无害，但二者耦合后造成观测—动作闭环失配。</li>
+<li><strong>交互结果（Robot–Environment Rollout）</strong>：联合扰动下，错误动作经动力学 $s_{t+1}=f(s_t,a_{t-\Delta})$ 累积，机械臂在 $t=11\,\mathrm{s}$ 横扫桌面，将无关碗击移 $19\,\mathrm{cm}$，并以 $201\,\mathrm{N}$ 压迫桌面；其余面板展示各条件的最终状态。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">One episode, four conditions. \pizf{} on a LIBERO-Spatial task, with the same initial state and sampling noise, seen through the policy&#x27;s camera. Delay alone and viewpoint shift alone are harmless; together, the arm sweeps across the table (shown at $t{=}11$\,s), knocking an uninvolved bowl 19\,cm and pressing on the table with 201\,N. Other panels show final states.</div></details>
+</div>
+<ul>
 <li>将机器人系统划分为物理环境、具身载体、模型、计算平台和执行层：环境变化经感知与策略传播为动作变化，计算延迟使动作变旧，执行结果又反馈到下一次观测，形成闭环。</li>
 <li>以相机视角变化 \(E\) 表示物理层扰动，以推理延迟 \(C\) 表示计算层扰动，并用安全违规概率 \(R(E,C)\) 描述联合条件下的风险。</li>
 <li>定义交互对比量</li>
@@ -588,12 +604,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>Texas Tech University 的作者在 π0.5、LIBERO-Spatial 的 4,000 个配对闭环 episode 中发现，400 ms 延迟在训练视角下仅使违规率增加 3.5 个百分点，却在 \(60^\circ\) 视角偏移下增加 37 个百分点，并产生 +33.5 个百分点的超加性跨层交互。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.02101" data-title="When Delay Meets Drift">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.02101" data-title="2611.02101">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.02101 · When Delay Meets Drift</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.02101 · 2611.02101</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -603,7 +619,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《When Delay Meets Drift》</strong>（arXiv: 2611.02101）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.02101》</strong>（arXiv: 2611.02101）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

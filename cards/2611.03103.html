@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜VLALagBench</title>
+<title>深读｜2611.03103</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.03103" rel="noopener noreferrer" target="_blank">arXiv 2611.03103</a></span><span class="badge">深读</span></div>
-<h1>深读｜VLALagBench</h1>
+<h1>深读｜2611.03103</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.03103" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>VLA 通常一次预测动作块；在闭环执行中，延迟既会使视觉观测过时，也可能让同步执行的机器人周期性停顿。两种机制分别威胁精确对准和持续接触等不同能力。</li>
 <li>论文以 MuJoCo 仿真为主，并在 Isaac Sim 和真实机器人上做补充验证；评测官方公开 VLA 检查点，所给正文未报告为本基准重新训练或微调这些策略。</li>
 <li>作者目标是建立可控的“推理延迟—任务成功率”评测，并据系统延迟与单机器人吞吐量选择更合适的执行模式和动作执行视界。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 16）</span>
+    <a href="/assets/figures/2611.03103.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.03103.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.03103.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.03103.png'">
+    <img src="/assets/figures/2611.03103.png" onerror="this.onerror=null;this.src='../assets/figures/2611.03103.png'" alt="2611.03103 Figure 16 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多模态输入（Multimodal Inputs）</strong>：数据流由左向右展开，模型接收视觉观测 $I_t$ 与语言指令 $l$；视觉信息可表示为图像 token $x_t^{\mathrm{vis}}$，文本经分词后形成 $x^{\mathrm{lang}}$，共同描述当前环境状态与任务目标。</li>
+<li><strong>视觉语言主干（VLM Backbone）</strong>：VLM 对视觉、语言 token 进行跨模态融合与上下文建模，输出条件语义特征 $h_t=\mathrm{VLM}(I_t,l)$。该表征既编码物体、空间关系和场景状态，也保留指令中的任务约束，作为动作预测的统一条件。</li>
+<li><strong>动作专家（Action Expert）</strong>：Action Expert 读取 VLM 特征 $h_t$，将高层视觉语言知识映射到机器人控制空间，建模条件策略 $\pi_\theta(\mathbf a_{t:t+H-1}\mid h_t)$；其输出不是单步决策，而是长度为 $H$ 的连续动作序列。</li>
+<li><strong>机器人动作输出（Robot Action Sequence）</strong>：最终得到 $\mathbf a_{t:t+H-1}=[a_t,\ldots,a_{t+H-1}]$，其中每个 $a_i$ 可包含末端位姿、关节控制量及夹爪指令。该序列交由机器人执行，并在后续观测到来后滚动更新。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 16 Caption）</summary><div class="arch-cap-text">A VLA model combines a VLM backbone with an action expert that predicts a sequence of robot actions.</div></details>
+</div>
+<ul>
 <li>VLALagBench 统一控制五个变量：任务类型、目标运动速度、VLA 策略、推理延迟以及同步/异步执行模式，观察最终任务成功率如何变化。</li>
 <li>每次 VLA 推理输出长度为 \(K\) 的动作块；系统只执行其中一段，执行视界记为 \(H\)。缩短 \(H\) 可更快利用新观测，但会增加推理请求频率。</li>
 <li>同步执行在完成 \(H\) 个动作后发起下一次推理，并在延迟对应的 \(L\) 个控制步内保持位姿和上一条夹爪命令，因此每个执行视界产生 \(I=L\) 个空闲步。</li>
@@ -585,12 +601,12 @@ details.fold .fold-body {
 <ul>
 <li>来自新加坡国立大学、南洋理工大学、斯坦福大学与 NVIDIA 的作者提出 VLALagBench，直接评测包括 \(\pi_{0.5}\) 在内的 VLA 在动态操作中的延迟敏感性，发现 \(100\,\mathrm{ms}\) 延迟可使 \(0.1\,\mathrm{m/s}\) 条件下某任务成功率由 71.5% 降至 40.5%，并以 RMSE 5.7%–7.8% 的经验模型辅助选择执行模式与动作视界。</li>
 </ul></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.03103" data-title="VLALagBench">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.03103" data-title="2611.03103">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.03103 · VLALagBench</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.03103 · 2611.03103</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -600,7 +616,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《VLALagBench》</strong>（arXiv: 2611.03103）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.03103》</strong>（arXiv: 2611.03103）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

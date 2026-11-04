@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Serving Agentic Robot Fleets</title>
+<title>深读｜2611.01404</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.01404" rel="noopener noreferrer" target="_blank">arXiv 2611.01404</a></span><span class="badge">深读</span></div>
-<h1>深读｜Serving Agentic Robot Fleets</h1>
+<h1>深读｜2611.01404</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.01404" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>现有机器人服务研究主要关注动作模型的 deadline、多模型执行和 GPU 共享；Agent 服务研究则关注工具调用间隙中的 KV 保留与缓存抖动。两者尚未共同回答：一个 GPU 集群究竟能稳定服务多少台持续运行的智能体机器人。</li>
 <li>论文研究的是仿真轨迹及其服务器回放，而非提出或训练新策略：任务来自 LIBERO-PRO，GPT-6-Astra 通过 RPent 调用感知、几何、脚本运动及 LIBERO 微调的 π0.5；脑服务则用 Qwen3.6-27B 代理并在真实 vLLM 引擎上回放。</li>
 <li>作者目标是建立可测量的双层容量模型，找出系统何时受 VLA 截止期限制、何时受脑模型 KV 工作集限制，并验证简单准入控制能否恢复持续机器人集群的吞吐。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2611.01404.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01404.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.01404.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01404.png'">
+    <img src="/assets/figures/2611.01404.png" onerror="this.onerror=null;this.src='../assets/figures/2611.01404.png'" alt="2611.01404 Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>机器人程序（Robot program）</strong>：左侧程序执行感知、工具调用与环境交互；在第 $i$ 轮形成上下文 token 序列 $C_i$，并依据工具决策分别触发脑服务或 $\pi_{0.5}$ VLA 服务，构成具有严格先后依赖的闭环请求流。</li>
+<li><strong>脑服务（Brain serving）</strong>：上行“Context request”携带持续增长的前缀，满足 $C_{i-1}\prec C_i$；服务端复用前缀对应的 KV-cache，并生成长度为 $o_i$ 的“Tool decision”返回程序。实验以保持长度与精确前缀关系的随机 token 在 vLLM 上重放，Qwen3.6-27B 仅代理计算及缓存成本。</li>
+<li><strong>VLA 服务（VLA serving）</strong>：下行“VLA tool call”将视觉观测与任务指令送入 $\pi_{0.5}$，输出动作块 $A_t=(a_t,\ldots,a_{t+H-1})$，再以“Action result”回传。其采用 FCFS 批处理，每台机器人至多保留一个未完成请求，并可预取动作块以降低控制饥饿。</li>
+<li><strong>独立 GPU 池与回放控制</strong>：Brain 与 VLA 位于分别剖析的 GPU 服务池；脑请求完成后等待原轨迹环境间隔 $\Delta t_i$ 再发下一轮。episode 边界的准入上限 $K$ 约束活跃程序数，从而抑制增长 KV 工作集引发的缓存抖动。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Context request / serving overview for brain and VLA workload in the paper.</div></details>
+</div>
+<ul>
 <li>整体流程为：采集完整机器人程序轨迹 → 分别剖析 π0.5 动作层和脑模型服务成本 → 按原始上下文增长、输出长度及环境步间隔，在 vLLM 上重放依赖请求 → 测量截止期违约、缓存命中、请求吞吐和完整 episode 吞吐。</li>
 <li>对每个虚拟机器人保留其上一轮的精确 token 前缀，并按轨迹新增输入长度和输出长度发起下一轮请求；响应完成后，再等待原轨迹记录的环境步间隔，从而保留程序内部的依赖关系和调用节奏。</li>
 <li>回放不复现 GPT-6-Astra 的语义内容，而使用保持输入长度及精确前缀关系的随机 token ID；Qwen3.6-27B 只作为可控的计算与 KV-cache 成本代理。论文没有声称该代理复现 Astra 的输出质量。</li>
@@ -584,12 +600,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>华为的 Sida He 通过 80 个 LIBERO-PRO episode 证明，π0.5 机器人集群会在动作截止期与脑模型 KV 工作集之间切换瓶颈，而 episode 级准入可将持续回放的完整程序吞吐从 1.30 提升至 5.00–5.55 episode/分钟。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.01404" data-title="Serving Agentic Robot Fleets">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.01404" data-title="2611.01404">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.01404 · Serving Agentic Robot Fleets</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.01404 · 2611.01404</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -599,7 +615,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Serving Agentic Robot Fleets》</strong>（arXiv: 2611.01404）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.01404》</strong>（arXiv: 2611.01404）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

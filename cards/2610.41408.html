@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜SACQ</title>
+<title>深读｜2610.41408</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41408" rel="noopener noreferrer" target="_blank">arXiv 2610.41408</a></span><span class="badge">深读</span></div>
-<h1>深读｜SACQ</h1>
+<h1>深读｜2610.41408</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41408" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,22 @@ details.fold .fold-body {
 <li>现有 GPTQ、GPTVQ、AQLM、QuIP# 等方法主要优化层内重建；QVLA、ActQuant、HBVLA、QuantVLA 已开始引入动作敏感度或 DiT 结构，但尚未同时覆盖投影功能角色、最终动作误差和超低比特码本优化。</li>
 <li>本文研究无需全量重训练的权重量化：在 GR00T N1.7 上压缩语言骨干与动作头权重，并用机器人任务成功率评估；提供的原文未披露完整 rollout 次数、是否真机执行以及全部闭环协议。</li>
 <li>作者目标是在平均约 1–2 bit/weight 的极低精度下维持 VLA 的动作质量和任务成功率，同时显著降低模型内存，并在进一步量化激活与注意力后获得实际推理加速。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.41408.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41408.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41408.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41408.png'">
+    <img src="/assets/figures/2610.41408.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41408.png'" alt="2610.41408 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>图表性质</strong>：Figure 1 的题注仅为 “GR00T N1.7 success rate on LIBERO”，表明该图展示的是 GR00T N1.7 在 LIBERO 基准上的成功率评测，而非包含输入、编码器、策略头及动作输出的数据流模型结构图。</li>
+<li><strong>评测对象与指标</strong>：图中核心对象应为策略模型 GR00T N1.7，输出指标为任务成功率 $S=N_{\mathrm{success}}/N_{\mathrm{total}}$；LIBERO 通常按任务或任务套件汇总结果，但现有题注未给出横纵轴、对比方法、误差条或具体数值，不能据此准确还原。</li>
+<li><strong>结构信息边界</strong>：原图题注与所给“方法上下文”均未提供模块英文名称、输入输出张量、特征表示或 Stage I $\rightarrow$ Stage II 流程，因此无法可靠写出逐模块结构详解；若补充 Figure 1 原图或论文方法章节，方可按真实标注解析视觉输入、语言条件、策略表示与动作预测链路。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">GR00T N1.7 success rate on LIBERO</div></details>
+</div>
+<ul>
 <li>整体流程分为三步：先按投影在下游计算中的功能角色拟合向量码本，再依据最终解码动作误差分配各层位宽，最后进行“索引重分配＋动作级校准”的两阶段量化后优化，输出可直接替代原权重的低比特表示。</li>
 <li>结构感知码本拟合不只重建单个线性层输出，而是近似其下游扰动：query/key 关注 attention logits，value 同时考虑注意力概率和输出投影，gate/up 考虑 SwiGLU 非线性及 down projection，DiT 动作头还针对交叉注意力、GELU 与 AdaLN 构造对应度量。</li>
 <li>为使码本优化可分解，方法保留每个四维权重向量内部的输入相关性，但舍弃跨输出通道及跨向量项；输出通道的敏感度以对角权重进入二次型，未建模的跨向量误差留给后续二阶补偿处理。</li>
@@ -581,12 +596,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>KAIST 的 SACQ 以结构感知码本、最终动作驱动的混合位宽和两阶段量化后校准，将 GR00T N1.7 的语言/动作权重压至平均 1.5 bit，在四套 LIBERO 上保持 93.85% 成功率并把模型内存缩减 4.83 倍，但尚未在 π0、π0.5 或 OpenPI 上验证。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41408" data-title="SACQ">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41408" data-title="2610.41408">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41408 · SACQ</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41408 · 2610.41408</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -596,7 +611,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《SACQ》</strong>（arXiv: 2610.41408）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41408》</strong>（arXiv: 2610.41408）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

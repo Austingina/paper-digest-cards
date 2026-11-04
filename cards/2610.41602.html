@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜DrawSplat</title>
+<title>深读｜2610.41602</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41602" rel="noopener noreferrer" target="_blank">arXiv 2610.41602</a></span><span class="badge">深读</span></div>
-<h1>深读｜DrawSplat</h1>
+<h1>深读｜2610.41602</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41602" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>纯显式 Gaussian 地图容易产生冗余并扩大模型；引入 NeRF、MVS、单目几何或基础模型先验虽可补充几何，却可能增加在线计算和系统复杂度。</li>
 <li>本文设定为在线 RGB-D 室内 SLAM：前端不依赖持续变化的 Gaussian 外观地图，而以显式点线几何估计位姿、稀疏结构和重力方向；后端增量构建隐式神经 Gaussian 地图。</li>
 <li>作者目标是在实际在线效率和紧凑地图规模下，同时提升跟踪鲁棒性、自由视角渲染质量以及室内几何与结构一致性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2610.41602.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41602.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41602.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41602.png'">
+    <img src="/assets/figures/2610.41602.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41602.png'" alt="2610.41602 Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>在线输入与跟踪前端（Tracking Front-end）</strong>：按从左到右接收 RGB-D 帧 $\{I_t,D_t\}$，联合提取并关联点特征与线特征，估计相机位姿 $\mathbf T_t\in\mathrm{SE}(3)$；同时依据视角与共视关系选择关键帧，并将二维观测反投影为稀疏三维点集 $\mathcal P$ 和线集 $\mathcal L$。</li>
+<li><strong>显式几何建图（Explicit Point-Line Geometry）</strong>：持续融合跟踪后的 $\mathcal P,\mathcal L$，以点提供稳定重投影约束、以线提供室内结构方向线索，形成稀疏 3D geometry map；该显式地图既支撑后续帧定位，也向高斯映射后端输送带空间位置的特征。</li>
+<li><strong>隐式高斯解码（Implicit Gaussian Mapping）</strong>：将三维点体素化/散射为 sparse feature grid，并由轻量级 MLP 解码高斯基元 $\mathcal G_i=(\boldsymbol\mu_i,\mathbf\Sigma_i,\mathbf c_i,\alpha_i)$，分别表示中心、协方差、颜色与不透明度；在线增量更新使地图保持紧凑，并通过可微渲染获得照片级重建。</li>
+<li><strong>结构平面约束与联合优化（Structural Plane Regularization）</strong>：三维结构线 $\mathcal L$ 在共享重力方向 $\mathbf g$ 的 Atlanta World 先验下诱导平面 $\Pi_k:(\mathbf n_k^\top\mathbf x+d_k=0)$；平面约束联合正则化高斯中心 $\boldsymbol\mu_i$ 与法向 $\mathbf n_i$，再与渲染及几何误差共同优化，输出几何一致、结构规整的室内高斯地图。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Overview of DrawSplat. {DrawSplat follows a hybrid Gaussian SLAM paradigm: explicit point-line geometry provides stable tracking and structural cues, while the implicit Gaussian map is incrementally updated online for compact, photorealistic, and geometry-consistent reconstruction.} Given an online RGB-D stream, the tracking front-end jointly estimates camera poses, selects keyframes, and builds a sparse 3D geometry map from point and line features. The mapping back-end converts tracked 3D points into a sparse feature grid and decodes implicit Gaussian primitives through lightweight MLPs. Structural 3D lines further induce structural planes constrained by the shared-gravity Atlanta World prior, which regularize Gaussian centers and normals during joint map optimization. The final system produces compact, photorealistic, and structurally consistent indoor reconstructions.</div></details>
+</div>
+<ul>
 <li><strong>整体流程</strong>：输入在线 RGB-D 流，点线联合前端完成特征关联、相机跟踪、关键帧选择、稀疏地图构建和重力估计；后端把关键帧几何组织成锚点网格，解码局部 Gaussian，并利用线段推断的结构平面联合优化外观与几何。</li>
 <li><strong>点线联合跟踪</strong>：在点式 SLAM 前端上增加线特征，联合最小化点和线的二维重投影残差及 RGB-D 反投影得到的三维几何残差。点提供纹理区域的局部对应，线则覆盖墙体边界、门框、地面边界和天花板轮廓等弱纹理结构。</li>
 <li><strong>Atlanta World 结构先验</strong>：不同房间可具有不同水平主方向，但共享同一重力方向；系统由持续跟踪的三维线段和重力线索推断结构平面，比要求全场景共享单一水平坐标系的 Manhattan World 更适合多房间布局。</li>
@@ -582,12 +598,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>DrawSplat 由日本东北大学主导、理化学研究所 AIP 等机构参与，以 Atlanta World 引导点线前端和锚点式隐式 Gaussian 后端，在 Replica 多房间 Apartment 上相对次优基线降低 60% 轨迹误差、在 ScanNet 上提升 2.54 dB 渲染质量，但论文所给片段未报告可对应的导航 SR/SPL。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41602" data-title="DrawSplat">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41602" data-title="2610.41602">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41602 · DrawSplat</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41602 · 2610.41602</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -597,7 +613,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《DrawSplat》</strong>（arXiv: 2610.41602）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41602》</strong>（arXiv: 2610.41602）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

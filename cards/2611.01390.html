@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Same Path, Less Time</title>
+<title>深读｜2611.01390</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.01390" rel="noopener noreferrer" target="_blank">arXiv 2611.01390</a></span><span class="badge">深读</span></div>
-<h1>深读｜Same Path, Less Time</h1>
+<h1>深读｜2611.01390</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.01390" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,22 @@ details.fold .fold-body {
 <li>即使消除推理停顿，异步执行通常仍按缓慢、谨慎的遥操作示范速度运行；已有免训练加速方法则多假设同步执行，无法直接处理推理期间机器人已沿旧动作块继续前进的问题。</li>
 <li>简单叠加“异步执行”和“动作加速”会错配新动作块的计划起点与机器人实际进度，造成重复或跳过运动。文中的开发集案例中，异步 FreeSpeed 使 π0.5 在 LIBERO-Spatial 上从 45/50 降至 20/50。</li>
 <li>本文研究仿真中的闭环动作分块执行：策略权重完全冻结，推理在后台进行，机器人持续执行并周期性重规划。目标是在尽量保持策略规划路径与成功率的同时，同时消除推理停顿和示范速度限制，最大化单位时间任务吞吐量。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 4）</span>
+    <a href="/assets/figures/2611.01390.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01390.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.01390.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01390.png'">
+    <img src="/assets/figures/2611.01390.png" onerror="this.onerror=null;this.src='../assets/figures/2611.01390.png'" alt="2611.01390 Figure 4 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>a｜同策略同回合时序对比</strong>：输入为冻结策略 $\pi_{0.5}$ 在 LIBERO-Long 上生成的同一初态、同一随机种子轨迹；各列按相同墙钟时刻对齐，每步为 $50\,\mathrm{ms}$。Sync-$1\times$ 每次推理均暂停控制，时间轴标出阻塞步；Async-$1\times$ 以异步执行消除停顿，但运动速度仍受示范节奏约束；PTS 同样无停顿，并以更高速度沿已规划路径推进。</li>
+<li><strong>b｜成功率—耗时权衡</strong>：在完整 $\pi_{0.5}$ 测试集上，将任务成功率 $P$ 与平均单次尝试时长 $\mathbb{E}[T]$ 联合绘制；灰色等值线对应相同吞吐率 $\Theta=1000P/\mathbb{E}[T]$，因此越靠近高成功率、低耗时区域，部署效率越高。该面板同时区分“减少推理阻塞”和“提高轨迹遍历速度”带来的收益。</li>
+<li><strong>c｜跨模型汇总吞吐率</strong>：将 PTS 在不同模型上的吞吐率 $\Theta$ 汇总，并逐一对比各模型最强的可部署基线；输入是各方法测得的 $P$ 与 $\mathbb{E}[T]$，输出为统一吞吐指标，用于检验其加速是否可跨策略复现，而非仅对单个 $\pi_{0.5}$ 或单条回合有效。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 4 Caption）</summary><div class="arch-cap-text">Same policy, same episode, less time. a,~Frozen \pifive{} on a LIBERO-Long task (same initial state and seed; columns at equal times, counted in 50\,ms control steps; the time line marks steps halted for inference). Stop-and-wait (Sync-1$\times$) halts at every inference, asynchronous execution (Async-1$\times$) never halts but stays at demonstration speed, and \pts{} never halts and traverses the planned path faster. b,~Success rate versus mean attempt duration on the full \pifive{} test set; gray lines have equal throughput $\Theta=1000\,P/\E[T]$. c,~Pooled throughput of \pts{} against the strongest deployable baseline of each model.</div></details>
+</div>
+<ul>
 <li>整体 pipeline：冻结 VLA 根据最新观测生成相对末端执行器动作块；路径层决定新动作块的解码方式和接入位置，时间层决定沿该路径的执行速率与控制命令；后台推理期间控制循环不停止。</li>
 <li>路径层采用“滚动续接”：请求推理后，记录机器人在等待结果期间已经消耗的计划进度 \(m\)，新动作块到达时直接从第 \(m\) 个计划步接入，而不是从头执行，避免重放已经完成的位移。</li>
 <li>对流匹配 VLA 使用从 \(x_1=0\) 出发的一步确定性 Euler 解码，得到 \(A&#x27;=-v_\theta(0,1\mid o&#x27;)\)。这不要求精确恢复条件均值，但可去除每次切换重新随机采样带来的执行方差，并缩短推理延迟。</li>
@@ -582,12 +597,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>Fuyi Chen（University of Nottingham Ningbo China）提出免训练执行层 PTS，在冻结 π0.5 与 SmolVLA 的 LIBERO 延迟评测中，通过按已消耗进度续接并沿计划路径安全加速，使汇总任务吞吐量相对最强可部署基线分别提升 33% 和 104%。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.01390" data-title="Same Path, Less Time">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.01390" data-title="2611.01390">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.01390 · Same Path, Less Time</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.01390 · 2611.01390</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -597,7 +612,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Same Path, Less Time》</strong>（arXiv: 2611.01390）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.01390》</strong>（arXiv: 2611.01390）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

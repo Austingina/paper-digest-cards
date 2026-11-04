@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜RTPolicy</title>
+<title>深读｜2610.41625</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41625" rel="noopener noreferrer" target="_blank">arXiv 2610.41625</a></span><span class="badge">深读</span></div>
-<h1>深读｜RTPolicy</h1>
+<h1>深读｜2610.41625</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41625" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>现有视觉运动策略的开销来自三个相互耦合的环节：大型视觉骨干、多视角视觉条件，以及扩散或流模型的多次迭代采样。已有加速方法往往只减少动作生成步数，没有同步压缩视觉编码与多视角条件路径。</li>
 <li>论文同时考察 RoboTwin 2.0 仿真基准和真实双臂平台，采用多视角 RGB 与机器人状态输入，闭环、异步流式执行动作块；DINOv3 ConvNeXt 视觉编码器在策略训练中冻结。</li>
 <li>作者目标是在保留精细操作能力的同时，联合降低视觉编码、多视角条件和动作生成成本，使策略能够在边缘设备上实时运行。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.41625.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41625.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41625.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41625.png'">
+    <img src="/assets/figures/2610.41625.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41625.png'" alt="2610.41625 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多视角输入与轻量编码</strong>：策略在控制步 $t$ 接收 $V$ 路图像 $\{I_t^{(v)}\}_{v=1}^{V}$ 和状态前缀 $S_t\in\mathbb{R}^{T_o\times d_a}$；冻结的 DINOv3 ConvNeXt 编码器逐视角提取稠密特征 $F_t^{(v)}=E(I_t^{(v)})\in\mathbb{R}^{P\times d_v}$，仅训练后续视觉适配与动作模块。</li>
+<li><strong>View-Aware Feature Fusion（视角感知融合）</strong>：各视角 token 加入可学习视角嵌入 $e_v$，先经单块 Intra-view Transformer 得到 $R_t^{(v)}=\mathcal{T}_{\mathrm{intra}}(F_t^{(v)}+e_v)$，再沿 token 维拼接，并由 Cross-view Transformer 交换跨相机信息，输出 $\widetilde F_t\in\mathbb{R}^{VP\times d_v}$。</li>
+<li><strong>Visual Compression 与动作生成</strong>：压缩模块将融合后的长视觉序列降维为紧凑条件，并与固定条件 $S_t$共同输入 flow-based action model；模型从噪声动作轨迹出发，以四步流积分逐步去噪，生成仅含未来动作的分块 $A_t\in\mathbb{R}^{H_a\times d_a}$，其中 $\tau\in[0,1]$ 表示流时间。</li>
+<li><strong>计算开销与部署表现</strong>：中图显示 VO-DP 的编码器占总延迟 $52\%$，而 $\pi_{0.5}$ 虽编码器占比更小，却因多视角视觉条件产生更高延迟；底图在 RDK S100/S600 的 INT8 部署中对比端到端延迟与平均成功率，RTPolicy 在两设备上同时取得最高平均成功率和低延迟，成功率采用 GPU 评测配置。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">RTPolicy design, visual encoding cost, and deployment performance. The top panel shows the lightweight encoder, view-aware feature fusion, visual compression, and four-step flow generation. The middle panel shows that VO-DP spends 52\% of its latency on the encoder, while $\pi_{0.5}$ incurs higher latency from multi-view visual conditioning despite a smaller encoder share. The bottom panels report end-to-end latency against mean success rate on the RDK S100 and RDK S600 in INT8. RTPolicy combines the highest mean success rate with low latency on both devices. The success rates use the GPU evaluation configuration rather than per-device task evaluations.</div></details>
+</div>
+<ul>
 <li><strong>整体流程</strong>：多视角图像先经冻结的 DINOv3 ConvNeXt 提取稠密特征，再经视角感知融合与视觉压缩形成紧凑条件；机器人状态前缀、压缩后的视觉 token 和流时间共同条件化 DiT，输出未来动作块。</li>
 <li><strong>视角感知融合</strong>：为每个相机视角加入可学习的 view embedding；先用参数共享的单层 Transformer 分别处理各视角，再用另一单层 Transformer 在拼接后的稠密序列上进行跨视角交互。跨视角融合发生在压缩之前，以免过早丢失空间对应信息。</li>
 <li><strong>视觉压缩</strong>：将融合后的 token 按视角恢复为空间网格，分别执行残差下采样和自适应平均池化，再拼接成紧凑视觉条件。虽然压缩逐视角进行，其输入已包含其他视角的信息。</li>
@@ -580,12 +596,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>RTPolicy由苏州大学、D-Robotics、同济大学上海自主智能无人系统科学中心及中国科学院自动化研究所团队提出，通过冻结DINOv3 ConvNeXt、将三视角900个视觉token压缩至12个并以4步流匹配DiT生成动作，在RoboTwin 2.0取得52.26%平均成功率、真实双臂平台取得72.0%，并在RDK S600 INT16上达到30.35 ms（32.9 Hz）。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41625" data-title="RTPolicy">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41625" data-title="2610.41625">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41625 · RTPolicy</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41625 · 2610.41625</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -595,7 +611,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《RTPolicy》</strong>（arXiv: 2610.41625）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41625》</strong>（arXiv: 2610.41625）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

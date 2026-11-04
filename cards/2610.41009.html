@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜STAR</title>
+<title>深读｜2610.41009</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41009" rel="noopener noreferrer" target="_blank">arXiv 2610.41009</a></span><span class="badge">深读</span></div>
-<h1>深读｜STAR</h1>
+<h1>深读｜2610.41009</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41009" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>现有免训练干预多作用于扩散/流轨迹、动作解码或视觉 token；它们没有直接处理 Transformer 后层动作隐藏状态中的视觉信息流失，部分方法还需要额外前向传播。</li>
 <li>本文面向闭环机器人操作，在不收集额外数据、不训练参数、不修改模型权重与架构的前提下，对冻结 VLA 的单次推理过程进行干预；策略仍按 action chunk 预测并执行其中前若干步。</li>
 <li>作者目标是让后层动作表征保留早中层形成的目标感知信息，同时避免在旋转、接触变化和精细调整阶段过度干预原策略，从而提高冻结 VLA 的任务成功率。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 5）</span>
+    <a href="/assets/figures/2610.41009.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41009.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41009.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41009.png'">
+    <img src="/assets/figures/2610.41009.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41009.png'" alt="2610.41009 Figure 5 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>本体感知历史输入</strong>：在动作生成步 $t$，模型首先汇聚截至当前时刻的 proprioceptive history（本体感知历史），形成刻画机器人运动状态及短期动态的历史特征；该分支不直接预测动作，而是为当前步计算自适应平滑强度。</li>
+<li><strong>步级 EMA 系数估计</strong>：历史特征被映射为 step-level EMA coefficient $\beta_t$。图中蓝色箭头表示 $\beta_t$ 的生成与传递；同一时间步内，各网络层共享该系数，从而依据当前运动状态统一调节信息保留与更新幅度。</li>
+<li><strong>逐层动量更新</strong>：对第 $\ell$ 层，模型将该层的新更新量与跨层传入的 update momentum 进行 EMA 混合，可概括为 $m_t^{(\ell)}=\beta_t m_t^{(\ell-1)}+(1-\beta_t)\Delta h_t^{(\ell)}$。粉色箭头表示跨层传播的更新动量，使早期层的更新连续影响后续层。</li>
+<li><strong>动作生成输出</strong>：混合后的 $m_t^{(\ell)}$ 逐层注入隐藏特征，最终由末层动作头产生时刻 $t$ 的 action。较大的 $\beta_t$ 强化历史动量与层间一致性，较小的 $\beta_t$ 则提高当前层新信息的占比，实现状态自适应的动作平滑。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 5 Caption）</summary><div class="arch-cap-text">Overview of action generation at step $t$. \algo estimates a step-level EMA coefficient $\beta_t$ from proprioceptive history and applies it to layer-wise updates. Blue arrows denote the EMA coefficient $\beta_t$ derived from proprioceptive history, while pink arrows denote the cross-layer update momentum used in the EMA mixing.</div></details>
+</div>
+<ul>
 <li>整体流程为：VLA 接收图像、语言指令和当前本体状态，正常通过前部 Transformer 层；STAR 在最后一段层中混合跨层残差更新，再由原动作头输出 action chunk。模型参数、动作头和原有输入输出接口均保持不变。</li>
 <li>STAR 将每个 Transformer block 的输出视为残差更新 \(\Delta h_t^k\)，在后层沿网络深度维护指数移动平均 \(m_t^k=\beta_t m_t^{k-1}+(1-\beta_t)\Delta h_t^k\)，并以该平滑更新替代当前层原始残差更新。</li>
 <li>这种跨层“动量”把较早、目标感知更强的更新方向带到靠近动作输出的层；STAR不修改注意力图，也不是通过裁剪视觉 token 或重新采样动作来实现引导。</li>
@@ -578,12 +594,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>STAR由北京大学、理想汽车、BIGAI和威斯康星大学麦迪逊分校作者提出，以本体状态调节最后三分之一 Transformer 层的跨层残差 EMA，在冻结 VLA、无需训练和改权重的条件下增强后层目标感知，并在主实验中将平均任务成功率提高 4.0 个百分点。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41009" data-title="STAR">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41009" data-title="2610.41009">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41009 · STAR</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41009 · 2610.41009</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -593,7 +609,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《STAR》</strong>（arXiv: 2610.41009）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41009》</strong>（arXiv: 2610.41009）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜UniGS-SLAM</title>
+<title>深读｜2611.02051</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.02051" rel="noopener noreferrer" target="_blank">arXiv 2611.02051</a></span><span class="badge">深读</span></div>
-<h1>深读｜UniGS-SLAM</h1>
+<h1>深读｜2611.02051</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.02051" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>现有语义高斯 SLAM 常把标签或特征直接绑定到会被优化、分裂和裁剪的 Gaussian primitive 上，导致同一物理表面的语义支撑不稳定，并增加语义优化、存储与渲染开销。</li>
 <li>Gaussian–voxel 混合方法虽能提供更稳定的语义融合单元，但多数依赖 RGB-D 和给定位姿；当后端更新历史位姿或深度时，已经融合的旧语义证据通常不会随之修正。</li>
 <li>本文面向校准单目 RGB 序列，不使用输入深度或给定位姿，目标是在统一在线 SLAM 流程中兼顾可靠跟踪、高质量几何与渲染、可修订的开放词汇语义地图及重建效率。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.02051.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02051.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.02051.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02051.png'">
+    <img src="/assets/figures/2611.02051.png" onerror="this.onerror=null;this.src='../assets/figures/2611.02051.png'" alt="2611.02051 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入与几何先验（Foundation Geometry Priors）</strong>：从标定单目 RGB 序列 $\{I_t\}$ 出发，将近期跟踪关键帧与可靠历史视图组成预测窗口；依据位姿 $(R_i^F,\mathbf t_i^F)$ 计算平移—旋转距离 $d(i,j)$，选择兼具重叠与几何多样性的上下文。</li>
+<li><strong>单目高斯 SLAM（Geometry-Enhanced Monocular Gaussian SLAM）</strong>：通过锚点对齐消除跨窗口尺度与位姿不一致，并执行置信度感知深度融合和长时程位姿引导，联合优化相机轨迹及 Gaussian Map，重建场景几何与 RGB 外观。</li>
+<li><strong>开放词汇语义融合（Independent Sparse Voxel Map）</strong>：在已估计几何上，将各帧开放词汇语义观测投影并融合至独立稀疏体素地图；当几何或位姿更新时重新关联观测、修正历史语义证据，避免语义直接绑定高斯造成的累积误差。</li>
+<li><strong>语义反馈与三维理解（Semantic Feedback）</strong>：体素语义地图反向指导 Gaussian floater filtering 与 surface refinement，剔除漂浮高斯并细化表面；最终同时输出高质量几何、开放词汇三维语义及相机轨迹，支持 3D scene understanding。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Our RGB-only framework reconstructs detailed geometry and open-vocabulary semantics (left), achieves strong quality and efficiency (middle), and supports 3D scene understanding (right).</div></details>
+</div>
+<ul>
 <li><strong>整体流程</strong>：输入校准后的单目 RGB 序列，以高斯地图表示几何与外观，以独立稀疏体素地图表示开放词汇语义；基础模型几何先验先增强跟踪和重建，几何结果用于语义提升与融合，融合后的语义再反向帮助清理和细化高斯地图。</li>
 <li><strong>基础几何先验接入单目 SLAM</strong>：从近期跟踪关键帧和可靠历史视图中选择兼顾重叠与几何多样性的上下文，通过历史锚点及重叠观测对齐不同预测窗口，缓解基础模型跨窗口的尺度和位姿不一致。</li>
 <li><strong>置信度感知深度融合</strong>：将基础模型深度对齐到局部 SLAM 尺度，依据预测置信度及其与 SLAM 深度的对数域一致性决定融合权重；拒绝不可靠预测，并用平滑残差尺度校正补偿低频对齐偏差，再以融合深度初始化和优化 Gaussian primitive。</li>
@@ -574,12 +590,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>UniGS-SLAM 由上海交通大学、香港科技大学（广州）与 XGRIDS 提出，以单目 RGB 构建可相互修正的高斯几何和开放词汇体素语义地图，在 Replica/ScanNet 分别取得 <strong>89.84/52.86 的几何 F-score</strong>、在 KITTI-360 取得 <strong>1.366 ATE</strong>，并报告相对最快对比语义 SLAM <strong>2.37×</strong> 的重建加速。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.02051" data-title="UniGS-SLAM">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.02051" data-title="2611.02051">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.02051 · UniGS-SLAM</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.02051 · 2611.02051</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -589,7 +605,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《UniGS-SLAM》</strong>（arXiv: 2611.02051）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.02051》</strong>（arXiv: 2611.02051）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

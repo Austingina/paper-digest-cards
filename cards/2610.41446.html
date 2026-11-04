@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Beyond Trial-and-Error</title>
+<title>深读｜2610.41446</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41446" rel="noopener noreferrer" target="_blank">arXiv 2610.41446</a></span><span class="badge">深读</span></div>
-<h1>深读｜Beyond Trial-and-Error</h1>
+<h1>深读｜2610.41446</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41446" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>CityNav 等任务的指令包含道路、地标、街区及相对方位关系，但已有方法往往只把地理信息用于路径规划，没有主动决定“还需要观察什么证据”来区分竞争目标，容易误定位或过早停止。</li>
 <li>论文采用 CityNav 标准空中 VLN 设定：无人机接收俯视 RGB-D、当前位姿和语言指令，在连续导航过程中闭环选择移动或停止动作；同时可以访问地理实体名称及其空间轮廓。提供的原文节选未说明策略权重是否冻结。</li>
 <li>作者目标是把反应式试错搜索改造成地理空间先验驱动的主动推理，在零样本条件下提高城市级目标定位的成功率与停止决策可靠性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.41446.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41446.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41446.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41446.png'">
+    <img src="/assets/figures/2610.41446.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41446.png'" alt="2610.41446 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入与地理先验约束（Geospatial Prior）</strong>：框架接收语言指令 $I$、无人机当前观测 $o_t$ 与位姿 $p_t$；GeoReasoner 在实际搜索前检索并推理地理空间知识 $K_{\mathrm{geo}}$，形成候选目标假设集 $\mathcal{H}_0=\{h_i\}$，再以先验一致性筛得 $\mathcal{H}\subseteq\mathcal{H}_0$，区别于仅依赖被动观测试错的 reactive Aerial VLN。</li>
+<li><strong>目标假设推理（Goal Hypothesis Reasoning）</strong>：将指令语义、视觉证据与候选地点属性联合编码，为每个 $h_i$ 计算后验分数 $P(h_i\mid I,o_{\le t},K_{\mathrm{geo}})$；该模块输出竞争假设及其置信度，而非直接锁定单一目标，从而显式缩小搜索空间。</li>
+<li><strong>主动辨别证据获取（Active Evidence Acquisition）</strong>：针对当前难以区分的候选，策略 $\pi(a_t\mid s_t,\mathcal{H})$ 选择最具信息增益的航行动作 $a_t$，主动获得新观测 $o_{t+1}$，并递归更新各假设后验，实现“为消歧而观察”而非盲目探索。</li>
+<li><strong>多源一致性验证与停止（Multi-source Consistency Verification）</strong>：终止前联合核验视觉、语言、地理位置及空间关系证据；仅当最优假设 $h^\*$ 的跨源一致性 $C(h^\*)$ 与置信度均超过阈值时输出目标并停止，否则返回主动搜索环路继续取证。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of our framework. Unlike conventional reactive Aerial VLN methods that search for the goal through trial-and-error from passively acquired observations, GeoReasoner exploits geospatial knowledge as a prior before search to constrain the goal hypothesis space, actively acquires discriminative evidence to resolve competing goal hypotheses, and verifies multi-source consistency before stopping.</div></details>
+</div>
+<ul>
 <li>整体由三个阶段组成：搜索前地理空间推理先构造区域级目标假设，假设驱动的主动探索再生成并区分物体级候选，最后由一致性感知目标验证决定停止、补充探索或重新规划。</li>
 <li>搜索前阶段将指令拆分为目标描述、地理地标、上下文实体、目标—上下文关系以及地标相关空间约束；随后把道路拐角、邻近、对面、前方等语言关系映射为几何约束，并由 LLM 检查和修正候选搜索区域。</li>
 <li>系统不立即锁定单一区域，而是维护带地理合理性分数的竞争区域假设，并记录各区域已有支持证据和尚未验证的约束。为避免粗糙先验导致过早确认，论文还提出优先挑战较低合理性的区域，同时兼顾访问效率。</li>
@@ -586,12 +602,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>GeoReasoner由东南大学、中国科学院产业人工智能研究院等机构作者提出，通过区域级地理假设、主动判别性取证和多源证据对抗验证，在 CityNav 上获得零样本空中 VLN 新 SOTA，但当前提供的原文节选未披露可核对的 SR、SPL或定位误差数值。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41446" data-title="Beyond Trial-and-Error">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41446" data-title="2610.41446">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41446 · Beyond Trial-and-Error</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41446 · 2610.41446</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -601,7 +617,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Beyond Trial-and-Error》</strong>（arXiv: 2610.41446）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41446》</strong>（arXiv: 2610.41446）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Contact Imitation Interface</title>
+<title>深读｜2610.41028</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41028" rel="noopener noreferrer" target="_blank">arXiv 2610.41028</a></span><span class="badge">深读</span></div>
-<h1>深读｜Contact Imitation Interface</h1>
+<h1>深读｜2610.41028</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41028" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>人本采集允许示教者自然操作，但动作与视觉观测通常绑定于人手形态；机器人本体遥操作、外骨骼或机械连杆能生成机器人兼容数据，却限制手指自由度、依赖特定硬件或需要较高操作熟练度，难以同时兼顾自然示教和跨机器人手复用。</li>
 <li>直接从视觉预测腕部运动与手指关节命令，还要求单个策略同时学习“接触应如何展开”和“机器人如何用自身运动学实现接触”，容易出现腕—指协调不良与接触偏移。</li>
 <li>论文面向真机灵巧操作：从无机器人参与的人手示教构造机器人训练数据，训练闭环、分层的接触轨迹策略，并在 LEAP 与 Wuji 两种灵巧手上验证；其目标是以统一的接触接口提高接触敏感任务的成功率，同时复用同一批人类示教。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.41028.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41028.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41028.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41028.png'">
+    <img src="/assets/figures/2610.41028.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41028.png'" alt="2610.41028 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>人类示范输入（Human Demonstration）</strong>：操作者佩戴共享指尖模块完成接触敏感操作；模块同步采集第一视角图像 $I_t^{h}$、指尖位姿 $T_t^{h}\in\mathrm{SE}(3)$ 与接触状态 $c_t^{h}$，形成示范轨迹 $\tau^{h}=\{I_t^{h},T_t^{h},c_t^{h}\}_{t=1}^{T}$。</li>
+<li><strong>共享指尖模块（Shared Fingertip Modules）</strong>：同一硬件先后安装于人手和不同机器人手，为两端提供一致的接触表面与相机视角，使观测 $I_t^{h}$ 与 $I_t^{r}$、接触变量 $c_t^{h}$ 与 $c_t^{r}$具有直接对应关系；该物理接口减少跨形态迁移中的视觉域差异和接触几何偏差。</li>
+<li><strong>CIMI 技能迁移（Contact-sensitive Skill Transfer）</strong>：CIMI 以人类轨迹 $\tau^{h}$ 为条件，将多指时序关系和局部接触约束映射为机器人执行目标；针对不同手型，通过共享指尖坐标系表达期望运动与接触，使策略 $\pi$ 根据机器人观测 $o_t^{r}=(I_t^{r},q_t^{r},c_t^{r})$ 输出动作 $a_t^{r}=\pi(o_t^{r},\tau^{h})$。</li>
+<li><strong>机器人执行与任务输出（Robot-hand Execution）</strong>：动作序列驱动不同机器人手复现示范中的接触过程，并由指尖相机形成闭环反馈。图下方展示三类结果：可变形物体操作、多指协调及精确接触，强调迁移目标不是仅复刻关节姿态，而是保持任务关键的接触关系与时序。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">CIMI transfers contact-sensitive skills from human demonstrations to robot hands. Shared fingertip modules provide corresponding contact surfaces and camera views for human demonstration and execution across different robot hands. Bottom: tasks involving deformable objects, multi-finger coordination, and precise contact.</div></details>
+</div>
+<ul>
 <li>整体流程为：人佩戴与机器人同构的指尖模块完成自然示教 → 视觉跟踪人手接触面的时序位姿 → 联合优化机器人腕部和手指轨迹 → 重投影场景视角并保留指尖接触视角 → 训练接触面轨迹规划器 → 由控制器把轨迹转换为协调的腕部与手指命令。</li>
 <li><strong>共享接触硬件与观测接口</strong>：人手和机器人手使用具有相同接触面几何、相机相对位置的指尖模块。指尖 RGB 相机直接观察局部接触区域，使示教和执行阶段在接触附近获得对应视角，而不是依赖人手外观与机器人手外观对齐。</li>
 <li><strong>接触优先重定向</strong>：系统跟踪每根受控手指接触面的四个角点，并联合优化机器人腕位姿与手指关节，使机器人接触面的位姿匹配人手示教；平滑正则约束相邻有效帧间的腕平移、旋转及关节变化。与固定腕部以优先匹配场景相机视角的方法不同，CIMI 允许腕部偏离原相机轨迹，以换取更准确的接触对齐。</li>
@@ -578,12 +594,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>CIMI 由新加坡国立大学、RoboScience 与华南理工大学团队提出，以匹配的指尖接触硬件、接触优先重定向和分层接触面轨迹控制跨人手与机器人手迁移灵巧技能，在 LEAP/Wuji 的 6 个手—任务组合上取得 <strong>80.8%</strong> 平均最终阶段成功率，较使用相同视觉输入的直接腕—关节基线提高 <strong>50.0 个百分点</strong>。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41028" data-title="Contact Imitation Interface">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41028" data-title="2610.41028">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41028 · Contact Imitation Interface</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41028 · 2610.41028</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -593,7 +609,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Contact Imitation Interface》</strong>（arXiv: 2610.41028）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41028》</strong>（arXiv: 2610.41028）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

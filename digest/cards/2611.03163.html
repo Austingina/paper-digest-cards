@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜FineCraft</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.03163" rel="noopener noreferrer" target="_blank">arXiv 2611.03163</a></span><span class="badge">深读</span></div>
+<h1>深读｜FineCraft</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.03163" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>细粒度操作不仅要识别正确物体，还要区分瓶盖/瓶身、指定字母或开关颜色等局部目标，并在接近、接触、抓取、搬运、插入等连续阶段中保持指令一致；局部定位误差或中途偏离都可能导致失败。</li>
+<li>通用预训练机器人策略具有视觉与动作先验，但未必能直接满足 MetaFine 对局部感知、指令切换、视觉扰动和多阶段执行的精细要求；单次长动作预测也容易在状态变化后积累误差。</li>
+<li>论文采用已知任务 ID 的设定，为五项任务选择独立适配的策略，并以短动作块、获取新观测后重新规划的方式闭环执行。所给正文未明确说明官方环境属于仿真还是真机，也未完整披露所有骨干参数是否冻结。</li>
+<li>作者目标是通过任务专用适配、精细视觉定位和反馈纠错，提高现有视觉—语言—动作模型在五类细粒度操作任务上的综合成功表现与视觉鲁棒性。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.03163.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.03163.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.03163.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.03163.png'">
+    <img src="/assets/figures/2611.03163.png" onerror="this.onerror=null;this.src='../assets/figures/2611.03163.png'" alt="FineCraft Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入与任务路由（Task Routing）</strong>：每回合重置时，已知任务 ID $\tau\in\{1,\ldots,5\}$ 以 one-hot 门控选择独立策略 $\pi_{\theta_\tau}$。输入为指令 $\ell$ 与历史 $\mathcal O_t$；单帧观测 $o_t=(I_t^{\mathrm{base}},I_t^{\mathrm{wrist}},q_t)$，含两幅 $512\times512$ RGB 图像及九维关节位置。</li>
+<li><strong>双骨干与任务分支（Two Backbone Families）</strong>：五个任务被归入两类骨干并保留 task-specific branches。T1/T5 由 DINOv2 提取双视角空间特征，Heatmap/Visibility Heads 输出关键点及置信度；指令进一步选择 T1 的 cap/body 分支或 T5 的目标字母分支。</li>
+<li><strong>特征融合与动作生成（DiT Policy）</strong>：预测视觉特征、$q_t$、历史动作及目标 one-hot 在两帧窗口内融合；T1 还汇聚瓶盖中心与夹爪邻域特征。Diffusion Transformer 对高斯噪声动作块迭代去噪，生成 $\mathbf A_t=(a_t,\ldots,a_{t+H-1})$，其中 $a_t\in\mathbb R^8$ 控制七个机械臂关节和夹爪。</li>
+<li><strong>执行与闭环重规划（Replanning）</strong>：MoP 为硬路由 $\pi_{\mathrm{MoP}}=\sum_{k=1}^5\mathbf1[\tau=k]\pi_{\theta_k}$；每次仅产生一条动作流，执行前 $K\le H$ 步后获取新观测并重规划。T2/T4 取 $H=K=10$，T3 取 $H=10,K=5$。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">FineCraft as a task-routed mixture of policies (MoP). The task ID selects one independent task policy for the rollout. Two backbone families summarize five task instances, including their task-specific branches. The selected policy generates one action stream and replans from new observations.</div></details>
+</div>
+<ul>
+<li>整体流程为：任务 ID 选择对应策略，策略接收基座相机、腕部相机、机器人本体状态和语言指令，预测动作块；系统只执行其中一部分动作，再用新观测重新预测。</li>
+<li>五项任务共享观测—动作接口，但不是一个统一策略：瓶身/瓶盖抓取与字母插入使用 DINOv2 特征、关键点/可见性预测和 DiT 动作生成；杯子搬运、开关切换与方块分类使用任务专用 LoRA 适配的预训练 π0.5。</li>
+<li>T1 将瓶盖和瓶身建成两个独立分支，由指令选择目标。瓶盖分支额外汇聚瓶盖中心和夹爪附近的局部视觉特征；瓶身分支使用从学习策略困难状态开始的专家续接数据，并排除专家介入前的学习器动作。</li>
+<li>T1 重规划时从三个候选动作块中选择与上一动作块未执行部分差异最小、且代价低于阈值的候选，以减少相邻规划之间的动作跳变；若均不满足阈值，则使用第一个样本。</li>
+<li>T2、T3、T4 保留 π0.5 的视觉—语言及动作模块接口，通过每任务独立的 LoRA 权重和动作归一化统计进行适配；这改变的是任务专用低秩参数，而非训练一个跨任务共享的组合策略。</li>
+<li>T5 由通用策略、收尾策略和 C/o/L 字母专用纠错策略组成。阶段分类器连续两次给出正预测后切换到收尾策略，停滞监测器可进一步触发纠错；阶段只按“通用→收尾→纠错”单向切换。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>FineCraft 在 MetaFine 官方五任务评测中总分为 <code>0.878</code>，排名第四；官方感知、理解、行为三轴均值分别为 <code>0.860</code>、<code>0.887</code>、<code>0.887</code>。</li>
+<li>相比组织方发布的 π0 参考均分 <code>0.430</code>，FineCraft 提高 <code>44.8</code> 个百分点，并在五项任务及每个评测维度上均高于该公开参考。该数字是对组织方公开结果的比较，不是论文重新训练 π0 得到的同场消融。</li>
+<li>杯子搬运 T2 的感知、理解和行为均为 <code>1.000</code>；方块分类 T4 总分 <code>0.987</code>，其中行为分 <code>0.983</code>，覆盖连续完成三次放置的阶段进度，而不只是首次抓取。</li>
+<li>其余任务中，开关切换 T3 得分 <code>0.925</code>，瓶部件抓取 T1 得分 <code>0.796</code>；最困难的字母插入 T5 得分 <code>0.681</code>，其中感知仅 <code>0.594</code>、理解和行为均为 <code>0.725</code>。T5 相对 π0 参考的感知与理解分别提升 <code>56.9</code> 和 <code>67.5</code> 个百分点，但相机与光照扰动仍比固定场景中的指令变化更难。</li>
+<li>T1 本地诊断中，在相同排序的场景种子上，瓶身指令成功 <code>70/80</code>，瓶盖指令成功 <code>72/80</code>；加入瓶盖相机和光照扰动测试后，共计 <code>720</code> 次 rollout，感知分 <code>0.874</code>、综合分 <code>0.883</code>，且相机扰动下的成功曲线面积低于光照扰动。</li>
+<li>T3 的本地继续训练实验覆盖三个开发组；每个模型在 <code>60</code> 个场景上执行 <code>540</code> 次 rollout，平均分由 <code>0.841</code> 提升到 <code>0.894</code>。不过该结果同时改变了训练数据规模和训练时长，不能单独归因于其中一个因素。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>系统依赖已知任务 ID 路由到五个独立适配策略，T1 和 T5 内部还包含目标分支或纠错子策略；因此结果不能证明存在一个可复用、可组合的统一交互表示，也不能证明对未见任务组合的零样本泛化。</li>
+<li>官方结果与组织方发布的 π0 数字比较，但论文没有报告同一代码、数据和训练预算下的 π0、π0.5 全量微调、LoRA 及 DINOv2-DiT 对照；各组件的独立贡献因而难以拆分。</li>
+<li>T3 的适配研究将扩充数据与继续训练绑定在一起；T5 也没有分别报告阶段分类器、停滞检测器和字母专用纠错策略的消融，现有证据不足以量化每个机制带来的增益。</li>
+<li>论文评估了固定场景下改变指令，但没有置零、反向或交换几何条件的干预实验，也没有测试策略是否在执行全过程持续服从条件，而非仅把指令当作任务或分支 ID。</li>
+<li>可继续构造“物体×目标×方向×场景”的交叉训练矩阵，并留出未见组合；在相同初始状态下交换目标或运动场，逐帧评估目标跟随、错误放置、重规划恢复和停滞恢复，而不只统计最终任务分数。</li>
+<li>可将 FineCraft 的 π0.5-LoRA 执行器作为强基线，额外输入统一的 G 或 A/F 条件，并比较“仅语言”“语言+G”“G 置零/反向/交换”以及视觉预测 G，检验预训练策略是否真正利用交互几何。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>任务：T1 瓶盖/瓶身抓取、T2 杯子搬运、T3 红/蓝开关切换、T4 方块分类与连续放置、T5 指定字母插入。</li>
+<li>官方评测采用 MetaFine 的感知 <code>P</code>、理解 <code>U</code>、行为 <code>B</code> 三轴：感知为相机与光照扰动成功曲线的归一化面积均值；理解在固定场景种子上改变指令；行为对单阶段任务评最终成功，对多阶段任务评归一化阶段进度。</li>
+<li>单任务分数为 <code>(P+U+B)/3</code>，总分为五个任务分数的均值；T1、T3、T5 的行为分复用理解评测结果。</li>
+<li>官方数字取自 2026 年 10 月 24 日更新的最终公开排行榜中 HITSZ Robotics 条目；比较基线为组织方发布的 π0 参考分数。</li>
+<li>每步观测包含两张 <code>512×512</code> RGB 图像，分别来自基座相机和腕部相机，以及由九个关节位置表示的本体状态；动作是七个机械臂关节加一个夹爪控制量，共八维。</li>
+<li>T1/T5 使用 DINOv2 空间特征、关键点与可见性预测头和 DiT；动作模型使用两帧观测历史。T1 分为瓶盖与瓶身模型，T5 另有通用、收尾和 C/o/L 专用纠错策略。</li>
+<li>T1 分支和 T5 通用策略预测 <code>16</code> 步动作，每次执行 <code>2</code> 步后重规划；T5 收尾策略预测 <code>8</code> 步，各子策略同样每次执行 <code>2</code> 步。</li>
+<li>T2、T3、T4 使用 π0.5 加任务专用 LoRA 和独立动作归一化统计。T2、T4 各使用 <code>300</code> 条示范、训练 <code>30,000</code> 次更新。</li>
+<li>T2、T4 的动作预测与执行长度均为 <code>H=K=10</code>；T3 预测 <code>H=10</code> 步、执行 <code>K=5</code> 步后重新观测。</li>
+<li>T3 数据包含 <code>864</code> 条轨迹和 <code>88,059</code> 个动作帧；红、蓝指令在相同物理场景中示范，另加入相机与光照扰动场景，训练与推理使用明确的目标颜色提示。</li>
+<li>T3 本地诊断的训练与评测场景种子互斥；每个模型在三个开发组共 <code>60</code> 个场景上执行 <code>540</code> 次 rollout。</li>
+<li>T1 本地测试包含 <code>80</code> 次瓶身、<code>80</code> 次瓶盖指令测试，以及 <code>560</code> 次瓶盖相机/光照扰动测试，共 <code>720</code> 次 rollout。</li>
+<li>所给正文未披露 LoRA 秩、学习率、批大小、全部优化器设置、候选动作块代价阈值、具体 π0.5 检查点名称，以及官方评测环境的仿真/真机属性。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的主要原因不是它提出了统一组合表示，而是它给出了 π0.5 经任务专用 LoRA 适配后，在搬运、开关切换和多次放置任务中的强执行器基线，并展示了短动作块闭环重规划的实际效果。</li>
+<li>论文同时提供固定场景改变指令、瓶盖/瓶身目标切换、视觉扰动和停滞纠错等评测，可用于思考“策略是否真的遵循条件”；但其任务 ID 路由和独立策略结构限制了对组合泛化的证明力。</li>
+</ul>
+<h3 class="sub">与本项目关系</h3>
+<p>FineCraft 与 Austin 项目的直接联系在于：它可作为 OpenPI/π0.5 执行器的参考基线，并说明持续重规划有助于搬运、多次放置和困难状态恢复。差距也很明确：FineCraft 没有统一的 G 或 A/F 交互几何接口，瓶盖/瓶身与不同任务主要通过任务 ID、目标 one-hot 或独立权重切换，也未通过 G 置零、反向、交换等干预证明策略持续遵循几何条件；其数据与评测也未覆盖系统性的物体×目标留出组合。</p>
+<h3 class="sub">启发</h3>
+<ul>
+<li>在同一初始场景中设置不同目标或相反运动方向，分别测试语言、G、A/F 对最终放置位置的控制；除成功率外，记录每次重规划后策略输出是否继续朝目标收敛。</li>
+<li>以 FineCraft 的 π0.5-LoRA 配置为执行器基线，增加 G/A-F 条件后做四组严格对照：正常条件、置零、方向反转、跨样本交换；若动作仅随条件类别离散切换而不随几何连续变化，应视为任务 ID 化而非真正条件遵循。</li>
+<li>将训练数据整理为物体×目标×场景的交叉覆盖矩阵，显式留出未见“物体—目标”组合；分别报告抓取成功、送达正确目标、连续目标跟随和失败恢复，避免抓到物体后错误放置仍被中间阶段分数掩盖。</li>
+<li>借鉴 T5 的阶段与停滞监测，但避免绑定字母专用纠错策略：可用统一的接近、接触、输运、释放阶段监控器触发重规划，再测试它能否跨物体和目标复用。</li>
+<li>对视觉预测的 G 增加在线一致性检查：比较预测物体运动与实际观测到的物体轨迹，当方向持续偏离或物体停止运动时触发重新定位、目标重选或恢复策略。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>来自哈尔滨工业大学（深圳）、西安交通大学、Shenzhen Loop Area Institute 与 HITSZ Robotics 的作者团队，以任务路由的 DINOv2-DiT 和 π0.5-LoRA 策略、短动作块重规划及专用纠错机制在 MetaFine 获得 <code>0.878</code> 总分和第四名，较公开 π0 参考提高 <code>44.8</code> 个百分点，但尚未证明统一交互表示上的组合泛化。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.03163" data-title="FineCraft">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.03163 · FineCraft</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《FineCraft》</strong>（arXiv: 2611.03163）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>

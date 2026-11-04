@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜RoboColosseum</title>
+<title>深读｜2611.02497</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.02497" rel="noopener noreferrer" target="_blank">arXiv 2611.02497</a></span><span class="badge">深读</span></div>
-<h1>深读｜RoboColosseum</h1>
+<h1>深读｜2611.02497</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.02497" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>单站点、单形态基准控制性较强，但难以检验跨环境与跨 embodiment 的稳健性；已有分布式评测则常依赖学生或志愿者，长期运营和条件配对困难。</li>
 <li>本文研究的是闭环真机评测：Open Track 不进行任务专属适配，以盲测、成对、同一局部条件下的 rollout 比较零样本泛化；Fine-tune Track 则允许完整微调，但每个策略在每项任务上只能使用相同的 100 条任务演示。</li>
 <li>作者目标是用统一策略服务、机器人接口和操作协议，把异构真机评测扩展到多站点、多形态规模，同时提高排名的可比性、统计稳定性与物理试验利用效率。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.02497.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02497.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.02497.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02497.png'">
+    <img src="/assets/figures/2611.02497.png" onerror="this.onerror=null;this.src='../assets/figures/2611.02497.png'" alt="2611.02497 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>配对评测输入（Paired Evaluations）</strong>：图从同一任务上的成对结果出发，共含 $N=901$ 次 Open Track 比较；每对分别输入前沿 AI 智能体（frontier AI model）与视觉-语言-动作策略（VLA policy）的归一化任务进度 $p_i^{A},p_i^{V}\in[0,100]\%$，从而消除不同任务量纲差异。</li>
+<li><strong>胜负分类统计（Figure 1a）</strong>：逐对计算 $\Delta_i=p_i^{A}-p_i^{V}$，并按 $\Delta_i&gt;0$、$\Delta_i&lt;0$、$\Delta_i=0$ 映射为“Agent makes more progress”“VLA makes more progress”和“Equal progress”三类。横向堆叠条展示各类占比，条内数字给出对应比较次数，输出整体胜负构成。</li>
+<li><strong>平均进度差（Figure 1b）</strong>：将配对差值聚合为 $\bar{\Delta}=\frac{1}{N}\sum_{i=1}^{N}\Delta_i$，单位为百分点（percentage points）。图中点估计刻画智能体相对 VLA 的平均优势：$\bar{\Delta}&gt;0$ 偏向 Agent，$\bar{\Delta}&lt;0$ 则偏向 VLA。</li>
+<li><strong>不确定性估计（Bootstrap CI）</strong>：对 $N$ 个配对样本进行有放回重采样，重复计算 $\bar{\Delta}^{(b)}$，以其经验分布的分位数构造 $95\%$ bootstrap 置信区间；误差线是否跨越零值线同时反映优势方向与统计稳定性。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Task progress of frontier AI models versus VLA policies. Comparison of normalized task progress across 901 Open Track evaluations, each involving a frontier AI model and a VLA policy on the same task. (a) Percentage of comparisons in which the agent makes more progress, the VLA makes more progress, or both make equal progress. Numbers inside the bars show comparison counts. (b) Mean difference in task progress (agent minus VLA, in percentage points), with 95\% bootstrap confidence intervals. Positive values favor the agent.</div></details>
+</div>
+<ul>
 <li>整体流程为：模型通过本地或远程策略服务接收标准化相机观测和语言任务，输出对应 embodiment 的关节位置动作；现场机器人闭环执行后，由统一标准记录任务成功、部分进度或成对胜负，再汇总为跨站点评测结果。</li>
 <li>RoboColosseum 在 SO-101、Franka DROID、Bimanual-YAM 和 Unitree G1 上分别固定观测与动作接口，使同一 embodiment 内不同策略和站点使用兼容的输入输出规格；它是评测基础设施，而不是新的 VLA 训练架构。</li>
 <li>Open Track 不修改被测模型，也不允许任务专属适配。系统匿名分配两个策略，并在相同机器人、指令、物体、初始布置和超时条件下先后执行，以局部条件匹配降低环境差异造成的混淆；不同配对之间仍可使用不同任务和真实场景。</li>
@@ -586,12 +602,12 @@ details.fold .fold-body {
 <ul>
 <li>由新加坡国立大学等多机构作者团队提出的 RoboColosseum，以 124 个站点的 5,699 次真机配对和四种机器人上的统一微调协议评测物理智能，发现 π0.5 在 Franka 与 Bimanual-YAM 上领先、跨形态排名一致性仅 \(W=0.24\)，并将约 90% 排名一致度所需试验量从均匀采样约 1,000 次降至主动匹配约 400–500 次。</li>
 </ul></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.02497" data-title="RoboColosseum">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.02497" data-title="2611.02497">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.02497 · RoboColosseum</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.02497 · 2611.02497</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -601,7 +617,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《RoboColosseum》</strong>（arXiv: 2611.02497）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.02497》</strong>（arXiv: 2611.02497）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

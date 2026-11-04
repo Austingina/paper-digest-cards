@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜TRACE</title>
+<title>深读｜2610.41275</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41275" rel="noopener noreferrer" target="_blank">arXiv 2610.41275</a></span><span class="badge">深读</span></div>
-<h1>深读｜TRACE</h1>
+<h1>深读｜2610.41275</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41275" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>作者发现，PPO 虽减少了提前丢失目标，却可能把原本的“目标丢失”终局转化为“持续追踪后接触”：在干扰跟踪中，碰撞率由 11.01% 上升到 13.78%。</li>
 <li>论文采用 Habitat 上的 EVT-Bench 仿真闭环设定：每步预测 8 个航点，仅执行第一个航点，经 PD 控制后重新观测与规划；视觉编码器、Qwen3-0.6B 语言骨干和识别适配器保持冻结。</li>
 <li>作者的目标是在保留 PPO 所学跟踪持续性的同时，以低开销、少量运行时干预消除其新增的碰撞风险。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.41275.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41275.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41275.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41275.png'">
+    <img src="/assets/figures/2610.41275.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41275.png'" alt="2610.41275 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>任务输入与监督跟踪器</strong>：每步输入语言指令 $I$ 与第一视角 RGB 历史 $O_t$；Vision Encoder、Qwen3-0.6B Language Backbone 和 Recognition Adapter 联合编码目标身份及视觉上下文，Planner Head 输出航点张量 $W_t\in\mathbb{R}^{8\times3}$，其中 $w_{i,t}=(v_x,v_y,\omega)$。</li>
+<li><strong>规划头强化学习</strong>：SFT 后冻结视觉编码器、语言骨干与识别适配器，仅对 Planner Head 进行 PPO，使机器人在干扰者和身份歧义下更持久地跟随语言指定人物；图 A 强调这种持续性虽减少丢失目标，却会使部分 distracted tracking 轨迹最终发生接触。</li>
+<li><strong>TRACE 风险门控</strong>：图 B 中，TRACE 根据 EVT-Bench 自带检测与身份信息构成的 $84$ 维目标状态线索，对下一动作计算风险分数 $r_t$，并与阈值 $\tau$ 比较；该模块位于 PPO 航点输出与机器人执行器之间，不反向改动跟踪网络。</li>
+<li><strong>选择性动作修正与闭环执行</strong>：若 $r_t&lt;\tau$，首航点 $w_{1,t}$ 原样通过；若 $r_t\ge\tau$，仅缩放平移分量 $(v_x,v_y)$，保持偏航速度 $\omega$ 不变。动作经 PD Controller 执行后重新观测并规划；超过 $98\%$ 的时间步门控不触发。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">The safety cost of persistent following, and the gate that removes it. (A) The robot must keep a language-specified person in view under distractors and ambiguity; PPO on the planner head makes it persist longer, and on distracted tracking part of that persistence ends in contact. (B) \trace{} scores the next action from target-state cues and rescales its translation only when the score crosses a threshold; the action is unchanged on over $98\%$ of steps.</div></details>
+</div>
+<ul>
 <li>整体流程分为三层：监督训练的紧凑 VLA 跟踪器根据语言指令和第一视角 RGB 历史预测航点；PPO 只更新规划头以增强持续跟踪；TRACE 在动作执行前评估风险，并选择性修改下一航点。</li>
 <li>基础策略由视觉编码器、Qwen3-0.6B、视觉到语言空间的识别适配器以及航点规划头组成。后续冻结前三者，仅更新确定性航点均值头、探索项和值函数头，因此不改变策略“认为自己在跟谁”，主要改变对当前身份判断的运动承诺程度。</li>
 <li>PPO 的奖励综合跟随状态、碰撞、与目标的测地距离变化及距离超过 4 m 的惩罚。训练时从规划头输出的高斯分布采样，评测时直接使用均值。</li>
@@ -590,12 +606,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>中国科学院自动化研究所等机构提出的 TRACE 在冻结 Qwen3-0.6B 感知与语言骨干、仅以 PPO 后训练规划头的基础上，通过目标状态风险门控修改不足 2% 的动作，使 EVT-Bench 干扰跟踪碰撞率由 13.78% 降至 9.83%，并将成功率和跟随率分别提高 2.03 和 2.14 个百分点。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41275" data-title="TRACE">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41275" data-title="2610.41275">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41275 · TRACE</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41275 · 2610.41275</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -605,7 +621,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《TRACE》</strong>（arXiv: 2610.41275）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41275》</strong>（arXiv: 2610.41275）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

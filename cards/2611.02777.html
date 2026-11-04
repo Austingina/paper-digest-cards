@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Beyond Policy Patches</title>
+<title>深读｜2611.02777</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.02777" rel="noopener noreferrer" target="_blank">arXiv 2611.02777</a></span><span class="badge">深读</span></div>
-<h1>深读｜Beyond Policy Patches</h1>
+<h1>深读｜2611.02777</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.02777" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>为每个关键阶段训练轻量级 RL 专家可以缩短信贷分配范围，并避免直接对大型 VLA 动作专家做不稳定的 RL 更新，但部署时需要保留额外控制器和策略切换，交接还可能产生动作不连续与抖动。</li>
 <li>直接用专家成功轨迹监督 VLA 仍有两个缺口：单条已执行动作会把专家的随机波动一并当成标签；专家辅助轨迹与学生独立执行时访问的状态分布不同，偏差可能逐步累积。</li>
 <li>本文研究六项真实机器人任务：训练专家时冻结基础 VLA；蒸馏阶段更新 VLA，并以学生闭环执行产生的状态继续修复；最终部署只保留一个 VLA，不保留专家或切换器。目标是在固定真实机器人交互预算下，同时提高成功率、执行效率与控制平滑性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.02777.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02777.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.02777.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02777.png'">
+    <img src="/assets/figures/2611.02777.png" onerror="this.onerror=null;this.src='../assets/figures/2611.02777.png'" alt="2611.02777 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>局部RL专家（Local RL Expertise）</strong>：针对各任务训练局部策略 $\pi_{\mathrm{RL}}^{(k)}$ 及价值函数 $Q_{\mathrm{RL}}^{(k)}(s,a)$；专家把状态—动作轨迹与价值评估作为监督信号，而非在线执行时接管机器人。</li>
+<li><strong>离线初始化（Offline Initialization）</strong>：汇集专家轨迹 $\mathcal D_{\mathrm{off}}=\{(o_t,a_t,Q_t)\}$，以价值引导方式筛选或加权动作，训练视觉—语言—动作策略 $\pi_{\mathrm{VLA}}(a_t\mid o_t,\ell)$，获得可执行的初始通用策略。</li>
+<li><strong>在线蒸馏与在策略修复（Online Distillation / On-policy Repair）</strong>：VLA 独立采样 $a_t\sim\pi_{\mathrm{VLA}}$ 并产生在策略轨迹；局部专家仅通过 $Q_{\mathrm{RL}}(s_t,a_t)$ 评价失败或低价值行为，生成价值引导的修复监督，将纠正动作继续蒸馏回 VLA。</li>
+<li><strong>单策略部署（Single-policy Deployment）</strong>：修复后的 $\pi_{\mathrm{VLA}}$ 统一吸收离线专家知识与在线交互经验；部署阶段仅保留该策略，由图像观测 $o_t$ 和语言指令 $\ell$ 直接输出机器人动作 $a_t$，无需专家切换、路由或接管。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of \method{}. Local RL expertise provides value-guided supervision for offline initialization and on-policy repair. The VLA acts without specialist takeover during online distillation and is deployed as a single policy.</div></details>
+</div>
+<ul>
 <li>整体流程为：人类示范微调得到基础 VLA → 冻结基础 VLA，为各精密阶段训练 RLT 轻量级 MLP actor–critic 专家 → 用专家辅助轨迹做离线初始化 → 让学生独立执行并在其访问状态上做在线修复 → 移除全部专家，部署单一 VLA。</li>
 <li>对每个被标注为关键阶段的观测，选取对应专家，重新采样多个动作块候选；不是直接复制轨迹中当时执行的单个动作。</li>
 <li>专家 critic 对候选动作评分。REPAIR 在每个状态内对评分做均值—标准差归一化，再经温度 softmax 得到权重，从而构造偏向高价值动作的监督分布，降低偶然动作波动被完整继承的风险。</li>
@@ -578,12 +594,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>REPAIR 由中国科学院大学、中国科学院自动化研究所、Striding AI、清华大学、中关村学院和北京理工大学团队提出，通过 critic 加权的多候选流匹配监督及离线—在线蒸馏把阶段性 RL 专家吸收到单一 VLA 中，在六项真实机器人任务各 30 次评测中全部达到 100% 成功率，并较专家接管降低 29.8%–67.5% 的平均末端执行器 jerk。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.02777" data-title="Beyond Policy Patches">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.02777" data-title="2611.02777">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.02777 · Beyond Policy Patches</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.02777 · 2611.02777</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -593,7 +609,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Beyond Policy Patches》</strong>（arXiv: 2611.02777）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.02777》</strong>（arXiv: 2611.02777）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜TinyAstral</title>
+<title>深读｜2610.41216</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41216" rel="noopener noreferrer" target="_blank">arXiv 2610.41216</a></span><span class="badge">深读</span></div>
-<h1>深读｜TinyAstral</h1>
+<h1>深读｜2610.41216</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41216" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>大型规划器虽然具备较强推理与恢复能力，但在线推理计算开销高；直接训练紧凑型端到端 VLA，又往往依赖大规模同分布机器人示范，并可能在扰动和失败恢复场景中退化。</li>
 <li>本文采用闭环工具调用式操控：规划器根据图像、指令、工具反馈和夹爪状态逐步决策，不直接输出底层关节动作；教师权重在 harness 演化期间保持冻结，最终 harness 也在蒸馏和部署阶段冻结。</li>
 <li>作者目标是把大教师在自演化 harness 中形成的推理、工具调用和故障恢复能力迁移给 0.8B–4B 小模型，在尽量保持成功率的同时降低部署推理计算成本。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.41216.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41216.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41216.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41216.png'">
+    <img src="/assets/figures/2610.41216.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41216.png'" alt="2610.41216 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>阶段一—Harness Evolution</strong>：人类预先设定规则、预算与统计门限；冻结教师规划器 $\pi_T$ 经工具、反馈、记忆和恢复模块组成的执行框架 $H$ 产生轨迹。前沿 LLM 智能体 Master 读取轨迹并提出 $H\!\rightarrow\!H'$ 的编辑，全程不更新模型权重。</li>
+<li><strong>配对筛选—Statistical Gate</strong>：候选 $H'$ 与当前 $H$ 在相同 selection seeds 上进行配对 A/B 测试；仅当严格成功率 $S$ 通过预注册统计检验时才接受修改，循环迭代得到最终框架 $H^*$，避免以偶然收益驱动演化。</li>
+<li><strong>阶段二—Trajectory Distillation</strong>：冻结 $H^*$，收集教师在其中执行的完整轨迹 $\tau=\{o_t,\text{reasoning}_t,a_t,r_t\}_{t=1}^{T}$，其中每轮仅生成一个工具调用 $a_t$；数据保留推理、失败反馈与 recovery branches，并与离线真实机器人监督混合，训练 $0.8$B–$4$B 的学生 $\pi_S$。</li>
+<li><strong>部署与评测—Student-in-the-Loop</strong>：以 $\pi_S$ 替换 $\pi_T$，但继续复用同一 $H^*$；规划器决定“做什么”，框架负责感知、抓放几何、无碰规划、闭环纠错及 <code>done</code> 谓词核验。评测覆盖三个训练域、三个未见基准及 SO-ARM101 的三项闭环真机任务。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of \ours. Stage~1: humans specify the rules and budget in advance. A master of frontier LLM agents reads trajectories of the frozen teacher acting through the harness (tools, feedback, memory, recovery) and proposes harness edits, which are accepted only if a paired A/B test on selection seeds passes a pre-registered statistical gate; model weights never change. Stage~2: after evolution ends, we freeze $H^*$ and collect teacher trajectories, including reasoning and recovery branches. These are mixed with offline real-robot supervision to train tiny students (0.8B--4B), which replace the teacher in the same harness. Evaluation covers three training domains and three unseen benchmarks, plus three closed-loop real-robot tasks on an SO-ARM101 arm.</div></details>
+</div>
+<ul>
 <li>TinyAstral 是两阶段 pipeline：先让冻结教师通过可统计检验的递归自改进演化 harness，再冻结最终 harness，采集教师的推理、工具调用与恢复轨迹，训练小型学生替换同一 harness 中的教师。</li>
 <li>智能体每轮接收相机图像、任务指令、近期工具结果和夹爪状态，输出一段 reasoning 及且仅一个工具调用；harness 负责 SAM 3 分割、深度点云、抓放几何、无碰撞运动规划和闭环修正，规划器负责对象、顺序、空间关系及终止判断。</li>
 <li>RSI 阶段只有 harness 被修改。由多个 frontier LLM agent 组成的 master 阅读教师轨迹、把失败归入十类问题，并提出新工具、感知修复、更真实的工具返回、恢复逻辑或局部任务记忆修改；master 本身不直接控制机器人。</li>
@@ -584,12 +600,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>TinyAstral 由华为技术有限公司、华为诺亚方舟实验室及独立研究者的作者团队提出，通过先演化冻结教师的 harness、再蒸馏到同一 harness 中的紧凑规划器，将 RoboTwin 教师严格成功率从 33.4% 提升到 63.6%，并使最终 4B 学生达到 62.8%。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41216" data-title="TinyAstral">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41216" data-title="2610.41216">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41216 · TinyAstral</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41216 · 2610.41216</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -599,7 +615,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《TinyAstral》</strong>（arXiv: 2610.41216）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41216》</strong>（arXiv: 2610.41216）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

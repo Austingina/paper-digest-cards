@@ -523,69 +523,83 @@ details.fold .fold-body {
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.01558" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
-<li>事件相机具有高动态范围、高时间分辨率、低能耗和抗运动模糊优势，适合高速运动、弱光与剧烈光照变化下的地点识别；但事件流只记录亮度变化，空间结构稀疏、语义信息不足，容易造成地点描述符辨识度下降。</li>
-<li>现有事件 VPR 往往使用单一时间窗或帧式事件表示，未充分建模异步事件随时间的演化，因此容易受到运动引起的位置偏移、事件稀疏性和跨帧不稳定影响。</li>
-<li>既有文本增强方法多采用拼接、投影或粗粒度匹配，难以建立事件局部区域、时间变化与词级语义之间的细粒度对应关系。</li>
-<li>本文研究的是基于查询—参考库检索的事件流 VPR，而非带动作输出的 VLN、GoalNav 或闭环机器人导航；所给原文未说明编码器是否冻结，也未报告真机闭环部署。</li>
-<li>作者目标是利用文本语义以及统一的跨模态、跨尺度和跨帧最优传输，提高事件流全局地点描述符的判别性与时空鲁棒性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
-<li>整体流程为：将事件流切分并构造成事件帧序列，由 DINOv2 提取 CLS 与局部 patch token；由 CLIP 文本编码器提取句子和有效词 token；依次执行事件—文本对齐、跨模态瓶颈融合、多尺度空间 OT、跨帧时间 OT，最后通过 SALAD 聚合成用于地点检索的全局描述符。</li>
-<li>跨模态对齐以归一化事件 patch 和有效词 token 的余弦距离为代价，采用均匀边缘分布和熵正则 OT，通过 log-domain Sinkhorn 求解传输计划；随后使用双向重心投影，把文本上下文注入视觉 token，并把视觉上下文注入词 token。</li>
-<li>跨模态瓶颈模块使用少量可学习 bottleneck token，分别对齐后的视觉与文本 token 做交叉注意力，再以残差和前馈网络融合；融合信息最终广播回视觉 token，避免直接对全部双模态 token 做高开销的全连接交互。</li>
-<li>多尺度空间 OT 将融合后的事件特征构造成小、中、大三个尺度，以“特征距离＋归一化空间坐标距离”定义运输成本；小尺度和大尺度分支分别向中尺度建立对应关系，重采样后与原始中尺度特征拼接。</li>
-<li>跨帧时间 OT 面向五帧事件序列，以中间帧作为固定锚点，把其余帧的 token 与锚帧支持集对齐，再进行门控时间聚合，从而建模事件结构随运动发生的跨帧偏移，而不是仅对各帧独立池化。</li>
-<li>相比 SALAD 等面向静态 RGB patch 的 OT 聚合方法，MSTOT-EPR 把 OT 扩展到事件—文本、跨空间尺度和跨时间帧三个层面；原有 SALAD 仍作为末端全局特征聚合器。原文未说明 DINOv2、CLIP 或 SALAD 的哪些参数被冻结或微调。</li>
+<li>传统 RGB 地点识别依赖稠密外观信息，在低照度、高动态范围、高速运动、运动模糊和动态遮挡下容易退化；事件相机虽具有高动态范围、高时间分辨率和低功耗优势，但只记录亮度变化，空间结构与场景语义较稀疏。</li>
+<li>现有事件流 VPR 往往基于单一时间窗口或帧化表示，未充分利用事件的异步时序特性，因而容易受到运动引起的位置偏移、事件稀疏和跨帧不稳定影响。</li>
+<li>已有文本增强事件感知方法多采用拼接、投影或粗粒度匹配，难以建立事件局部特征、时间演化与文本深层语义之间的细粒度对应。</li>
+<li>本文研究的是离线地点检索而非闭环导航：输入事件帧序列及配对场景文本，输出用于在地理标注参考库中检索地点的全局描述符；所给原文未说明机器人平台、导航策略或策略权重冻结设置。</li>
+<li>作者目标是通过统一的跨模态、跨尺度和跨时间最优传输，学习对稀疏事件、空间错位与时序变化更稳健的地点表征。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.01558.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01558.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.01558.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01558.png'">
+    <img src="/assets/figures/2611.01558.png" onerror="this.onerror=null;this.src='../assets/figures/2611.01558.png'" alt="Text-Assisted Event Stream Visual Place Recognition via Multi-Scale Spatiotemporal Optimal Transport Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>传统视觉定位（Conventional Vision-only VPR）</strong>：查询图像 $I_q\in\mathbb{R}^{H\times W\times3}$ 与数据库参考图像 $\{I_r^j\}$ 分别经共享视觉编码器 $f_I$，得到全局描述子 $z_q$、$z_r^j\in\mathbb{R}^{D}$；通过余弦相似度 $s_j=\frac{z_q^\top z_r^j}{\|z_q\|\|z_r^j\|}$ 检索最相似地点。</li>
+<li><strong>事件输入（Event）</strong>：本文以异步事件流 $\mathcal{E}=\{(x_i,y_i,t_i,p_i)\}_{i=1}^{N}$ 替代常规查询帧，其中 $(x_i,y_i)$、$t_i$ 与 $p_i\in\{-1,+1\}$ 分别表示位置、时间戳和极性；事件编码器 $f_E$ 将稀疏时空变化聚合为地点特征 $z_E$。</li>
+<li><strong>文本地点表征（Text）</strong>：参考侧由地点文本描述 $T=(w_1,\ldots,w_L)$ 输入文本编码器 $f_T$，生成语义嵌入 $z_T$；该表示不依赖参考图像外观，而以场景实体、布局及属性构成可检索的地点语义库。</li>
+<li><strong>事件—文本匹配（Event-text VPR）</strong>：模型将 $z_E$ 与候选文本特征 $\{z_T^j\}$ 投影至共享嵌入空间，计算跨模态相似度 $s_j=\operatorname{sim}(z_E,z_T^j)$，并输出 $\hat{j}=\arg\max_j s_j$，实现从事件观测到文本地点身份的直接检索。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Comparison between conventional vision-only VPR and our event-text VPR paradigm.</div></details>
+</div>
+<ul>
+<li>整体流程为：将事件流切分成事件帧序列，以 DINOv2 提取每帧 CLS token 和 patch tokens；以 CLIP 文本编码器提取句子向量与有效词 token；随后依次执行事件—文本 OT 对齐、跨模态瓶颈融合、多尺度空间 OT、帧间时间 OT，最后通过 SALAD 聚合得到紧凑的全局地点描述符。</li>
+<li>跨模态对齐先把视觉 patch 与文本词 token 投影到同一维度，以余弦距离构造代价矩阵，并用带熵正则的最优传输及 log-domain Sinkhorn 求解软对应；再通过双向重心投影，让视觉 token 注入文本上下文、文本 token 注入视觉上下文。</li>
+<li>跨模态瓶颈模块使用少量可学习 bottleneck tokens，分别对 OT 对齐后的视觉和文本 token 做交叉注意力；两路信息经残差聚合与前馈网络融合后，再广播回视觉 token，以限制直接全量双模态交互的计算量。</li>
+<li>多尺度空间模块从融合后的事件特征图构造小、中、大三个分辨率分支；分别将小尺度和大尺度分支与中尺度分支对齐。运输代价同时包含特征距离和归一化空间坐标距离，因此不是仅凭外观相似度进行跨尺度匹配。</li>
+<li>帧间时间模块把五帧序列的中间帧作为固定锚点，将其他帧的空间 token 对齐到该锚点支持集，以建模运动造成的跨帧位移。原文还称该模块包含锚点引导的 token 级运输计划与门控时间聚合，但所给正文在该节公式展开处截断，无法核对后续门控结构与最终计算式。</li>
+<li>相较 SALAD 等面向静态 RGB patch 聚合的方法，本文把 OT 扩展到事件—文本对齐、多尺度空间对应和跨帧时间建模；最终仍使用 SALAD 进行特征聚合。原文没有说明 DINOv2、CLIP 或 SALAD 是否冻结，因此不能将该框架描述为训练冻结骨干上的纯外挂模块。</li>
 </ul></section><section class="section"><h2>实验与结果</h2><ul>
-<li>论文在 NYC-Event-VPR 和 EPRBench 两个事件 VPR 基准上进行实验，并声称结果验证了 MSTOT-EPR 对文本辅助事件流表征学习的有效性。</li>
-<li>所给原文节选没有包含实验表格，因此无法核对 Recall@1、Recall@N、mAP、检索误差、参数量、推理速度或相对基线提升幅度；也没有 SR、SPL 等导航指标，因为本文评测对象是地点检索而非导航 episode。</li>
-<li>节选未披露与 EventVLAD、Sparse-Event-VPR、EventGeM、SALAD、AnyLoc 等方法的定量对照结果，因而不能据此判断增益主要来自文本、DINOv2 特征、SALAD 聚合，还是三个 OT 模块本身。</li>
-<li>节选提到进行了“extensive experiments”，但未给出跨模态对齐、多尺度空间 OT、时间 OT及瓶颈融合的消融数字，也未提供弱光、高速运动、动态遮挡等具体失败案例或分场景结果。</li>
-<li>因缺少完整实验章节，目前只能确认评测数据集与作者的定性结论，不能给出可核验的绝对性能或相对提升。</li>
+<li>作者报告在 NYC-Event-VPR 与 EPRBench 两个事件地点识别基准上进行了实验，并在摘要中称结果验证了 MSTOT-EPR 的有效性。</li>
+<li>所给论文原文只覆盖摘要、相关工作和方法章节的一部分，没有提供实验表格、Recall@K、mAP、定位误差、参数量、时延或消融结果，因此无法给出可核对的绝对指标及相对提升。</li>
+<li>原文节选也未披露与 EventVLAD、Sparse-Event-VPR、EventGeM、SALAD、AnyLoc 等方法的定量对照，不能据此判断其领先幅度或统计显著性。</li>
+<li>本文评估对象是地点检索描述符，不是完整导航系统；原文没有报告 VLN/GoalNav 常用的 SR、SPL、路径长度或碰撞率。</li>
+<li>没有可核对的恢复案例、失败案例或按低照度、高速运动、视角变化等条件分组的鲁棒性结果。相关结论需等待完整实验章节或作者代码；论文仅承诺在接收后发布代码。</li>
 </ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
-<li><strong>证据不足：</strong>当前原文在时间 OT 方法描述中途截断，实验表格、统计波动、消融实验和失败案例均不可见；摘要中的“充分验证”不能替代可核验的定量证据。</li>
-<li><strong>设定外推风险：</strong>方法解决的是离线或数据库式 VPR 检索，不直接产生位姿、地图或导航动作；尚不能据此推断其在闭环 VLN、GoalNav 或 SLAM 回环检测中的实际收益。</li>
-<li><strong>文本依赖：</strong>框架要求与场景配对的自然语言描述，但节选没有说明文本来自人工标注、自动生成还是数据库元数据，也未测试描述缺失、语义错误、同义改写及跨语言输入时的鲁棒性。</li>
-<li><strong>计算与扩展性：</strong>三个层面的 Sinkhorn OT 都会引入 token 两两匹配与迭代求解开销；论文节选未报告显存、延迟或随帧数、patch 数和文本长度变化的扩展曲线，部署到低功耗事件相机平台前需补测。</li>
-<li><strong>可继续做的：</strong>可将全局描述符接入 SLAM 回环候选召回，并以几何验证过滤文本造成的语义混淆；同时比较“无文本、自动生成文本、人工文本”和“单帧、五帧、更长滑窗”，报告召回率—延迟—能耗曲线及跨城市泛化结果。</li>
-<li><strong>可继续做的：</strong>在闭环导航中把检索置信度、OT 运输熵和跨帧一致性暴露给上层规划器，用于触发重定位、主动观察或降速，而不是只输出不可解释的最近邻地点。</li>
+<li><strong>证据不足：</strong>当前节选缺少所有定量结果、消融实验和复现细节，尚不能验证性能收益分别来自文本、跨模态 OT、多尺度空间 OT、时间 OT，还是最终 SALAD 聚合器。</li>
+<li><strong>设定外推风险：</strong>方法依赖与事件序列配对的场景文本，但原文未说明文本由人工标注、传感器同步采集还是模型生成，也未测试文本缺失、描述错误、语义冲突及词汇分布变化；真实机器人部署中的文本成本和可靠性尚不明确。</li>
+<li><strong>计算开销边界：</strong>视觉 patch—词 token、跨尺度 token 以及跨帧 token 均需构建运输代价并运行 Sinkhorn。瓶颈 token 可降低部分融合成本，但原文未报告显存、吞吐量、迭代次数或端侧延迟，暂不能证明适合实时 SLAM 回环检测。</li>
+<li><strong>导航闭环缺口：</strong>实验只针对地点检索，尚未验证将描述符接入位姿图、回环验证器或分层导航系统后，是否能降低轨迹漂移、错误回环和重定位时间。</li>
+<li><strong>可以继续做的：</strong>补充“事件单帧→五帧时序→加入空间 OT→加入文本 OT→完整模型”的阶梯消融，并分别报告 Recall@1/5、检索时延、Sinkhorn 开销以及低照度、高速运动和文本扰动下的性能。</li>
+<li><strong>可以继续做的：</strong>将 MSTOT-EPR 描述符接入现有事件 SLAM 回环模块，用几何验证过滤文本诱发的感知混淆；同时比较固定中间帧锚点、运动补偿锚点和可学习锚点对跨场景泛化与高速运动鲁棒性的影响。</li>
 </ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
-<li>任务：文本辅助的事件流视觉地点识别，即从地理标注参考库中检索与查询事件序列对应的地点。</li>
+<li>任务：事件流视觉地点识别；查询观测与大规模地理标注参考数据库进行匹配。</li>
 <li>数据集：NYC-Event-VPR、EPRBench。</li>
-<li>事件输入：原始事件由空间坐标、时间戳和极性组成，并被切分为事件帧序列。</li>
-<li>时间协议：时间 OT 使用五帧输入，训练和推理时均选择索引为 \(a=2\) 的中间帧作为锚帧。</li>
-<li>视觉编码器：DINOv2，输出帧级 CLS token 与局部 patch token。</li>
-<li>文本编码器：CLIP 文本编码器，输出句子嵌入和词 token；特殊 token 与 padding token 根据 attention mask 丢弃。</li>
-<li>跨模态 OT：视觉 patch 与有效词 token 使用余弦距离和均匀边缘分布，通过带熵正则的 log-domain Sinkhorn 求解。</li>
-<li>空间尺度：小尺度分支调整为 \(8\times8\)，大尺度分支调整为 \(32\times32\)，中尺度分支通过 \(1\times1\) 投影获得。</li>
-<li>空间 OT 成本权重：特征距离权重 \(\lambda_f=0.9\)，位置距离权重 \(\lambda_p=0.1\)。</li>
+<li>事件输入：原始事件表示为 \((x,y,t,p)\)，其中 \(p\in\{-1,+1\}\)；事件流被划分为多个时间段并构造成事件帧序列。</li>
+<li>时间窗口：时间 OT 使用五帧输入序列；训练和推理均选择中间帧作为锚点，索引 \(a=2\)。</li>
+<li>视觉编码器：DINOv2，输出每帧 CLS token 与 patch tokens。</li>
+<li>文本编码器：CLIP 文本编码器，输出句子嵌入、词 token 和 attention mask；特殊 token 与 padding token 被剔除。</li>
+<li>跨模态 OT：视觉 patch 与有效词 token 使用余弦距离作为局部运输代价，边缘分布采用均匀质量，通过数值稳定的 log-domain Sinkhorn 求解。</li>
+<li>空间尺度：小尺度分支调整为 \(8\times8\)，大尺度分支调整为 \(32\times32\)，中尺度分支由 \(1\times1\) 投影得到。</li>
+<li>空间 OT 代价权重：特征距离权重 \(\lambda_f=0.9\)，空间位置距离权重 \(\lambda_p=0.1\)，所有实验固定使用该设置。</li>
 <li>小尺度到中尺度 OT 的熵正则系数：\(\epsilon_s=0.08\)。</li>
-<li>全局聚合：SALAD-based feature aggregation。</li>
-<li>所给节选未披露数据集样本量、训练/测试划分、文本生成方式、优化器、学习率、batch size、训练轮数、硬件、Sinkhorn 迭代次数、描述符维度及编码器冻结策略。</li>
-<li>所给节选未说明数据采集平台、机器人或载具形态，也未报告真机闭环导航评测。</li>
-<li>代码状态：作者表示将在论文被接收后发布；当前节选未给出代码仓库。</li>
-<li>论文版本：arXiv:2611.01558v1，提交日期为 2026 年 11 月 1 日；节选未注明已录用会议或期刊。</li>
+<li>聚合器：方法总览图及正文说明最终采用 SALAD-based feature aggregation 生成全局描述符。</li>
+<li>训练硬件、优化器、学习率、batch size、训练轮数、Sinkhorn 迭代次数、描述符维度、数据集规模、评测次数及编码器冻结状态：所给原文未披露。</li>
 </ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
-<li>推荐这篇论文的主要原因，是它没有把事件流简单压成单帧后直接套用 RGB VPR，而是分别处理事件的语义缺失、空间尺度变化和跨帧异步运动三个问题。</li>
-<li>其工程价值在于把 OT 运输计划同时用作跨模态软对应、跨尺度结构对应和跨时间 token 对齐，为事件相机定位提供了比直接拼接文本或平均池化更结构化的接口；不过当前节选缺少速度和精度数字，尚不能判断复杂度是否值得。</li>
+<li>推荐这篇的核心原因不是它提出了新的 SLAM 后端，而是它把事件地点识别中的三个错配问题——事件与文本的模态差异、跨尺度空间差异、跨帧运动差异——统一写成可微最优传输问题。</li>
+<li>对导航与 SLAM 研究而言，它提供了一种可作为回环检测或全局重定位前端的事件描述符设计思路，尤其面向低照度、高动态范围和高速运动场景；但当前证据仅限 VPR，不能直接推导闭环导航收益。</li>
 </ul>
 <h3 class="sub">与现有VLN/SLAM对比</h3>
 <ul>
-<li>相比主流 VLN，本文不解析语言指令、不预测可通行路径，也不输出低层动作；文本只是辅助构造地点描述符的场景语义模态，因此它更接近“语言增强的感知前端”，而非语言条件导航策略。</li>
-<li>相比 GoalNav，MSTOT-EPR 不进行目标观测与当前观测之间的策略学习，也没有 SR、SPL、碰撞率或路径效率评测；其输出适合用作重定位候选或地点先验，但不能直接替代规划与控制模块。</li>
-<li>相比经典视觉 SLAM，本文没有显式估计相机位姿、事件运动模型、地图点或回环几何约束；其增量主要位于地点识别/回环候选检索层，仍需 RANSAC、事件几何匹配或图优化确认闭环。</li>
-<li>相比 NetVLAD、ConvAP、MixVPR、TransVPR、AnyLoc 和 BoQ 等 RGB VPR，本文针对事件流增加五帧时间建模，并使用文本补足事件数据缺少绝对外观语义的问题；代价是需要额外文本来源及多次 Sinkhorn 求解。</li>
-<li>相比 SALAD，本文不仅在末端采用其聚合思想，还将 OT 前移到事件—文本、跨尺度和跨帧对应中；但节选没有消融数字，无法确认这些新增模块相对单独使用 SALAD 的净贡献。</li>
+<li>与主流 VLN 相比，MSTOT-EPR 不根据语言指令预测动作，也不进行分层路径规划；文本在这里是辅助地点表征的场景语义，而非任务目标或导航指令。</li>
+<li>与 GoalNav 相比，本文没有目标图像到控制动作的策略、可通行性预测或局部控制器，输出仅是用于参考库检索的全局描述符，因此没有 SR、SPL 等闭环指标。</li>
+<li>与经典视觉 SLAM 相比，方法不估计相机位姿、不构建稠密或稀疏地图，也不包含几何优化后端；其更合理的系统位置是地点识别、回环候选召回或重定位前端，候选结果仍需局部特征、单应性/本质矩阵或位姿图一致性验证。</li>
+<li>相较 NetVLAD、ConvAP、MixVPR、TransVPR、AnyLoc、BoQ 和 SALAD 等主要面向同步 RGB 图像的方法，本文的核心增量是显式处理事件的稀疏异步时序结构，并利用文本补充绝对外观与语义信息。</li>
+<li>相较 EventVLAD、Sparse-Event-VPR 和 EventGeM 等事件 VPR 路线，MSTOT-EPR 不只对单窗口事件表示做全局聚合，而是增加事件—文本细粒度 OT、多尺度位置感知 OT 和锚点式帧间 OT；代价是多处 Sinkhorn 求解带来的额外计算和对配对文本质量的依赖。</li>
+<li>论文没有在完整 VLN、GoalNav 或 SLAM 系统中验证，也未提供与上述方法的可核对定量差值，因此目前只能确认机制差异，不能确认系统级优势。</li>
 </ul>
 <h3 class="sub">对Austin启发</h3>
 <ul>
-<li><strong>空间几何表示：</strong>可把空间 OT 中的二维归一化坐标成本扩展为由深度、事件运动补偿或 SLAM 位姿投影得到的三维坐标成本，比较纯语义匹配与“语义＋几何”运输计划对跨视角回环召回率的影响。</li>
-<li><strong>分层规划接口：</strong>让 VPR 模块向上层规划器同时输出候选地点、描述符距离、OT 运输熵和跨帧一致性；当运输熵高或时间一致性差时，规划器可触发主动转头、减速、补采事件或切换到几何重定位。</li>
-<li><strong>跨场景泛化：</strong>按城市、昼夜、速度和天气进行严格留域测试，并构造错误文本、缺失文本和自动生成文本协议，以区分模型学到的是可迁移空间结构，还是依赖数据集特有的场景描述。</li>
-<li><strong>可解释回环：</strong>将词—事件 patch 的运输矩阵保留下来，检查“桥梁、路口、建筑立面”等词是否稳定对应可重复结构；再以几何验证淘汰只有语义相似、空间布局却不一致的感知混淆候选。</li>
-<li><strong>工程消融：</strong>优先测试仅跨模态 OT、仅空间 OT、仅时间 OT及完整模型，并同步记录 Recall@1、Recall@5、单查询延迟、峰值显存和能耗，确定哪一级 OT 最值得保留在实时系统中。</li>
+<li><strong>空间几何表示：</strong>可把空间 OT 中的二维 patch 坐标替换为带深度或事件运动补偿的三维位置，将运输代价扩展为“语义特征距离＋三维几何距离＋时间一致性”，并测试其对重复结构和视角变化的抑制效果。</li>
+<li><strong>分层规划/控制接口：</strong>将全局描述符用于高层拓扑节点检索，只向下游局部定位器传递 top-\(K\) 候选；再由局部事件特征和几何验证产生置信度，避免文本语义相似但物理位置不同的候选直接触发回环或重定位。</li>
+<li><strong>跨场景泛化：</strong>设计文本缺失、词语替换、幻觉描述和跨城市词汇迁移测试，并加入“无文本退化模式”；若文本置信度过低，可通过门控降低文本运输质量，而不是始终等权融合。</li>
+<li><strong>时序接口：</strong>对比固定中间帧、IMU/光流补偿后的参考帧和可学习锚点；同时将 OT 匹配熵、运输成本及跨帧一致性作为在线监控量，用于拒绝高速运动或事件过稀时的不可靠地点匹配。</li>
+<li><strong>评测设计：</strong>除 Recall@K 外，应把描述符接入实际回环与重定位管线，报告错误回环率、轨迹 ATE/RPE、重定位延迟、单位查询能耗及文本生成成本，从而判断检索提升能否转化为 SLAM 或导航收益。</li>
 </ul>
 <h3 class="sub">一句话总结</h3>
-<p>MSTOT-EPR由安徽大学与北京大学作者提出，以事件—文本对齐、多尺度空间 OT 和五帧时间 OT 构造事件地点全局描述符，并在 NYC-Event-VPR 与 EPRBench 上验证，但所给原文未披露 Recall、SR、SPL 或定位误差等可核验指标。</p></div></details>
+<p>MSTOT-EPR 由安徽大学与北京大学作者提出，以事件—文本、跨尺度空间和五帧锚点时间最优传输生成地点检索描述符，并在 NYC-Event-VPR 与 EPRBench 上验证，但所给原文未披露 Recall、SR、SPL 或定位误差等可核对数值。</p></div></details>
 <section id="paper-qa" class="qa-section" data-arxiv="2611.01558" data-title="Text-Assisted Event Stream Visual Place Recognition via Multi-Scale Spatiotemporal Optimal Transport">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>

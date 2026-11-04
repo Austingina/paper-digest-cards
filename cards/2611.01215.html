@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Vision-Language Models Are Joint Denoisers in Robotic Action Generation</title>
+<title>深读｜2611.01215</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.01215" rel="noopener noreferrer" target="_blank">arXiv 2611.01215</a></span><span class="badge">深读</span></div>
-<h1>深读｜Vision-Language Models Are Joint Denoisers in Robotic Action Generation</h1>
+<h1>深读｜2611.01215</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.01215" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>这种感知—控制解耦在训练分布内可能足够，但面对未见过的场景随机化、精细操作和长时程任务时，动作专家难以持续利用 VLM 的语义理解与规划能力。</li>
 <li>VLM 对动作的学习通常只依赖动作专家反传的间接梯度，缺少“从噪声动作恢复干净动作表示”的直接监督。</li>
 <li>论文同时覆盖 RoboTwin 2.0、RoboDojo 的闭环双臂操作，并报告在四个真机双臂任务上评测；策略并非整体冻结，只有预训练 OAT 编码器保持冻结，其余组件联合训练。作者目标是在提高分布外鲁棒性、精细控制和长时程成功率的同时，用更少的去噪步数抵消 VLM 每步参与带来的计算开销。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.01215.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01215.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.01215.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01215.png'">
+    <img src="/assets/figures/2611.01215.png" onerror="this.onerror=null;this.src='../assets/figures/2611.01215.png'" alt="2611.01215 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>训练输入与动作加噪</strong>：多模态观测 $o_t$（图像、语言指令与机器人状态）输入 VLM；真实动作块 $\mathbf A\in\mathbb R^{H\times D}$ 经流匹配插值得到 $\mathbf A_\tau=(1-\tau)\mathbf A+\tau\boldsymbol\epsilon$，其中 $\boldsymbol\epsilon\sim\mathcal N(0,I)$。</li>
+<li><strong>冻结 OAT 动作编码器</strong>：Frozen OAT Encoder 分别将噪声动作与干净动作的物理维度编码为紧凑连续寄存器：$\mathbf Z_\tau=E_{\mathrm{OAT}}(\mathbf A_\tau^{\mathrm{phys}})$、$\mathbf Z_0=E_{\mathrm{OAT}}(\mathbf A^{\mathrm{phys}})\in\mathbb R^{M\times d_z}$；前者作为 VLM 输入，后者作为训练目标，使视觉语言表征显式感知当前动作。</li>
+<li><strong>联合训练与速度预测</strong>：VLM 根据 $o_t$ 和 $\mathbf Z_\tau$ 生成动作条件，并传给连续 Action Expert；专家预测速度场 $v_\Theta(\mathbf A_\tau,\tau,o_t)$，回归目标为 $\boldsymbol\epsilon-\mathbf A$，同时 VLM 学习由噪声动作潜变量恢复干净潜变量。</li>
+<li><strong>推理时联合去噪</strong>：从 $\mathbf A_1\sim\mathcal N(0,I)$ 出发，每一步都将当前 $\mathbf A_\tau$ 重新送入冻结 OAT 与 VLM，再以更新后的 VLM guidance 驱动 Action Expert 积分至 $\tau=0$；区别于传统 VLA 的固定条件，JADE 将 VLM 纳入完整 denoising loop。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">\small Illustration of the key difference between our proposed JADE and conventional VLA models. (a) During training, a frozen OAT encoder in JADE provides noisy action latents as VLM inputs and clean action latents as training targets. (b) During inference, \method{} brings the VLM into the denoising loop, so its guidance to the action expert is updated with the current action at every step.</div></details>
+</div>
+<ul>
 <li>整体流程为：图像、语言指令和机器人状态形成可缓存的观察前缀；当前噪声动作先由冻结 OAT 编码器压缩成连续潜变量，再送入 VLM；VLM 生成与当前动作相关的逐层寄存器特征，动态指导流式动作专家预测速度场，最终通过 Euler 积分得到动作块。</li>
 <li>JADE 不再让 VLM 只提供一次性的静态视觉—语言条件，而是在每个去噪步骤重新读取当前噪声动作。观察前缀的 key/value 每次策略查询只计算一次，动作寄存器可以关注有效前缀和彼此，但观察前缀不反向关注动作寄存器。</li>
 <li>OAT 使用少量有序寄存器表示整段动作；JADE采用量化前的连续潜变量，而非原始 OAT 的 FSQ 离散码。输入适配器同时接收噪声动作潜变量和噪声时间，将其映射到 VLM 隐藏空间。</li>
@@ -577,12 +593,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>JADE 将 π0.5 的预训练 VLM 引入每一步动作去噪，在 RoboTwin 2.0 达到 54.4% Random、66.9% 平均成功率并在 RoboDojo 达到 18.29 Score / 12.67% 成功率，但所给原文节选未披露作者机构，因而无法核实其机构归属。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.01215" data-title="Vision-Language Models Are Joint Denoisers in Robotic Action Generation">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.01215" data-title="2611.01215">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.01215 · Vision-Language Models Are Joint Denoisers in Robotic Action Generation</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.01215 · 2611.01215</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -592,7 +608,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Vision-Language Models Are Joint Denoisers in Robotic Action Generation》</strong>（arXiv: 2611.01215）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.01215》</strong>（arXiv: 2611.01215）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Solv3R</title>
+<title>深读｜2611.02857</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.02857" rel="noopener noreferrer" target="_blank">arXiv 2611.02857</a></span><span class="badge">深读</span></div>
-<h1>深读｜Solv3R</h1>
+<h1>深读｜2611.02857</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.02857" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>流式重建方法虽然能逐帧更新场景状态，但通常假设视图按顺序到达；常规前馈 Transformer 的中间状态又与网络层深绑定，不能像经典 SfM 优化器那样从任意已有解继续迭代。</li>
 <li>DéjàView 已采用权重共享的循环 Transformer，但更新仍以迭代步编号为条件，因而难以联合处理“已迭代多次的旧视图”和“刚初始化的新视图”，超出训练步数后还会损失重建精度。</li>
 <li>作者目标是学习一个与迭代次数无关、可持续调用的多视图几何求解器，用同一模型统一离线重建、增量重建、重定位与流式重建，同时复用已有状态和注意力上下文。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 5）</span>
+    <a href="/assets/figures/2611.02857.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02857.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.02857.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02857.png'">
+    <img src="/assets/figures/2611.02857.png" onerror="this.onerror=null;this.src='../assets/figures/2611.02857.png'" alt="2611.02857 Figure 5 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入编码与状态初始化</strong>：多视图图像 $\mathcal I=\{I_i\}_{i=1}^{N}$ 经共享 Image Encoder 编码为逐视图初始状态 $\mathbf z^0=\{\mathbf z_i^0\}$；该状态既作为迭代起点，也在后续更新中持续执行 Initial-state Injection（初始状态注入），保留原始视觉证据。</li>
+<li><strong>Stationary Transformer Block</strong>：共享且无步数条件的固定算子对当前状态 $\mathbf z^k$ 反复更新。Frame-wise Attention 在单帧 token 内建模局部结构，Global Attention 在不同视图间交换信息并施加几何一致性；随后融合 $\mathbf z^0$，经 State Normalization 稳定状态尺度，形成 $\mathbf z^{k+1}=F_\theta(\mathbf z^k,\mathbf z^0)$，不依赖迭代索引 $k$。</li>
+<li><strong>跨 Solver Call 持续求解</strong>：右图中同一算子可跨多次 solver call 继续细化重建，而非在固定层数后终止。新视图可在任意阶段编码并加入当前多视图状态，与已迭代不同次数的旧视图联合更新，实现可扩展、异步的多视图融合。</li>
+<li><strong>任意时刻几何解码</strong>：每次 solver call 后，当前状态均可送入任务解码头，分别输出 Camera Poses、Depth Maps 与 Ray Maps；因此相机、深度及像素射线表示可随迭代持续修正，并共同确定场景三维几何。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 5 Caption）</summary><div class="arch-cap-text">Overview. Left: A stationary transformer block repeatedly updates the multi-view state through frame-wise and global attention, initial-state injection, and state normalization. Right: The same operator continues refining the reconstruction across solver calls, allowing new views to be introduced at any stage and jointly updated with existing views. Camera poses, depth maps, and ray maps can be decoded from the current state after any solver call.</div></details>
+</div>
+<ul>
 <li>整体流程为：图像编码器将多视图图像编码为初始状态 \(\mathbf z^0\)；共享 Transformer 更新算子反复读取当前状态与初始图像编码；任意一次调用后，解码器均可输出相机位姿、深度图和射线图。</li>
 <li>核心更新写为 \(\mathbf z^{k+1}=\mathcal T_\theta(\mathbf z^k;\mathbf z^0)\)。算子不接收迭代编号，也不要求各视图经历相同次数的更新，因此能同时处理不同求解进度的视图。</li>
 <li>更新算子由一个在所有调用间完全共享的 Transformer block 实现，包含帧内注意力与全局注意力；每次调用重新注入 \(\mathbf z^0\)，使更新持续访问图像约束，而不只依赖可能累积误差的当前状态。</li>
@@ -580,12 +596,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>UBC、Wayve Labs、SFU、多伦多大学及 Sony 团队提出 Solv3R，以与迭代次数无关的共享 Transformer 持续更新位姿、深度和射线状态，在 148 个窗口中有 144 个于 64 次调用内停止、其中 99.3% 的旋转误差低于 \(5^\circ\)，但原文节选未提供 SR/SPL 或完整跨数据集主表数值。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.02857" data-title="Solv3R">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.02857" data-title="2611.02857">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.02857 · Solv3R</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.02857 · 2611.02857</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -595,7 +611,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Solv3R》</strong>（arXiv: 2611.02857）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.02857》</strong>（arXiv: 2611.02857）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

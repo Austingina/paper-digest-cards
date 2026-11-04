@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜HeLM</title>
+<title>深读｜2611.02660</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.02660" rel="noopener noreferrer" target="_blank">arXiv 2611.02660</a></span><span class="badge">深读</span></div>
-<h1>深读｜HeLM</h1>
+<h1>深读｜2611.02660</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.02660" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>堆叠历史帧或保存关键帧虽能提供视觉历史，但图像 token 会随任务时长累积，带来显存和推理开销；潜变量或压缩 token 记忆则较难检查具体记住了什么、为何失败。</li>
 <li>论文研究真实机器人上的非马尔可夫操作，既覆盖单条指令内的工作记忆，也覆盖指令切换后仍需保留信息的跨 episode 记忆；低层动作策略并非冻结的通用策略，而是使用每任务示范微调的 VLA。</li>
 <li>作者目标是以紧凑、可检查的显式语言状态替代不断增长的视觉历史，使机器人能够更可靠地完成计数、顺序跟踪、遮挡后位置回忆和跨指令操作。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.02660.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02660.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.02660.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.02660.png'">
+    <img src="/assets/figures/2611.02660.png" onerror="this.onerror=null;this.src='../assets/figures/2611.02660.png'" alt="2611.02660 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>非马尔可夫任务输入</strong>：Figure 1 从环境观测与长程指令开始；当前视觉观测 $o_t$ 本身无法区分“红色按钮尚未按下”与“已经按下”，正确动作 $a_t$ 因而还依赖历史进度 $h_{1:t}$，即 $p(a_t\mid o_t,\ell)\neq p(a_t\mid o_t,\ell,h_{1:t})$。</li>
+<li><strong>Vanilla VLA 基线</strong>：普通 Vision-Language-Action（VLA）策略直接将当前观测 $o_t$ 和语言指令 $\ell$ 映射为动作 $a_t=\pi_{\mathrm{VLA}}(o_t,\ell)$。按下红色按钮后，模型缺乏可持续的任务状态表示，重新看到相似场景便丢失进度并再次按下，暴露其马尔可夫式架构限制。</li>
+<li><strong>Language Memory 进度存储</strong>：HeLM 在执行过程中把已完成事件写入语言记忆 $m_t$，例如“red button pressed”，并通过 $m_{t+1}=U(m_t,o_t,a_t)$ 持续更新。该显式记忆将不可由单帧观测恢复的历史压缩为可读、可检索的任务状态。</li>
+<li><strong>HLP–LLP 分层执行</strong>：High-Level Planner（HLP）联合指令 $\ell$、当前观测 $o_t$ 与记忆 $m_t$ 生成下一子目标 $g_t$；Low-Level Policy（LLP）再执行 $a_t=\pi_{\mathrm{LLP}}(o_t,g_t)$。因此 HLP 能跳过已完成的红色按钮步骤，引导 LLP 转向后续操作并完成任务。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Example of non-Markovian task. Due to architectural limitation, a vanilla VLA loses track after pressing the red button and presses it again. HeLM successfully executes the task by storing progress in language memory, allowing the HLP to guide the LLP correctly.</div></details>
+</div>
+<ul>
 <li>整体采用高低层架构：基于 VLM 的高层策略 HLP 接收当前图像、全局指令和语言记忆，输出低层动作指令；VLA 低层策略 LLP 再结合当前观测，将该指令转成机器人动作。</li>
 <li>记忆被显式拆分为工作记忆与情景记忆：前者记录当前 episode 内的执行进度，后者保存跨指令仍有用的摘要；episode 边界处清空工作记忆，并把相关内容归纳进持续保留的情景记忆。</li>
 <li>HLP 将事件检测和记忆更新因子化为 Detect、Update 两种模式。二者共享同一个 VLM 参数，仅由不同系统提示区分；Detect 输出预定义任务事件或“无事件”，Update 才修改记忆并生成后续动作指令。</li>
@@ -582,12 +598,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>首尔大学的 HeLM 用事件触发的工作/情景语言记忆为 π0/π0.5 类低层 VLA 补充非马尔可夫能力，在真实 episode 内任务上达到 85.7%子任务成功率、较最强基线高 12.8 个百分点，并在跨 episode 任务上达到 89.2%。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.02660" data-title="HeLM">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.02660" data-title="2611.02660">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.02660 · HeLM</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.02660 · 2611.02660</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -597,7 +613,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《HeLM》</strong>（arXiv: 2611.02660）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.02660》</strong>（arXiv: 2611.02660）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

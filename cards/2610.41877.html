@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Movens-Zero</title>
+<title>深读｜2610.41877</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41877" rel="noopener noreferrer" target="_blank">arXiv 2610.41877</a></span><span class="badge">深读</span></div>
-<h1>深读｜Movens-Zero</h1>
+<h1>深读｜2610.41877</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41877" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>文本、语音、音乐和视频具有不同的格式与时间结构；现有方法难以用统一模型联合学习多模态条件，同时又满足实时、闭环控制所需的推理延迟。</li>
 <li>本文采用“高层运动生成器＋高频低层跟踪器”的闭环执行设定：模型持续接收更新后的多模态指令和机器人状态，生成重叠运动分块，而非一次性开环生成完整轨迹。所给正文未说明全模态骨干是否冻结，也未充分披露真机评测范围。</li>
 <li>作者的目标是把大规模网络人类视频转化为可执行的人形机器人监督，并验证扩大数据量与动作专家容量能否持续提升多模态意图对齐、运动质量和物理可执行性。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 33）</span>
+    <a href="/assets/figures/2610.41877.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41877.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41877.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41877.png'">
+    <img src="/assets/figures/2610.41877.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41877.png'" alt="2610.41877 Figure 33 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多模态意图输入（Omni-Modal Input）</strong>：文本指令、采样 RGB 帧以及语音/音乐共同输入冻结的全模态上下文编码器；语音与音乐共享音频前端，仅以任务提示区分，所得条件 token 经线性投影对齐动作专家宽度 $D$。</li>
+<li><strong>机器人中心运动表示（Robot-Centric Motion Representation）</strong>：Unitree G1 每帧编码为 $\mathbf{x}_j\in\mathbb{R}^{40}$，包含 29 维关节角、2 维平面根位移、6 维根朝向、1 维世界系根高度和2维足接触。位移为 $[\mathbf A_n^\top(\mathbf r_j-\mathbf r_{j-1})]_{xy}$，锚点 $\mathbf A_n$ 在运动块内固定。</li>
+<li><strong>流式动作专家（Flow-based Action Expert）</strong>：条件 token 与当前机器人状态 token、噪声未来运动 token $z_t$ 联合注意；DiT 动作专家预测条件速度场 $v_\theta(z_t,t,c)$，沿流积分将噪声逐步变换为未来运动块。模型规模仅改变宽度、深度与头数，单头维度固定为 64。</li>
+<li><strong>解码与实时执行（Generation–Execution）</strong>：解码时正交化朝向的前两列，以 $\mathbf A_n$ 恢复世界旋转，并从最新根位置累积平面位移；生成块按共享40通道格式转为可执行关节轨迹与足接触状态，实现从理解、生成到人形机器人实时执行的闭环。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 33 Caption）</summary><div class="arch-cap-text">Overview of \movenszero, a scalable understanding--generation--execution architecture built on \movensdata. It translates multimodal human intent directly into physically executable humanoid behaviors in real time.</div></details>
+</div>
+<ul>
 <li>整体流程分为“数据构建—意图理解—运动生成—闭环执行”：Movens-5M 数据引擎把原始网络视频转成多模态对齐的人体及机器人运动；预训练全模态骨干把文本、视频和音频编码为共享 token 序列；流匹配动作专家结合条件、最新机器人状态与逐帧进度生成未来运动；低层跟踪策略负责执行。</li>
 <li>Movens-5M 的数据引擎依次执行视频切片、质量过滤、语义标注、人体运动恢复和物理精炼，再进行跨形态重定向与跟踪验证。流程按计算成本由低到高排列，使不合格样本在昂贵的重建和仿真前被剔除。</li>
 <li>数据清洗同时检查视觉质量和人体运动连续性：使用人物区域与背景区域的光流统计识别硬切、主体消失或“瞬移”、相机运动及播放速度异常，避免把背景变化误判为有效肢体运动。</li>
@@ -582,12 +598,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>Movens-Zero由浙江大学、宇树科技及其联合实验室等机构共同提出，通过超过10,000小时的Movens-5M和闭环分块运动生成，将910.5M参数动作专家的文本R@3提升至62.57%，并在Movens-Intent上取得语音R@3 74.30%和视频W-MPJPE100 49.1 mm，但尚未证明其基于或优于π0、π0-FAST、π0.5或OpenPI。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41877" data-title="Movens-Zero">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41877" data-title="2610.41877">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41877 · Movens-Zero</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41877 · 2610.41877</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -597,7 +613,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Movens-Zero》</strong>（arXiv: 2610.41877）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41877》</strong>（arXiv: 2610.41877）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Spade-SLAM</title>
+<title>深读｜2611.01937</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.01937" rel="noopener noreferrer" target="_blank">arXiv 2611.01937</a></span><span class="badge">深读</span></div>
-<h1>深读｜Spade-SLAM</h1>
+<h1>深读｜2611.01937</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.01937" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>纯光度自监督假设跨帧亮度恒定，遇到自动曝光、光照变化、非朗伯表面、低纹理区域或大基线运动时容易产生错误梯度、局部极小值和轨迹漂移。</li>
 <li>论文研究单目、非标定 RGB 视频上的零样本视觉 SLAM：不使用真实位姿或深度标签，通过学习式稠密束调整联合恢复相机位姿、稠密深度与共享焦距；表中方法未标注在评测集上微调。</li>
 <li>作者目标是在相同训练数据量约束下，用极少量可靠的二维对应关系稳定稠密自监督，将零样本相机跟踪与三维重建性能推进到接近全监督 SLAM 的水平。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.01937.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01937.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.01937.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01937.png'">
+    <img src="/assets/figures/2611.01937.png" onerror="this.onerror=null;this.src='../assets/figures/2611.01937.png'" alt="2611.01937 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入与帧图构建（Frame Graph）</strong>：输入未标定 RGB 视频 $\mathcal{V}=\{I_i\in\mathbb{R}^{H\times W\times3}\}_{i=1}^{N}$，按共视关系构建 $\mathcal{G}=(\mathcal{V},\mathcal{E})$；每条边 $(i,j)$ 对应一对待联合更新的图像，并维护位姿 $\hat{\mathbf G}_i\in SE(3)$、低分辨率深度 $\hat{\mathbf z}_i$ 与共享焦距 $f$。</li>
+<li><strong>相关性更新（RAFT-style ConvGRU）</strong>：对边 $(i,j)$ 提取图像相关特征，循环更新算子预测稠密对应修正 $\boldsymbol{\delta}_{ij}$ 及置信权重 $\mathbf w_{ij}$。当前几何首先产生诱导投影 $\mathbf p_{ij}=\Pi_f\!\left(\hat{\mathbf G}_{ij}\circ\Pi_f^{-1}(\mathbf p_i,\hat{\mathbf z}_i)\right)$，再由修正量给出优化目标 $\mathbf p_{ij}+\boldsymbol{\delta}_{ij}$。</li>
+<li><strong>可微分联合优化（Differentiable Bundle Adjustment）</strong>：以加权重投影残差为约束，在整张帧图上迭代更新相机位姿、深度与共享焦距，即联合求解 $\{\mathbf G_i\}$、$\{\mathbf z_i\}$ 和 $f$；稀疏高置信匹配仅覆盖约 $1\%$ 像素，却为病态的纯光度优化提供稳定几何锚点。</li>
+<li><strong>自监督输出与损失</strong>：学习式凸上采样将 $\hat{\mathbf z}_i\in\mathbb{R}^{H/8\times W/8}$ 恢复为稠密深度 $\hat{\mathbf Z}_i\in\mathbb{R}^{H\times W}$。训练端联合采用 photometric warping 光度一致性与 sparse correspondence reprojection 稀疏重投影损失，无需真实位姿或深度标注。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">\Ourname pipeline. Our method jointly optimizes camera poses, dense depth, and a shared focal length over a frame graph $\mathcal{G}=(\mathcal{V}, \mathcal{E})$, where each image pair $(i, j)$ represents an edge for iterative updates. Trained end-to-end via self-supervision, \Ourname leverages photometric warping and sparse correspondence-based reprojection, eliminating the need for ground-truth pose or depth annotations.</div></details>
+</div>
+<ul>
 <li>整体流程以 DROID-SLAM 为骨干：输入一段 RGB 视频，构建表示共视关系的动态图；RAFT 风格 ConvGRU 为图中帧对预测稠密对应修正和置信度，随后由可微稠密束调整迭代更新位姿与低分辨率深度，最后通过学习式凸上采样生成全分辨率深度。</li>
 <li>稠密监督来自跨帧视图合成。模型按当前位姿、深度和焦距将目标帧反向采样到源帧，再结合 SSIM 与像素级 L1 残差计算光度损失。</li>
 <li>为降低曝光和传感器响应变化的影响，作者先为每个帧对闭式求解全局仿射亮度参数 \(a_{ij},b_{ij}\)，将重建图像对齐到源图像；这两个参数在反向传播时视为常数。</li>
@@ -584,12 +600,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>慕尼黑工业大学与慕尼黑机器学习中心提出的 Spade-SLAM 用不到约 1% 像素的稀疏对应锚定 DROID-SLAM 的稠密光度自监督并联合估计位姿、深度和焦距，在 TartanAir hard split 将平均 ATE RMSE 从纯光度版本的 <strong>1.95 m</strong> 降至 <strong>0.50 m</strong>，接近全监督 DROID-SLAM 的 <strong>0.54 m</strong>。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.01937" data-title="Spade-SLAM">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.01937" data-title="2611.01937">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.01937 · Spade-SLAM</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.01937 · 2611.01937</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -599,7 +615,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Spade-SLAM》</strong>（arXiv: 2611.01937）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.01937》</strong>（arXiv: 2611.01937）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

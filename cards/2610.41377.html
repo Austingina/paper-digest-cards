@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜MolmoSpaces-CommonSense</title>
+<title>深读｜2610.41377</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41377" rel="noopener noreferrer" target="_blank">arXiv 2610.41377</a></span><span class="badge">深读</span></div>
-<h1>深读｜MolmoSpaces-CommonSense</h1>
+<h1>深读｜2610.41377</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41377" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>真实室内环境中的失败并不只是控制误差：机器人还可能接近错误的干扰物、抓错物体部件、采用不稳定的堆叠顺序，或在目标短暂消失后完全丢失其位置。</li>
 <li>本文在 MuJoCo 仿真中的 MolmoSpaces 环境开展闭环、零样本评测；策略需要根据持续观测生成动作并真正完成操作，而非只回答图像问答。被测策略不在该基准上重新训练，但均曾在 DROID 数据上微调。</li>
 <li>作者目标是建立一个以发展认知科学为依据、可规模化复现的具身常识评测框架，检验通用操作策略在物理推理、可供性和物体恒存性上的真实能力，而不是提出新的控制模型。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.41377.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41377.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41377.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41377.png'">
+    <img src="/assets/figures/2610.41377.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41377.png'" alt="2610.41377 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>任务分类输入（Commonsense Taxonomy）</strong>：Figure 1 并非神经网络计算图，而是以具身操作中的部分可观测情境与动作要求为输入，将能力集合组织为 $\mathcal{C}=\{\text{Physical Reasoning},\text{Affordances},\text{Object Permanence}\}$，再映射为 MolmoSpaces 中的测试任务。</li>
+<li><strong>物理推理（Physical Reasoning）</strong>：细分为遮挡（Occlusion）、覆盖（Covering）与容纳（Containment）。策略接收当前观测 $o_t$ 与目标指令 $g$，需在目标被杂物遮住、被物体盖住或位于抽屉等容器内时，输出动作 $a_t$，主动避开或移除干扰物，而非仅预测隐藏物体。</li>
+<li><strong>可供性（Affordances）</strong>：包含空间可供性（Spatial Affordances）与抓取可供性（Grasping Affordances）。前者依据表面布局和几何尺寸约束动作，例如堆叠时满足支撑块尺寸不小于上层块；后者要求策略依据物体形状及可接近区域选择有效抓取与操作方式。</li>
+<li><strong>物体恒存与任务实例化（Object Permanence &amp; Instantiation）</strong>：该分支检验目标离开即时视野后，策略能否维持其存在性与位置表征。各分类最终被实例化为 MolmoSpaces 闭环任务，以轨迹 $\tau=(o_0,a_0,\ldots,o_T)$ 统一评估通用操作策略的感知、记忆、推理和执行能力。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Taxonomy of embodied commonsense reasoning capabilities, showing the diversity of tasks we test on. We organize tasks along three categories grounded in developmental cognitive science, and instantiate tasks within MolmoSpaces environments.</div></details>
+</div>
+<ul>
 <li>作者先将机器人操作中的具身常识划分为三类：物理推理、可供性和物体恒存性；再将其具体化为八类必须通过实际动作完成的闭环任务。</li>
 <li>物理推理覆盖三种部分可观测关系：目标被周围杂物遮挡、被其他物体覆盖，以及被收纳在抽屉等容器内；对应单物体拾取和多物体打包任务。</li>
 <li>可供性分为两层：部件级抓取可供性要求选择语义合适的抓取位置，例如从把手抓起热锅；空间可供性要求按照几何支撑关系，将大小不同的积木按可稳定支撑的顺序堆叠。</li>
@@ -587,12 +603,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>华盛顿大学、Ai2 与新加坡国立大学作者提出 MolmoSpaces-CommonSense，以八类闭环任务评测 π0、π0-FAST、π0.5 等通用策略，发现所有策略单项成功率均未超过 30%，且五个以上干扰物会使成功率相对下降超过 50%，揭示当前 VLA 的主要短板已从原子动作扩展到对象绑定、可供性、记忆与结果评估。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41377" data-title="MolmoSpaces-CommonSense">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41377" data-title="2610.41377">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41377 · MolmoSpaces-CommonSense</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41377 · 2610.41377</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -602,7 +618,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《MolmoSpaces-CommonSense》</strong>（arXiv: 2610.41377）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41377》</strong>（arXiv: 2610.41377）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

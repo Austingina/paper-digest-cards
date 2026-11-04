@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜OpenNWM</title>
+<title>深读｜2611.01844</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.01844" rel="noopener noreferrer" target="_blank">arXiv 2611.01844</a></span><span class="badge">深读</span></div>
-<h1>深读｜OpenNWM</h1>
+<h1>深读｜2611.01844</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.01844" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>传统重建式潜在动作模型还可能把光照、动态物体或其他外观变化编码为“动作”，而非智能体可控制的自身运动，因此预测质量不必然转化为有效规划。</li>
 <li>论文研究从无动作视频预训练、再用带物理标注的数据对齐真实运动的设定；在线阶段不是在潜在动作空间中控制，而是用后训练后的世界模型对真实 waypoint 动作进行闭环、滚动时域规划。</li>
 <li>作者目标是构建可从异构无动作视频扩展训练、同时能落到真实导航动作预测与规划的通用导航世界模型，提高跨场景动力学建模和下游导航泛化能力。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.01844.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01844.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.01844.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01844.png'">
+    <img src="/assets/figures/2611.01844.png" onerror="this.onerror=null;this.src='../assets/figures/2611.01844.png'" alt="2611.01844 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>图文对应关系</strong>：所给 Figure 1 题注描述的是 NavAnywhere 及其互补域外评测集，属于数据集总览；而方法片段对应的结构图标题为 “Framework of OpenNWM”。两者并非同一幅图，无法据此准确还原 Figure 1 的模型数据流。</li>
+<li><strong>异构数据输入</strong>：OpenNWM 将视觉经验组织为 $\mathcal D=\{(\mathbf x_i,\mathbf y_i,c_i)\}_{i=1}^{N}$；其中 $\mathbf x_i=(x_{i,0},\ldots,x_{i,T_i})$，$\mathbf y_i$ 为可选相机位姿，$c_i$ 标记数据源、具身形态与采样率，无动作视频满足 $\mathbf y_i=\varnothing$。</li>
+<li><strong>通用导航潜动作</strong>：潜动作编码器 $q_\phi$ 根据首末视觉状态推断转移变量 $z_{\tau\rightarrow m}\sim q_\phi(\cdot\mid x_\tau,x_m)$，以连续紧凑表征分离并保留可控运动语义，无需显式动作标签。</li>
+<li><strong>未来状态生成</strong>：以最近 $h$ 帧状态 $\mathbf s_{\tau-h+1:\tau}$、潜动作 $z_{\tau:m}$ 和预测跨度 $k$ 为条件，扩散分布 $p_\theta$ 预测 $s_m$，其中 $m=\tau+k$；训练最大化 $\mathbb E_{q_\phi}[\log p_\theta(s_m\mid\mathbf s_{\tau-h+1:\tau},z_{\tau:m},k)]$。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of NavAnywhere and its complementary out-of-domain evaluation sets. NavAnywhere covers diverse everyday navigation environments. The complementary evaluation sets are separate from NavAnywhere and are described in Section.</div></details>
+</div>
+<ul>
 <li>整体流程为：异构导航视频与少量带物理标注轨迹 → 推断 Universal Navigation Latent Actions（UNLA）→ 以 UNLA 为条件预训练扩散式视觉世界模型 → 用真实动作进行动作条件后训练 → 通过未来视觉 rollout 评估候选 waypoint 序列并闭环执行。</li>
 <li>UNLA 使用对角高斯后验从起始帧与未来帧的视觉转移中推断连续潜变量；辅助转移预测器负责重建未来观测，KL 正则将潜空间约束到标准正态先验。辅助预测器只用于规范潜在动作，高保真未来预测由主世界模型承担。</li>
 <li>为避免潜变量只记录外观或环境变化，作者在具有相机位姿、运动状态或机器人动作标注的轨迹上增加物理运动预测损失；视觉损失作用于全部视频，物理损失仅作用于有标注子集，从而以统一的视觉—物理目标将潜变量对齐到可控运动。</li>
@@ -582,12 +598,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>OpenNWM 由中国科学院自动化研究所等机构提出，以 15 个来源、1,750 万条视觉观测预训练经物理运动对齐的 UNLA，并在真实 waypoint 空间闭环规划；作者报告预测与导航性能领先，但所给原文未提供可核对的 SR、SPL 或误差数值。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.01844" data-title="OpenNWM">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.01844" data-title="2611.01844">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.01844 · OpenNWM</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.01844 · 2611.01844</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -597,7 +613,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《OpenNWM》</strong>（arXiv: 2611.01844）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.01844》</strong>（arXiv: 2611.01844）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

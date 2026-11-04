@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Gym-Anything for Robotics</title>
+<title>深读｜2610.40565</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.40565" rel="noopener noreferrer" target="_blank">arXiv 2610.40565</a></span><span class="badge">深读</span></div>
-<h1>深读｜Gym-Anything for Robotics</h1>
+<h1>深读｜2610.40565</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.40565" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,26 @@ details.fold .fold-body {
 <li>通用物理引擎并不自动带来任务所需的真实性：液体表面张力、化学反应、布料摩擦、切割与焊接等机制可能缺失或未经定量验证；编码智能体直接生成的仿真还可能用动画替代物理、产生穿模或允许奖励漏洞。</li>
 <li>本文主要研究自动构建、审计和使用机器人仿真，而不是提出新的机器人策略架构。评测以闭环仿真交互为主：策略根据相机图像和机器人反馈连续发出控制命令；默认受限策略看不到仿真内部状态，完整特权状态仅用于学习实验。</li>
 <li>作者目标是把仿真开发转化为可随编码智能体能力扩展的任务，自动生成兼顾真实性、可解性、运行速度、可配置性与抗漏洞性的环境，并以此扩大机器人训练和评测的任务覆盖。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 6）</span>
+    <a href="/assets/figures/2610.40565.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.40565.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.40565.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.40565.png'">
+    <img src="/assets/figures/2610.40565.png" onerror="this.onerror=null;this.src='../assets/figures/2610.40565.png'" alt="2610.40565 Figure 6 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><p>该图为论文《Gym-Anything for Robotics: Scaling physical simulations with digital agents》的Figure 6。</p>
+<p>图注要点：Overview of Gym-Anything for Robotics. Phase~1: We select 120 simulations grounded in U.S.\ GDP data, covering the most valuable physical work across occupations and everyday life, and build 25 of them. Phase~2: A creation agent builds each simulation in code and produces evidence of its quality, which four audit agents check against our criteria. Phase~3: A task creation agent proposes tasks of targeted difficulty, which six audit agents check, and each task runs with many robots and variations. Phase~4: Models learn from privileged simulation state through in-context learning, coaching, and code policies that train VLAs.</p>
+<p>方法上下文摘录：【LaTeX 方法章节片段】</p>
+<p>\label{sec:method}</p>
+<p>In this section, we introduce the problem setup and the GDP-grounded selection of simulations. In \S\ref{sec:creation}, we describe our multi-agent strategy for creating simulations, and in \S\ref{sec:tasks}, how we create tasks of controlled difficulty for each simulation.</p>
+<p>\subsection{Problem Setup}</p>
+<p>\label{sec:setup}</p>
+<p>\paragraph{Simulation.} We refer to a simulation $E$ as a scene implemented in code, consisting of objects with physical models (such as rigid, articulated, deformable, or liquid), a robot, cameras, and a physics engine that advances the physical state $s$ of the scene (Figure~\ref{fig:setup}). Each simulation specifies a default robot, which can be swapped for other robots from a shared catalog, from single arms to bimanual arms and huma</p>
+<p>（本地 Qwen 暂不可用，本 walkthrough 为图注/方法摘录占位，待模型恢复后可用 --force 重生成模块化解读。）</p></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 6 Caption）</summary><div class="arch-cap-text">Overview of Gym-Anything for Robotics. Phase~1: We select 120 simulations grounded in U.S.\ GDP data, covering the most valuable physical work across occupations and everyday life, and build 25 of them. Phase~2: A creation agent builds each simulation in code and produces evidence of its quality, which four audit agents check against our criteria. Phase~3: A task creation agent proposes tasks of targeted difficulty, which six audit agents check, and each task runs with many robots and variations. Phase~4: Models learn from privileged simulation state through in-context learning, coaching, and code policies that train VLAs.</div></details>
+</div>
+<ul>
 <li>整体流程为“经济活动选择 → 仿真创建与审计 → 任务创建与审计 → 策略评测和学习”：先从美国职业、经济价值和日常活动数据中分解原子物理动作，再选择能够覆盖高价值动作及其物理能力的仿真，最后由编码智能体实现环境、任务和验证器。</li>
 <li>每个仿真由场景对象、物理模型、机器人、相机和物理引擎组成，并支持替换单臂、双臂或人形机器人，以及改变物体位姿、外观和物理参数；这些变化改变场景和初始状态，但不改变任务语义。</li>
 <li>作者用四类共十项标准定义“合格仿真”，覆盖物理与视觉真实性、现实相关性、参数依据、交互动力学、可解性、运行速度、框架集成与配置、文档，以及对数值不稳定和非物理动作漏洞的鲁棒性。</li>
@@ -584,12 +603,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>Carnegie Mellon University 的 Aggarwal 与 Welleck 用创建智能体、4 个仿真审计器和 6 个任务审计器构建了含 25 个仿真、200 个环境的 RoboWorld，完整测试上最佳前沿模型仍为 0% 成功率、平均奖励 0.06，并以特权代码策略生成示范训练 \(\pi_{0.5}\)。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.40565" data-title="Gym-Anything for Robotics">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.40565" data-title="2610.40565">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.40565 · Gym-Anything for Robotics</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.40565 · 2610.40565</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -599,7 +618,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Gym-Anything for Robotics》</strong>（arXiv: 2610.40565）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.40565》</strong>（arXiv: 2610.40565）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

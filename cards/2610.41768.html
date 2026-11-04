@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Visual-Inertial RGB-D SLAM with Encoders for a Differential Wheeled Robot</title>
+<title>深读｜2610.41768</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41768" rel="noopener noreferrer" target="_blank">arXiv 2610.41768</a></span><span class="badge">深读</span></div>
-<h1>深读｜Visual-Inertial RGB-D SLAM with Encoders for a Differential Wheeled Robot</h1>
+<h1>深读｜2610.41768</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41768" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>RGB-D ORBSLAM2 虽具备厘米级精度和实时运行能力，但在特征稀少、弱光、快速运动、图像帧率偏低或嵌入式计算不稳定时容易暂时丢失跟踪，进而中断轨迹和地图点生成。</li>
 <li>视觉—惯性方案仍依赖纯视觉系统先稳定运行约 15 s，以使尺度、重力方向、速度和 IMU 偏置可观；这与作者追求的真实环境鲁棒性存在冲突。</li>
 <li>论文面向真实差速轮式机器人，在分段平坦且轮地摩擦充分的假设下，目标是将轮编码器和 IMU 紧耦合进 RGB-D ORBSLAM2，在不过度牺牲精度的情况下减少视觉暂时失效，并尽可能持续输出轨迹和地图点。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1 (p.1)）</span>
+    <a href="/assets/figures/2610.41768.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41768.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41768.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41768.png'">
+    <img src="/assets/figures/2610.41768.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41768.png'" alt="2610.41768 Figure 1 (p.1) 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多传感器输入与对齐</strong>：图中 RGB-D 帧 $\{I_k,D_k\}$、IMU 测量 $\{\boldsymbol\omega_t,\mathbf a_t\}$ 及左右轮编码器读数 $\{u_t^L,u_t^R\}$ 按时间戳汇入系统；视觉前端提取、匹配 ORB 特征，并由深度恢复地图点初值。</li>
+<li><strong>跨帧运动约束</strong>：IMU Preintegration 在关键帧间生成旋转、速度和位置增量 $(\Delta\mathbf R,\Delta\mathbf v,\Delta\mathbf p)$；Encoder Preintegration 依据差分轮生成式测量模型与分段平坦地面假设，积分相对运动 $\Delta\mathbf T_{ij}^{e}$，同步传播协方差及偏置雅可比。</li>
+<li><strong>紧耦合 MAP 优化</strong>：视觉重投影残差 $\mathbf r_{ij}^{v}=\mathbf z_{ij}-\pi(\mathbf T_i,\mathbf P_j)$、IMU 残差 $\mathbf r_{ij}^{I}$ 和编码器残差 $\mathbf r_{ij}^{e}$ 共同约束状态 $\mathcal X=\{\mathbf T_k,\mathbf v_k,\mathbf b_k,\mathbf P_l\}$；在 g2o 中以 LM 和 Huber 核最小化加权残差和。</li>
+<li><strong>建图与闭环输出</strong>：优化贯穿 Motion/Local/Global BA 与 Pose Graph；视觉失效时向 ORBSLAM2 Spanning Tree 加入纯编码器边，VIEOS2 可叠加 IMU 约束，并通过限制连续里程计边及动态回环阈值，最终输出一致的机器人轨迹与稀疏三维地图。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 (p.1) Caption）</summary><div class="arch-cap-text">First page overview / teaser extracted from arXiv PDF (PDF-only source).</div></details>
+</div>
+<ul>
 <li>整体流程以 RGB-D 图像、IMU 和左右轮编码器为输入：视觉前端提供特征与重投影约束，IMU 和编码器分别形成跨帧预积分约束，随后在 MAP 框架下联合优化关键帧位姿、速度、IMU 偏置及地图点。</li>
 <li>作者提出编码器的生成式测量模型，并在分段平坦地面假设下推导编码器预积分、误差协方差传播以及优化所需雅可比；与标准 IMU 预积分的近似推导相比，论文声称其编码器模型允许真实运动偏离理想模型，并给出相应的精确计算形式。</li>
 <li>系统在 ORBSLAM2 上扩展运动 BA、局部 BA、全局 BA 和位姿图优化，使编码器残差能够与视觉重投影残差、IMU 残差共同进入基于 g2o 的 Levenberg–Marquardt 优化，并继续使用 Huber 鲁棒核抑制异常值影响。</li>
@@ -578,12 +594,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>东京大学作者提出在 ORBSLAM2 中紧耦合 RGB-D、IMU 与轮编码器的 VIEOS2，在自建真实农业数据集上实现实时状态估计并报告约 2–7 cm 轨迹 RMSE，但现有原文未提供 SR、SPL 或完整基线表。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41768" data-title="Visual-Inertial RGB-D SLAM with Encoders for a Differential Wheeled Robot">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41768" data-title="2610.41768">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41768 · Visual-Inertial RGB-D SLAM with Encoders for a Differential Wheeled Robot</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41768 · 2610.41768</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -593,7 +609,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Visual-Inertial RGB-D SLAM with Encoders for a Differential Wheeled Robot》</strong>（arXiv: 2610.41768）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41768》</strong>（arXiv: 2610.41768）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

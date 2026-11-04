@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜REA</title>
+<title>深读｜2610.42053</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.42053" rel="noopener noreferrer" target="_blank">arXiv 2610.42053</a></span><span class="badge">深读</span></div>
-<h1>深读｜REA</h1>
+<h1>深读｜2610.42053</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.42053" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>快速 VLA、全身控制器和代码策略能以数 Hz 至数十 Hz 闭环执行，却可能在分布偏移下失效；论文指出，在标准 LIBERO 上超过 90% 的 VLA 面对 LIBERO-Pro 扰动测试集时会明显退化。</li>
 <li>现有“大脑—小脑”组合存在两类具体故障：让智能体同步调用快速策略会阻塞控制；仅在策略报错时调用智能体，又会反复触发同一错误并漏掉无异常的静默失败。论文的一组 LIBERO-Pro 测试中，异常触发路由在 590 个 episode 中只升级 6 次，而实际有 166 次失败。</li>
 <li>本文研究跨仿真与真机的闭环运行时，System 0 策略可为冻结代码、VLA 或全身控制器；目标是在不让运行中策略等待慢速“大脑”的前提下，统一调度异构策略、提高成功率与控制效率，并使恢复开销受单一预算约束。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 10）</span>
+    <a href="/assets/figures/2610.42053.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.42053.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.42053.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.42053.png'">
+    <img src="/assets/figures/2610.42053.png" onerror="this.onerror=null;this.src='../assets/figures/2610.42053.png'" alt="2610.42053 Figure 10 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>单策略基线（Fix/Evo）</strong>：输入任务指令 $g$ 与初始观测 $I_0$，执行程序策略 $\pi_k$ 产生动作序列 $a_t=\pi_k(I_t,g)$。Fix 可能在任务未完成时终止；Evo 虽可合成更强策略，但离线搜索与生成成本更高。</li>
+<li><strong>视觉判定门（Visual Judge）</strong>：每轮将初始帧 $I_0$、当前帧 $I_t$ 和指令 $g$ 联合输入视觉判定器，输出完成判断 $d_t=J(I_0,I_t,g)\in\{\mathrm{done},\mathrm{not\ done}\}$；若为 not done，则继续路由而非读取评测成功信号。</li>
+<li><strong>程序执行与路由（Program Executor/Router）</strong>：执行器运行离线生成并冻结的程序集合 $\Pi=\{\pi_1,\ldots,\pi_K\}$；路由器依据当前状态 $s_t$ 和 route memory 中的路由表选择下一策略 $\pi_{k_{t+1}}=R(s_t,g,M)$，并按 first/other/first escalation ladder 逐级切换。</li>
+<li><strong>共享预算与停止评测</strong>：所有策略调用共同消耗统一预算 $B$，满足 $\sum_k c_k\le B$；当 $d_t=\mathrm{done}$ 或预算耗尽时停止。真实成功标记 $y$ 仅在停止后读取一次，只用于最终评估，不参与判定、路由或策略执行。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 10 Caption）</summary><div class="arch-cap-text">\textbf{Overview of \rea{} with programmatic policies.} Top left: a single policy may end with the task unfinished (Fix), and a stronger policy is expensive to synthesise (Evo). Top right: the \syst{} visual judge compares the episode-initial and current frames with the instruction, answers not done, and the router dispatches the next policy from the current state. Bottom: \sysz{} runs frozen programs generated offline; \syso{} selects them with a route table (route memory) and a first/other/first escalation ladder; \syst{} is the visual judge gate. All runs share one budget; success is read once, after stopping, for evaluation only.</div></details>
+</div>
+<ul>
 <li>REA 将控制分为三级：System 2 离线生成候选策略、在线提供建议或视觉判定；System 1 只负责策略选择、完成判定与恢复调度，不直接输出动作；System 0 以原生频率闭环执行 VLA、代码策略或全身控制器，并在策略或动作段边界归还控制权。</li>
 <li>路由记忆在开发集上记录每个“任务—策略”组合的成功率与平均步数；测试时优先选择成功率最高者，平局时选择步数更少者，从而把 System 2 移出初始 dispatch 路径。遇到选择困境时，运行时仍可调用 System 2。</li>
 <li>边界触发 judge gate 在每次策略返回时比较初始帧、当前帧和任务指令，输出 <code>done</code> 或 <code>not_done</code>：前者立即停止，避免重复执行破坏已经完成的任务；后者沿恢复阶梯升级，因此能够处理不抛异常的静默失败。</li>
@@ -584,12 +600,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>REA 由新加坡国立大学 HPC-AI Lab、InfRec/Cardinal AI Lab、加州大学伯克利分校、东京大学、中科院深圳先进技术研究院及香港科技大学相关作者提出，以路由记忆、边界 judge 和共享预算升级统一调度冻结策略，在 3000 个 LIBERO-Pro episode 上取得 95.9% 成功率、较最佳单体策略高 1.2 个百分点并减少约 25% 控制步数，但尚未直接集成或验证 π0、π0.5 与 OpenPI。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.42053" data-title="REA">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.42053" data-title="2610.42053">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.42053 · REA</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.42053 · 2610.42053</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -599,7 +615,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《REA》</strong>（arXiv: 2610.42053）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.42053》</strong>（arXiv: 2610.42053）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜OpenVIO</title>
+<title>深读｜2610.41671</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41671" rel="noopener noreferrer" target="_blank">arXiv 2610.41671</a></span><span class="badge">深读</span></div>
-<h1>深读｜OpenVIO</h1>
+<h1>深读｜2610.41671</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41671" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>实用 VIO 还需要处理自动曝光变化、特征丢失、静止或运动启动、相机—IMU 外参与时间偏移不准确等问题，而不只是完成理想标定条件下的轨迹估计。</li>
 <li>论文研究的是记录自真实传感器的离线 VIO：在 EuRoC、TUM-VI 和 PanoAir 上评测，不涉及导航策略权重、仿真器交互或闭环任务成功率。</li>
 <li>作者目标是提供一个采用 MIT 许可证、能够在单目/双目和针孔/鱼眼/360° ERP 相机之间复用，并保持稳定轨迹估计与在线标定能力的开源 VIO 系统。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1 (p.1)）</span>
+    <a href="/assets/figures/2610.41671.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41671.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41671.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41671.png'">
+    <img src="/assets/figures/2610.41671.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41671.png'" alt="2610.41671 Figure 1 (p.1) 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多传感器输入与统一相机接口</strong>：左侧输入图像 $I_k$ 与 IMU 测量 $u_t=(\boldsymbol\omega_t,\mathbf a_t)$；Camera Model（相机模型）以反投影 $\mathbf r=\pi^{-1}(\mathbf z)$ 将像素变为单位射线，并以 $\mathbf z=\pi(\mathbf r)$ 完成针孔、鱼眼及 ERP 投影。</li>
+<li><strong>Feature Tracking &amp; Initialization（特征跟踪与初始化）</strong>：金字塔 Lucas–Kanade 光流结合前后向检查、旋转 RANSAC 和网格化管理生成轨迹 $\{\mathbf z_{i,k}\}$；系统按视差选择静态重力/偏置估计或动态联合优化，初始化 $\mathbf R,\mathbf p,\mathbf v,\mathbf b_g,\mathbf b_a$。</li>
+<li><strong>IMU Propagation 与视觉更新</strong>：IMU Propagation 按惯性动力学传播状态及协方差 $(\mathbf x_k,\mathbf P_k)$；终止轨迹进入 MSCKF Update，经三角化、零空间投影、卡方门控和 QR 压缩形成残差，长且几何稳定的轨迹则转为 Persistent Landmark（持久逆深度路标）继续约束滑窗。</li>
+<li><strong>状态标定与输出</strong>：滤波器联合估计相机–IMU 外参、公共时间偏移；双镜头 ERP 还估计拼接角误差和后镜头曝光延迟。右侧输出每次曝光时刻的 IMU 位姿 $\mathbf T_{WI}(t_k)$，被移除的克隆位姿同步导出为带观测的关键帧。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 (p.1) Caption）</summary><div class="arch-cap-text">First page overview / teaser extracted from arXiv PDF (PDF-only source).</div></details>
+</div>
+<ul>
 <li>整体流程为“图像与 IMU 输入 → 特征跟踪和初始化 → IMU 状态传播 → MSCKF/持久路标视觉更新 → 输出每次曝光时刻的 IMU 位姿”；滑窗中被移除的位姿同时以带特征观测的关键帧形式导出。</li>
 <li>用“像素到单位射线、三维方向到像素投影”的相机接口统一针孔、鱼眼和 ERP 几何。滤波器在单位射线上执行三角化与几何运算，因此也能表示位于相机后方的观测方向。</li>
 <li>前端采用金字塔 Lucas–Kanade 光流、前后向检查和单位射线旋转 RANSAC；网格化特征管理优先保留长轨迹，并利用中值亮度比补偿自动曝光变化。丢失的持久路标可在滤波器预测位置附近通过归一化互相关重新识别，ERP patch 搜索可跨越左右边界。</li>
@@ -582,12 +598,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>首尔大学的 OpenVIO 以单位射线和带持久路标的 MSCKF 统一针孔、鱼眼及 360° ERP VIO，并在线估计拼接与双镜头时序误差，在 EuRoC 单目共同序列上取得 0.135 m 平均 ATE、在 TUM-VI 单目完成 20/20 条序列，在 PanoAir 17 次飞行中取得 1.14 m 平均 ATE。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.41671" data-title="OpenVIO">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41671" data-title="2610.41671">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.41671 · OpenVIO</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41671 · 2610.41671</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -597,7 +613,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《OpenVIO》</strong>（arXiv: 2610.41671）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.41671》</strong>（arXiv: 2610.41671）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

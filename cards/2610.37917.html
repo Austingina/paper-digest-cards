@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜What Actually Matters? A Paired Evaluation of Inference Settings for $π_{0.5}$ on BEHAVIOR-1K</title>
+<title>深读｜2610.37917</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.37917" rel="noopener noreferrer" target="_blank">arXiv 2610.37917</a></span><span class="badge">深读</span></div>
-<h1>深读｜What Actually Matters? A Paired Evaluation of Inference Settings for $π_{0.5}$ on BEHAVIOR-1K</h1>
+<h1>深读｜2610.37917</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.37917" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>既有证据主要来自服装折叠、单一制造任务或较小规模评测，因此某项推理技巧在原场景有效，并不代表它能迁移到多阶段家庭任务。</li>
 <li>本文在 BEHAVIOR-1K 仿真环境中，对覆盖全部任务的闭环策略执行进行配对消融；研究对象是完全微调后的 π0.5，重点改变推理与数据采集配置，而非提出新的 VLA 架构。</li>
 <li>作者的目标是识别真正影响任务质量与采集成本的配置，并检验失败快照恢复能否以更少仿真开销获得更多有效 rollout。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1 (p.1)）</span>
+    <a href="/assets/figures/2610.37917.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.37917.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.37917.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.37917.png'">
+    <img src="/assets/figures/2610.37917.png" onerror="this.onerror=null;this.src='../assets/figures/2610.37917.png'" alt="2610.37917 Figure 1 (p.1) 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入与策略编码</strong>：图中数据流自左向右，视觉观测 $o_t^{\mathrm{vis}}$ 与语言任务指令 $l$ 共同输入完全微调的 $\pi_{0.5}$；该研究固定模型骨干与训练目标，比较对象始终是同一策略，而非不同模型。</li>
+<li><strong>动作块与阶段预测</strong>：策略从流匹配噪声状态 $z_\tau$ 迭代去噪，联合输出动作块 $A_t=(a_t,\ldots,a_{t+H-1})$ 及任务阶段 $\hat{s}_t$。系统仅执行长度为 $K\le H$ 的前缀，再基于新观测重规划。</li>
+<li><strong>闭环推理接口</strong>：预测阶段作为策略侧反馈维持多阶段任务信念；推理工具链逐项改变 $K$、动作回放速度、去噪步数、重叠 inpainting、advantage guidance、夹爪 snap、渲染与采样方式，以隔离 inference harness 的影响。</li>
+<li><strong>快照恢复与配对评估</strong>：失败后从不同进度快照恢复仿真器状态，并消融是否同步恢复阶段信念 $\hat{s}_t$；各设置按任务计算配对 Q-score 差值 $\Delta Q$，再以任务聚类 bootstrap 置信区间判定显著收益或损害。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 (p.1) Caption）</summary><div class="arch-cap-text">First-page overview extracted from arXiv PDF (LaTeX source had no includegraphics assets).</div></details>
+</div>
+<ul>
 <li>整体流程为：视觉与语言任务输入进入完全微调的 π0.5，模型预测动作块及任务阶段；执行动作块的指定前缀后重新推理，并通过预测阶段的反馈维持多阶段任务状态。</li>
 <li>以 2025 BEHAVIOR Challenge 冠军方案的配置为基线，逐项改变动作块执行长度、动作回放速度、流匹配去噪步数、重叠 inpainting、advantage guidance、夹爪 snap、渲染方式和采样策略。</li>
 <li>推理消融不引入新的模型骨干或训练目标，主要考察相同策略在不同执行接口与采样设置下的行为；因此结果反映的是 inference harness，而不是新模型之间的比较。</li>
@@ -584,12 +600,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>VCAI Lab（Kiel University）与 RobotiXX Lab（George Mason University）等机构的作者在 BEHAVIOR-1K 全部 100 项任务上表明，π0.5 从 20 步降至 1 步去噪无可检测损失，但将执行前缀从 26 减至 13 个动作会使 Q-score 下降 \(0.16\pm0.03\)，而快照恢复虽节省 29%–43% 仿真步数，却必须同步保留策略的阶段信念。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.37917" data-title="What Actually Matters? A Paired Evaluation of Inference Settings for $π_{0.5}$ on BEHAVIOR-1K">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.37917" data-title="2610.37917">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.37917 · What Actually Matters? A Paired Evaluation of Inference Settings for $π_{0.5}$ on BEHAVIOR-1K</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.37917 · 2610.37917</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -599,7 +615,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《What Actually Matters? A Paired Evaluation of Inference Settings for $π_{0.5}$ on BEHAVIOR-1K》</strong>（arXiv: 2610.37917）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.37917》</strong>（arXiv: 2610.37917）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

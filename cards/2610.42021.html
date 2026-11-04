@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜Nexus-VLA</title>
+<title>深读｜2610.42021</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.42021" rel="noopener noreferrer" target="_blank">arXiv 2610.42021</a></span><span class="badge">深读</span></div>
-<h1>深读｜Nexus-VLA</h1>
+<h1>深读｜2610.42021</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.42021" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,22 @@ details.fold .fold-body {
 <li>显式预测可供性图、轨迹等中间表示虽然可解释，却会增加推理计算与决策延迟，而且结构化或离散语义并不适合作为连续动作生成的直接接口。</li>
 <li>本文同时覆盖 RoboCasa-GR1 仿真、OOD 场景和真实机器人实验；策略采用连续动作块生成，但所给原文未明确将执行协议称为开环或闭环，也未说明是否冻结视觉—语言骨干。</li>
 <li>作者目标是用未配对人类视频和机器人示范进行单阶段端到端联合训练，使人类经验直接参与机器人动作学习，并提升数据利用效率与跨场景泛化能力。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.42021.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.42021.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.42021.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.42021.png'">
+    <img src="/assets/figures/2610.42021.png" onerror="this.onerror=null;this.src='../assets/figures/2610.42021.png'" alt="2610.42021 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入/跨具身经验</strong>：现有题注仅表明 Nexus-VLA 同时利用 human experiences 与 robot experiences，但未给出 Figure 1 原图，因而无法确认视觉、语言、状态或动作输入的具体名称、维度及数据流向。</li>
+<li><strong>Hierarchical Semantic Latent（层级语义潜变量）</strong>：题注明确其承担跨具身知识桥接，但未说明层级数量、编码器/解码器结构或潜变量符号；若直接写成 $z_t$、$z_t^{(l)}$ 等将属于无依据补充。</li>
+<li><strong>知识迁移与输出</strong>：可确认该潜空间服务于 cross-embodiment knowledge transfer 和 real-world generalization；但缺少方法章节与图中标注，无法准确描述策略 $\pi$、动作序列、训练阶段 Stage I/II 或损失函数。请提供 Figure 1 图片或方法原文后再作逐模块解析。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Nexus-VLA bridges human and robot experiences through a Hierarchical Semantic Latent, enabling cross-embodiment knowledge transfer and real-world generalization.</div></details>
+</div>
+<ul>
 <li><strong>整体流程</strong>：共享视觉—语言骨干接收当前视觉观测、任务指令和一个可学习语义 token，得到视觉—语言隐藏序列及 Hierarchical Semantic Latent；动作生成器再结合该序列、机器人本体状态、噪声动作块和 flow timestep，预测连续动作的条件速度场。</li>
 <li><strong>四级跨具身语义监督</strong>：作者将共享操作知识组织为 Intent、Spatial、Motion 和 Interaction 四层，分别对应“做什么”“操作什么及在哪里”“如何移动”“如何接触并影响物体”。监督目标包括局部任务描述、操作物体与目标区域的二维位置、未来双腕轨迹，以及未来接触位置和接触状态。</li>
 <li><strong>共享层次语义潜变量</strong>：模型把可学习的语义 token 放在多模态序列末尾，其最终隐藏状态作为统一 Semantic Latent。四个轻量投影头从同一个潜变量预测四级语义，使不同粒度的监督共同约束一个内部表示，而不是分别建立彼此独立的中间模块。</li>
@@ -579,12 +594,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>Nexus-VLA 由西安交通大学、中国科学院自动化研究所、中国科学院大学和北京邮电大学团队提出，通过四级跨具身语义共同塑造可直接驱动连续动作的共享潜变量，在 RoboCasa-GR1 的 24 个任务上取得 <strong>80.5%</strong> 平均成功率，但并非 π0、π0-FAST、π0.5 或 OpenPI 的官方继承工作。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2610.42021" data-title="Nexus-VLA">
+<section id="paper-qa" class="qa-section" data-arxiv="2610.42021" data-title="2610.42021">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2610.42021 · Nexus-VLA</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.42021 · 2610.42021</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -594,7 +609,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《Nexus-VLA》</strong>（arXiv: 2610.42021）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2610.42021》</strong>（arXiv: 2610.42021）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

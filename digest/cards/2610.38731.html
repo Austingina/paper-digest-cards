@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Value Function-Guided MPPI for Hierarchical Planning and Control in Off-Road Autonomous Navigation</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.38731" rel="noopener noreferrer" target="_blank">arXiv 2610.38731</a></span><span class="badge">深读</span></div>
+<h1>深读｜Value Function-Guided MPPI for Hierarchical Planning and Control in Off-Road Autonomous Navigation</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.38731" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>越野导航中的坡地、沟壑与不平整地形会引发过大俯仰、垂向冲击甚至车辆损伤；同一地形是否安全又取决于速度与控制律，因此仅按几何或语义生成静态代价图，不能完整反映真实执行代价。</li>
+<li>传统分层系统通常是高层规划器向低层控制器单向下发轨迹。若轨迹超出控制器在当前地形上的能力，规划器无法从执行失败中及时修正，可能反复选择不可执行路径。</li>
+<li>现有价值函数引导 MPC 的工作多将价值用于轨迹末端自举；本文关注的是能否把预训练 RL 控制器的价值函数用作每个航点的稠密、控制器相关代价，从而替代显式地形代价图。</li>
+<li>论文在 BeamNG 的 Johnson Valley 高保真越野仿真环境中研究闭环目标导航：高层 MPPI 周期性规划，预训练低层策略跟踪航点；在线变体继续更新价值函数，策略是否同步更新在所给原文中未见说明。</li>
+<li>作者目标是让规划器同时考虑目标进展、地形风险和低层控制可执行性，并利用部署经验减少在未见地形上的重复失败。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.38731.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.38731.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.38731.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.38731.png'">
+    <img src="/assets/figures/2610.38731.png" onerror="this.onerror=null;this.src='../assets/figures/2610.38731.png'" alt="Value Function-Guided MPPI for Hierarchical Planning and Control in Off-Road Autonomous Navigation Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><p>该图为论文《Value Function-Guided MPPI for Hierarchical Planning and Control in Off-Road Autonomous Navigation》的Figure 1。</p>
+<p>图注要点：Overview of our value-guided planning framework. We pre-train RL policies to provide both an actor $\pi_\theta(s)$ and a value function $V_\phi(s)$. MPPI samples candidate trajectories and evaluates them using a cost that combines goal progress with the negative value estimate, treating $-V_\phi(s)$ as a control-aware cost. The selected trajectory is executed by the policy, and the resulting experience can be used to update the value function online. This enables planning to be guided by the expected performance of the controller without requiring an explicit cost map.</p>
+<p>方法上下文摘录：【LaTeX 方法章节片段】</p>
+<p>\label{sec:methods}</p>
+<p>\subsection{RL Policy Training}\label{sec:methods:ppo}</p>
+<p>We first train a low-level RL controller to track waypoint sequences. All training and evaluations are conducted in the Johnson Valley environment in BeamNG ~\cite{beamng}. The controller is trained using Proximal Policy Optimization (PPO) ~\cite{ppo}. Training waypoint trajectories are constructed from over $3.5$K meters of human-teleoperated driving trajectories collected in the simulator. At each timestep, the policy receives as input the next waypoints along these trajectories and is trained to track them. The learned policy outputs continuous control commands (steering and throttle) to follow the waypoint sequence.</p>
+<p>The policy observation consists of (i) the distance and heading to the next $N=3</p>
+<p>（本地 Qwen 暂不可用，本 walkthrough 为图注/方法摘录占位，待模型恢复后可用 --force 重生成模块化解读。）</p></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of our value-guided planning framework. We pre-train RL policies to provide both an actor $\pi_\theta(s)$ and a value function $V_\phi(s)$. MPPI samples candidate trajectories and evaluates them using a cost that combines goal progress with the negative value estimate, treating $-V_\phi(s)$ as a control-aware cost. The selected trajectory is executed by the policy, and the resulting experience can be used to update the value function online. This enables planning to be guided by the expected performance of the controller without requiring an explicit cost map.</div></details>
+</div>
+<ul>
+<li>整体流程为：MPPI 在转向与油门动作空间采样控制序列，经运动学自行车模型生成候选航点轨迹；预训练 critic 对轨迹中每个航点的局部地形进行估值；规划器结合目标距离与负价值选择轨迹，再交给低层 PPO actor 输出连续转向和油门命令。</li>
+<li>低层 actor 接收未来 3 个航点、当前车速及局部高程图，并利用多航点前视保持高速跟踪稳定性；另行训练一个只观察下一个航点的单航点 critic，使其价值更接近短轨迹段的执行成本。作者明确指出，单航点策略本身不足以支持稳定高速控制。</li>
+<li>候选轨迹代价按航点累加：目标项为航点到全局目标的欧氏距离，残差项为 critic 估计回报的负值，即以 \(-V_{\mathrm{ppo}}\) 表示控制感知的地形代价。与只在轨迹末端使用价值函数的方法不同，这里在局部规划时域内逐航点查询价值。</li>
+<li>为比较候选路径的地形差异，critic 在各航点处使用对应的前视高程块，但将速度、航点间距等非地形输入固定；因此轨迹间残差代价的变化主要来自地形几何，而不是人为改变的控制条件。</li>
+<li>当航点距目标不超过一个规划空间时域时，残差项权重被置零，仅保留目标推进项，以避免价值代价阻碍最终到达。</li>
+<li>原始 critic 因奖励中存在幅值大、稀疏的负惩罚而系统性低估绝对价值。作者先用策略在训练轨迹上的实际 rollout 计算 Monte Carlo return，离线校准 critic；部署时的在线版本再用新驾驶经验更新价值函数，让后续规划避开已暴露的危险区域。提供的原文在在线更新机制展开处截断，无法核对更新频率、缓存设计及优化超参数。</li>
+<li>相比基线 MPPI，本文保留采样式轨迹搜索和运动学 rollout，主要改变代价接口：基线含显式俯仰代价，而本文以 RL critic 的负价值作为残差代价，不需要单独学习或标注显式地形代价图。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>论文在 64 条评测轨迹上统计安全违规。按低、中、高三个严重度区间，基线 MPPI 的垂向 jerk 违规数为 317、51、19，本文方法为 22、1、0，在线适应版本为 31、0、0；价值引导的两个版本均显著减少了该类事件。</li>
+<li>俯仰超过 0.4 rad（22.9°）时记为违规。基线在低、中、高严重度区间分别出现 84、0、0 次，本文方法为 11、1、0 次，在线适应版本为 1、1、3 次。在线版本减少了低严重度违规，但仍出现 3 次高严重度违规，不能据此声称其在所有风险等级上都优于无在线适应版本。</li>
+<li>图示案例中，基线 MPPI 在 A、B、E 三条未见轨迹上陷住并无法完成路线；本文方法在 C 中能够沿已有车辙行驶，而车辙比越野区域更安全。</li>
+<li>在案例 A 中，无在线适应的方法中途发生车辆损伤；在线适应版本仅凭运行中更新便绕开该区域，说明执行反馈可以改变后续路径选择。与此同时，在线版本在案例 D 达到最长时间限制且未完成，表明风险规避可能以通行效率或完备性为代价。</li>
+<li>摘要称本文比基线 MPPI 更安全、更有效地到达目标，但所给原文未提供成功率、SPL、完成时间、损伤率或统计显著性数值，因此无法量化其目标到达收益，也不能与 VLN/GoalNav 文献中的 SR、SPL 直接比较。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>证据局限于 BeamNG Johnson Valley 仿真；虽然作者强调算法不依赖难以由车载传感器复现的仿真特权信息，但当前高程图直接由仿真深度生成、无未知单元且近似真值，尚不能证明其对真实 LiDAR/深度噪声、遮挡和地图空洞的鲁棒性。</li>
+<li>研究只建模几何地形风险，未纳入泥、沙等会改变牵引力和可变形性的语义或材质信息；BeamNG 中植被也不改变车辆动力学。因此从几何危险泛化到真实越野可通行性仍有明显外推风险。</li>
+<li>规划 rollout 使用运动学自行车模型，而真正的越野交互高度非线性。价值残差可以间接补偿部分执行风险，但固定非地形输入查询 critic 也会弱化速度—地形耦合，尤其难以表达“同一坡面低速安全、高速危险”的完整条件关系。</li>
+<li>在线适应并非单调改善：给出的结果中仍有超时失败和高严重度俯仰事件。可进一步加入不确定性估计、保守价值下界、更新回滚和危险事件重采样，并分别报告适应前后成功率、完成时间与各级安全违规。</li>
+<li>可做一组面向实车迁移的分层消融：比较显式几何代价图、固定 critic、在线 critic 及二者融合；同时注入高程噪声、遮挡、定位漂移和跨速度分布偏移，以检验收益究竟来自价值表示、在线更新还是近真值感知。</li>
+<li>对跨场景泛化，应采用地形区域级而非轨迹级划分，在不同坡度分布、沟壑结构和材质环境中测试；所给节选未披露独立地图数量、随机种子、置信区间及真实车辆结果。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>仿真平台：BeamNG；训练与评测环境均为 Johnson Valley。</li>
+<li>任务：越野车辆从起点导航至目标，重点考察复杂地形几何引发的俯仰、垂向 jerk、损伤和卡住等问题。</li>
+<li>低层控制器：采用 PPO 训练，输出连续转向和油门控制。</li>
+<li>训练数据：超过 3.5K 米的人类遥操作仿真驾驶轨迹，用于构造航点跟踪任务。</li>
+<li>actor 观测：未来 \(N=3\) 个航点的距离与航向、当前车速，以及车辆前方 \(6\times6\) 米高程图；高程图下采样至 \(3\times3\)，所有观测堆叠最近 3 帧。</li>
+<li>高程来源：仿真中的下视深度相机，经后处理生成局部高度图；无未知单元，仅使用几何信息，不使用语义标签或其他视觉特征。</li>
+<li>actor 奖励：包含航点距离进展、车辆损伤、垂向 jerk 和垂向加速度；各项权重位于论文附录，但未包含在所给原文中。</li>
+<li>critic：独立训练于单航点任务，只观察下一个航点；车辆进入距航点 \(d_{\text{acceptance threshold}}\) 范围后终止 episode。该阈值数值未在所给节选中披露。</li>
+<li>critic 离线校准：在全部训练轨迹上执行预训练策略、critic 与 MPPI，记录观测—奖励并计算 Monte Carlo return；随后对 critic 微调 1000 个 epoch。</li>
+<li>高层规划器：在转向和油门动作空间采样，以带 Ackermann 转向的运动学自行车模型生成候选航点轨迹。</li>
+<li>规划空间时域：40 米；作者称该范围与通常可提供约 50 米或更远局部高程图的车载建图系统相符。</li>
+<li>轨迹代价：逐航点累加目标距离项与负价值残差项；进入距目标一个规划时域后关闭价值残差项。</li>
+<li>评测规模：安全违规统计覆盖 64 条评测轨迹；图 2 中展示的轨迹均未在训练时出现。</li>
+<li>违规阈值：俯仰超过 0.4 rad（22.9°）；垂向 jerk 阈值在原文图注中写为 \(10\mathrm{e}{-2}\,\mathrm{m/s^3}\)。原文称展示的俯仰和 jerk 严重度分别不超过 0.7 rad 与 2 \(\mathrm{m/s^3}\)。</li>
+<li>对照方法：基线 MPPI、价值函数引导 MPPI、带在线价值适应的价值函数引导 MPPI；基线包含显式俯仰代价项。</li>
+<li>所给节选未披露 MPPI 样本数、重规划频率、温度、噪声分布、目标距离权重、残差权重、最大 episode 时长、随机种子及在线更新周期。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的核心原因不是它提出了新的全局地图表示，而是它重新定义了分层导航中的代价接口：低层控制器通过自身价值函数告诉高层规划器“哪些局部轨迹对我而言可执行”，将传统单向的规划—控制链路改成带执行反馈的闭环。</li>
+<li>它还给出了较清晰的工程落点：可将已有 RL 控制器的 critic 接入 MPPI，而不必先训练独立语义代价图；在 64 条轨迹的安全统计中，价值引导版本的低、中、高 jerk 违规为 22、1、0，而基线为 317、51、19。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>与 VLN 或视觉 GoalNav 不同，本文不处理自然语言指令、目标语义识别或开放词汇场景理解；目标以位置形式给定，核心问题是局部轨迹的动力学可执行性和越野安全性。因此不能用其结果支持语言 grounding 或语义泛化能力。</li>
+<li>与经典 SLAM—规划—控制栈相比，本文不替代定位和几何建图，而是替换或补充规划器使用的局部代价表示。它仍需要各候选航点处的局部高程观测，也没有解决回环检测、全局一致性或大尺度路径搜索。</li>
+<li>相对显式 BEV 可通行性图，价值函数将地形、奖励设计和控制器能力压缩到同一标量中，减少人工代价标注并提高控制相关性；代价是可解释性降低，而且价值偏差会直接污染规划。</li>
+<li>相对 TD-MPC 一类方法，本文不只把价值用于轨迹末端，而是把它作为逐航点稠密代价；同时不学习规划动力学模型，而以运动学自行车模型完成采样 rollout，工程上更简单，但对高速越野动力学的表达更弱。</li>
+<li>在线适应让系统可根据实际失败更新规划偏好，这比静态代价图更适合持续部署；不过给出的超时和高严重度俯仰案例说明，适应机制仍需安全约束与遗忘控制。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li>在空间几何表示上，可保留局部稠密高程/占据表示作为可查询底座，再增加一个“控制器条件价值层”；同一空间位置应按速度、姿态、载荷或机器人形态条件化，而不是只输出单一可通行分数。</li>
+<li>在分层接口上，可让局部控制器返回价值、失败概率和不确定性三类信号，高层规划器分别用于效率代价、安全约束和探索抑制；这比把所有因素压进一个未经校准的标量更容易监控和调试。</li>
+<li>在评测上，应增加“重复失败率”和“首次受损后再次进入同一区域的概率”，专门检验规划—控制反馈是否真正形成记忆；同时报告 SR/SPL、完成时间与分级安全违规，避免安全提升被过度保守或超时掩盖。</li>
+<li>在跨场景泛化上，可先冻结 actor，仅在线更新 critic，并与 actor—critic 同时更新做对照；按地形区域留出测试集，监控价值校准误差和路径分布漂移，防止在线学习破坏原有控制能力。</li>
+<li>若迁移到 VLN/GoalNav，可把语言或语义模块产生的目标进展项与控制价值项分离：前者回答“应去哪里”，后者回答“当前机器人能否安全到达”，从而避免语义规划直接下发低层不可执行路径。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>卡内基梅隆大学机器人研究所提出以预训练 PPO critic 的负价值逐航点引导 MPPI、并在线适应未见地形的越野分层导航框架；在 64 条评测轨迹中，其无在线版本的低/中/高垂向 jerk 违规为 22/1/0，而基线为 317/51/19，但论文节选未报告 SR、SPL 或实车结果。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2610.38731" data-title="Value Function-Guided MPPI for Hierarchical Planning and Control in Off-Road Autonomous Navigation">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.38731 · Value Function-Guided MPPI for Hierarchical Planning and Control in Off-Road Autonomous Navigation</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Value Function-Guided MPPI for Hierarchical Planning and Control in Off-Road Autonomous Navigation》</strong>（arXiv: 2610.38731）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>

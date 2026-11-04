@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜SNAP</title>
+<title>深读｜2611.03498</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.03498" rel="noopener noreferrer" target="_blank">arXiv 2611.03498</a></span><span class="badge">深读</span></div>
-<h1>深读｜SNAP</h1>
+<h1>深读｜2611.03498</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.03498" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -528,7 +528,23 @@ details.fold .fold-body {
 <li>ViPlanner 等语义规划方法能区分不同地形的通行代价，但主要面向静态场景，遇到行人时通常依赖额外的反应式避障，难以联合权衡绕人和遵守地形规范。</li>
 <li>论文研究闭环目标导航：在仿真中训练导航策略，再冻结策略并零样本部署到四足机器人，由策略持续输出机体坐标系速度指令，底层 locomotion policy 负责执行。</li>
 <li>作者的目标是用统一的机器人中心语义 BEV 表示，同时处理动态人群、静态障碍和地形规范，在不显式估计或跟踪行人状态的情况下提高导航成功率并实现真机迁移。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2611.03498.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.03498.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.03498.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.03498.png'">
+    <img src="/assets/figures/2611.03498.png" onerror="this.onerror=null;this.src='../assets/figures/2611.03498.png'" alt="2611.03498 Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>环境生成与训练场景（a）</strong>：在程序化生成环境中构造具有不同风险等级的语义地形、静态障碍物及由社会力模型（SFM）驱动的行人，形成动态导航交互；环境状态记为 $s_t$，并提供碰撞、地形风险与任务进度等训练信号。</li>
+<li><strong>Actor 多模态观测（b）</strong>：策略输入由机器人中心语义鸟瞰图（semantic BEV map）$M_t$、本体感知向量 $p_t$ 与目标相对向量 $g_t$ 组成。BEV 显式编码周围地形语义、风险和障碍分布，后两者分别描述机器人运动状态及目标方向/距离。</li>
+<li><strong>特征编码与动作生成（c–d）</strong>：CNN 将 $M_t$ 编码为视觉特征，MLP 分别处理 $p_t$、$g_t$，融合后送入 Gaussian action head，输出 $\pi_\theta(a_t|o_t)=\mathcal N(\mu_t,\Sigma_t)$；采样动作 $a_t$ 表示速度指令，再由冻结的 locomotion policy 跟踪执行，实现高层导航与低层运动解耦。</li>
+<li><strong>PPO 与非对称 Critic（e）</strong>：Actor 仅使用可部署观测 $o_t=(M_t,p_t,g_t)$，Critic 则额外接收表中列出的特权观测以估计 $V_\phi(s_t)$。结合表中奖励通过 PPO 优化 $\pi_\theta$，特权信息只辅助训练，不进入部署阶段。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Overview of our framework. (a)~Training in procedurally generated environments with semantic terrain of varying risk, static obstacles, and SFM-driven pedestrians. (b)~The actor observes a robot-centric semantic BEV map, proprioception, and the target vector. (c)~CNN and MLP encoders feed a Gaussian action head. (d)~A frozen locomotion policy tracks the generated velocity command. (e)~PPO training with the rewards in Table and an asymmetric critic with privileged observations (Table).</div></details>
+</div>
+<ul>
 <li>整体 pipeline 为：机器人中心语义 BEV、目标向量和本体状态输入导航策略，经 CNN/MLP 编码后输出前向速度、侧向速度和偏航角速度，再由冻结的底层运动策略跟踪这些速度指令。</li>
 <li>单一 BEV 同时编码语义地形、静态障碍和附近动态障碍，保留障碍相对机器人的二维几何结构；actor 不接收行人的显式位置、速度或轨迹，因此无需单独的人体状态跟踪模块。</li>
 <li>策略采用 PPO 非对称 actor–critic：actor 只使用部署时可获得的 BEV、本体状态和目标向量；critic 在训练期额外读取归一化回合时间、特权二值可通行图，以及含障碍速度的占据栅格。</li>
@@ -583,12 +599,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>SNAP 由 ETH Zurich Robotic Systems Lab 提出，以统一的 360° 语义 BEV 和非对称 PPO 在无需显式行人状态的情况下联合处理地形规范与人群避障，在 0.5 m/s 行人、20 个动态障碍和动态语义场景中分别达到 93.2%、81.8% 和 82.6% SR，并以 10 Hz 零样本部署到 ANYmal-D。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.03498" data-title="SNAP">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.03498" data-title="2611.03498">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.03498 · SNAP</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.03498 · 2611.03498</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -598,7 +614,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《SNAP》</strong>（arXiv: 2611.03498）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.03498》</strong>（arXiv: 2611.03498）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">

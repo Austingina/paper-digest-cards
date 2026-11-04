@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜GatedVLA with Camera-Based Emergency Braking</title>
+<title>深读｜2611.01663</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.01663" rel="noopener noreferrer" target="_blank">arXiv 2611.01663</a></span><span class="badge">深读</span></div>
-<h1>深读｜GatedVLA with Camera-Based Emergency Braking</h1>
+<h1>深读｜2611.01663</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.01663" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>作者的初步闭环实验显示，主要失分来源是未能及时制动，尤其容易撞上慢速或静止的前车；仅依赖端到端策略的加速度输出缺少独立安全兜底。</li>
 <li>本文同时考察固定验证子集上的开环预测和 AlpaSim 仿真器中的闭环驾驶；策略并非全程冻结，视觉语言骨干仅在首个训练 epoch 冻结，之后与动作专家联合微调，而紧急制动模块只在部署阶段外挂。</li>
 <li>作者目标是在基本不牺牲整体开环精度的前提下，让动作专家更集中利用与导航意图相关的视觉证据，并通过独立制动机制减少闭环责任碰撞、提高场景得分。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.01663.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01663.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.01663.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.01663.png'">
+    <img src="/assets/figures/2611.01663.png" onerror="this.onerror=null;this.src='../assets/figures/2611.01663.png'" alt="2611.01663 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多模态输入与 VLM 编码</strong>：系统从左向右接收相机图像 $I$ 与语言指令 $l$；视觉语言模型（VLM）将图像编码为 image tokens $Z_I$，并结合文本语义形成供策略专家读取的多模态上下文。</li>
+<li><strong>GatedVLA 端到端策略</strong>：策略专家通过 cross-attention 查询 VLM 特征；视觉掩码 $m_p$ 作为门控偏置注入注意力，使专家更关注与当前规划相关的图像 token、抑制无关区域。该 VLM—专家链路联合端到端训练，并输出预测航迹点序列 $\hat{\mathbf P}=\{\hat{\mathbf p}_k\}_{k=1}^{H}$。</li>
+<li><strong>部署期目标检测</strong>：预训练 detector 仅在推理时接入，独立识别车辆、行人等障碍物并产生检测结果；它不参与 GatedVLA 的训练，也不直接改写策略网络参数，而是为后续安全约束提供环境状态。</li>
+<li><strong>规则式 AEB 与轨迹重定时</strong>：rule-based AEB 根据检测结果评估碰撞风险，对 $\hat{\mathbf P}$ 沿既定空间路径重新分配时间或速度，即保持航迹几何形状、调整 waypoint 的到达时刻；必要时减速或制动，得到安全执行轨迹 $\hat{\mathbf P}'$。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">System overview. (a) GatedVLA policy, trained end-to-end: the visual mask $m_p$ biases the expert&#x27;s cross-attention to the VLM&#x27;s image tokens. (b) Pretrained detector and rule-based AEB, integrated only at deployment: they re-time the planned waypoints along their path.</div></details>
+</div>
+<ul>
 <li>整体流程为：两帧前视广角图像和固定文本提示进入 Qwen-Drive-1.0-4B；车辆历史状态与导航目标点输入流匹配动作专家；专家生成未来控制序列并积分为位姿；部署时，基于目标检测的 AEB 可沿原规划路径重新定时并限制速度。</li>
 <li>动作专家采用 π0 风格的逐层结构：32 个 DiT block 交替执行自注意力和跨注意力，每个跨注意力层通过学习到的线性投影连接相应的 VLM 层；专家输出纵向加速度与曲率，而非直接输出离散驾驶指令。</li>
 <li>视觉门控根据每个视觉 token 的、已停止梯度的 VLM 最终层表示，以及包含目标点和自车状态的查询计算软掩码；掩码以 <code>log m_p</code> 的形式直接加到动作专家的跨注意力 logits，文本 token 和 VLM 内部表示不受遮蔽。</li>
@@ -594,12 +610,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>京都大学、东京农工大学与东京大学的 GatedVLA 在 Qwen-Drive-1.0-4B 上加入 π0 风格流匹配动作专家和 20% 视觉门控，使闭环均分由 0.479 升至 0.517但未达统计显著，再以部署端 AEB 将得分推至 0.599并把平均责任碰撞场景数从34降至11。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.01663" data-title="GatedVLA with Camera-Based Emergency Braking">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.01663" data-title="2611.01663">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.01663 · GatedVLA with Camera-Based Emergency Braking</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.01663 · 2611.01663</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -609,7 +625,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《GatedVLA with Camera-Based Emergency Braking》</strong>（arXiv: 2611.01663）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.01663》</strong>（arXiv: 2611.01663）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">
