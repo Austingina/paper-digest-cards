@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.31569",
+  "title": "Echo",
+  "fig_label": "Figure 2",
+  "source_file": "1-figure/fig_overview_pdf.pdf",
+  "width": 1179,
+  "height": 523,
+  "caption": "Overview of Echo. Four data types provide complementary action and signal supervision, with failed actions excluded from imitation. Stop (SS) and failure (FS) signals are appended to action chunks, with padding-based target construction illustrated.",
+  "walkthrough_zh": "- **多源互补监督数据构造**：左侧输入四种数据类型以解决无帧级标注问题。**成功演示**中，SS在边界处由padding mask引导至1，FS恒为0；**终端失败轨迹**中，SS与FS均在边界处被引导至1，且动作不参与模仿学习；**干预前失败片段**仅监督$SS=0, FS=1$以表征可恢复性；**恢复演示**则通过公式$n_t$使FS目标随进度线性下降，提供从失败到成功的过渡监督。\n- **联合表示与异步去噪机制**：中部核心模块将任务状态编码为停止信号（SS）和失败信号（FS），作为额外两维特征拼接到动作块$\\mathbf{A}_t \\in \\mathbb{R}^{H \\times d_a}$中。模型基于Flow Matching进行联合去噪，引入异步调度使信号去噪时间$\\tau_q$快于动作时间$\\tau_A$（公式12）。这使得在动作去噪后半程，模型能利用更干净的状态估计引导纠正性动作生成。\n- **受控交互注意力网络**：右侧Transformer内部实施受控注意力机制。动作Token同时关注SS和FS，且SS/FS也反向关注动作Token以增强条件生成。关键在于阻断SS与FS之间的直接注意力交互，防止“终止”与“失败”语义混淆，确保状态信号的独立性与准确性。",
+  "image_rel": "../assets/figures/2610.31569.png"
+}

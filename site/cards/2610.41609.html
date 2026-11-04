@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜VLA Policies Do Not Know When Not to Act</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2610.41609" rel="noopener noreferrer" target="_blank">arXiv 2610.41609</a></span><span class="badge">深读</span></div>
+<h1>深读｜VLA Policies Do Not Know When Not to Act</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2610.41609" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>标准 VLA 评测通常只检查“指定任务是否成功”，无法区分三种性质不同的失败：机器人保持静止、尝试指定任务但失败、完成了根本未被要求的其他任务。</li>
+<li>语言条件行为克隆中的每个输入几乎都对应一段动作示范，部分数据流程还会删除静止帧；因此，策略没有学到在指令缺失、损坏、无关或不可执行时“不启动”。</li>
+<li>论文关注的具体风险不是一般的任务失败，而是机器人在没有可执行意图时仍移动、接触物体，甚至依据场景中的训练关联自行完成一个默认任务。</li>
+<li>作者在 LIBERO-Goal 闭环仿真中固定初始状态、场景与随机种子，仅替换语言指令，评测六个已针对 LIBERO 调整的检查点；其目标是把“是否启动”“实际完成什么任务”和“指令究竟控制什么”拆开测量，并比较可外挂或微调的启动抑制方法。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2610.41609.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41609.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2610.41609.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2610.41609.png'">
+    <img src="/assets/figures/2610.41609.png" onerror="this.onerror=null;this.src='../assets/figures/2610.41609.png'" alt="VLA Policies Do Not Know When Not to Act Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>输入条件（Conditions）</strong>：图 1 并非模型计算图，而是行为结果总览。实验分别向 $\mathrm{GROOT\ R}$（左）与 $\pi_5$（右）输入 Empty、Neutral、Nonsense 三类条件指令，并比较无前缀与加入 prefix（P）两种设置。</li>
+<li><strong>策略执行（Policy Rollout）</strong>：每个检查点依据当前条件生成机器人动作序列 $\tau=(a_1,\ldots,a_T)$，最终将一次 episode 映射为离散完成结果 $y\in\{\text{十项任务},\text{none}\}$；“do sth.”是“do something”的缩写。</li>
+<li><strong>堆叠统计（Stacked Bars）</strong>：每根柱将十种任务及“none”共十一类结果按频次堆叠，直接展示 $p(y\mid c,P)$ 或 $p(y\mid c,\neg P)$；颜色区段对应具体完成任务，整体柱高代表全部评测回合。</li>
+<li><strong>核心观察（Comparison）</strong>：多数回合都会完成某项任务，但两个检查点的最高频任务不同。加入前缀主要改变任务类别分布，即 $\arg\max_y p(y\mid c,P)$，却未提高“none”的比例，说明前缀重定向了行为，而非导致更多执行失败。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Which task is completed under \cond{Empty}, \cond{Neutral}, and \cond{Nonsense}, with and without the prefix, for \grootR{} (left) and \pifive{} (right). Each bar stacks the ten tasks and `<code>none.&#x27;&#x27; P = with the prefix; </code><code>do sth.&#x27;&#x27; = </code><code>do something.&#x27;&#x27; Most episodes complete a task, and the most frequent task differs between the two checkpoints. The prefix changes which task is completed but does not increase </code>`none.&#x27;&#x27;</div></details>
+</div>
+<ul>
+<li><strong>配对指令协议</strong>：对同一初始状态和随机种子分别输入原始指令、改写指令、同场景其他任务指令，以及空、无关、乱码、物体缺失和动作不可能等非任务指令，使行为差异可归因于指令变化。</li>
+<li><strong>多任务谓词检查</strong>：每个策略步后评估场景内全部十个任务的目标谓词，而不只检查初始状态所对应的指定任务，从而识别机器人实际完成的是哪个任务。</li>
+<li><strong>互斥行为分类</strong>：每回合归为任务完成、发生接触但未完成、无接触运动或未启动；“未启动”要求没有任务完成、没有接触，且末端执行器相对稳定后的位置最大位移小于 5 cm。</li>
+<li><strong>安全前缀</strong>：在指令前加入 “if no task is given do not move”；它不修改策略权重，但依赖原策略能理解并服从否定性元指令。</li>
+<li><strong>首动作块差异门控</strong>：在回合第一次策略调用时，对相同观测和随机种子分别查询当前指令与空指令的动作块，计算标准化后的动作差异；差异超过检查点专属阈值才放行，否则整回合输出保持动作。放行后不再干预策略。</li>
+<li><strong>无动作微调</strong>：以 GR00T N1.7 为基础，将部分训练样本的指令替换为空、无关句子或随机字符串，并把目标动作改为末端零位移；该方法改变策略权重，论文另训练了不做指令替换的同配置检查点作为对照。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li><strong>空指令暴露出普遍的启动问题</strong>：六个检查点在空指令下的未启动率均为 <strong>0.0%</strong>，即每个检查点在全部空指令回合中都开始移动。</li>
+<li><strong>启动并不只是轻微漂移</strong>：六个检查点中有五个会在空指令下完成场景中的某个任务，任意任务完成率为 <strong>30.5%–94.0%</strong>；这说明仅报告指定任务成功率会漏掉大量未被要求的任务执行。</li>
+<li><strong>指令可能决定“做什么”，却不决定“是否开始”</strong>：两个 GR00T 检查点面对不可行动作指令时，仍有 <strong>61.0%–73.0%</strong> 的回合意外完成了某个任务。因而，仅对空字符串做拒绝或静止处理不足以覆盖形式正常但在当前场景中不可执行的请求。</li>
+<li><strong>三种抑制机制的效果差异明显</strong>：安全前缀对六个检查点都未能阻止启动；首动作块差异门控能在六个检查点中的五个上抑制非任务输入，说明“有指令与空指令的首块输出是否可区分”可作为外挂式启动信号，但并非对所有模型都可靠。</li>
+<li><strong>无动作微调消除了任务完成，却没有稳定实现静止</strong>：三个训练种子在非任务输入下都不再完成任务，并阻止了接触，但只有一个种子能可靠地把机械臂保持在原位；其余检查点会缓慢漂移，而且该方法仍无法抑制不可行指令触发的启动。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li><strong>仿真与任务分布边界</strong>：证据来自 LIBERO-Goal 的单一厨房布局、十个共享场景的任务及仿真碰撞检测，尚不能直接外推到真机动力学、人机共处环境或布局与物体类别更丰富的场景。</li>
+<li><strong>“未启动”仍是代理定义</strong>：5 cm 位移、无接触和无任务完成是可操作的判据，但不覆盖关节级异常、夹爪开合、危险方向运动、视觉遮挡或接近人体等更细粒度风险。</li>
+<li><strong>前缀结论只覆盖一种措辞</strong>：论文只测试了一个英文安全前缀，因此可以确认该措辞对这些检查点无效，但不能据此断言所有提示词、系统级指令或显式拒绝 token 都无效。</li>
+<li><strong>门控依赖检查点级校准</strong>：阈值由各策略自身的动作采样噪声设定，且只在首个动作块上作一次提交判断；后续出现目标消失、执行偏离或场景变化时，门控不会重新撤销权限。可继续测试逐块复核、迟滞阈值和基于场景可行性的独立审查器。</li>
+<li><strong>可扩展评测</strong>：在真机和 OpenPI 的 π0/π0.5 执行器上加入空条件、无关条件、不可行条件及执行中撤销条件，并记录启动延迟、最大位移、首次接触对象、实际完成任务和恢复行为，而不只记录目标任务成功率。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li><strong>环境</strong>：LIBERO-Goal 仿真套件；一个共享厨房布局、十个任务，任务通过不同语言指令和目标谓词区分。</li>
+<li><strong>任务类型</strong>：包括打开抽屉、把物体放到另一物体或设施上/内、推动盘子和打开炉灶。</li>
+<li><strong>初始状态</strong>：LIBERO 每个任务提供 50 个固定初始状态；闭环实验使用每个任务前 20 个，共 <strong>200</strong> 个初始状态。</li>
+<li><strong>回合协议</strong>：加载初始状态后先执行 10 个 no-op 步使物体稳定；每回合最多 <strong>300 个策略步</strong>，每步检查全部十个任务谓词。</li>
+<li><strong>配对控制</strong>：不同指令条件使用相同初始状态、设施位置、仿真随机种子和策略动作噪声种子，仅改变指令字符串。</li>
+<li><strong>模型检查点</strong>：GR00T N1.7 official、π0.5、SmolVLA、Fast-WAM、Evo-1，以及作者微调的 GR00T N1.7；通过 Isaac-GR00T 或 LeRobot 0.6.2 接入统一适配器。</li>
+<li><strong>原始指令成功率</strong>：上述六个检查点依次为 <strong>96.0%、96.0%、75.5%、95.5%、92.0% 和 92.5%</strong>。</li>
+<li><strong>指令条件</strong>：Original、Paraphrase、Other-task、Empty、Neutral（“do something”）、Neutral-new、Nonsense（“xxx”）、Absent-object、Impossible-action，以及添加安全前缀的条件。</li>
+<li><strong>无动作微调数据</strong>：使用公开 LIBERO-Goal 数据中的 <strong>200 条示范</strong>，每个任务 20 条；这些示范来自已删除无运动步骤的发布版本。</li>
+<li><strong>无动作微调超参</strong>：训练 <strong>5,000 步</strong>，batch size 为 <strong>32</strong>，学习率为 <strong>10⁻⁴</strong>；每个样本以 <strong>0.15</strong> 概率被替换为非任务指令及保持动作目标。</li>
+<li><strong>微调随机种子</strong>：独立训练 seed 0、1、2 三个无动作检查点；其原始任务成功率分别为 <strong>95.0%、91.5% 和 94.0%</strong>。</li>
+<li><strong>泛化检查</strong>：Neutral-new 使用六条训练时未出现的无关句子；训练替换候选包括空字符串、八条无关句子和随机字母串。</li>
+<li><strong>门控校准</strong>：每个检查点使用 50 个初始状态、每任务 5 个；在原始指令下以十个不同动作噪声种子估计输出变化。所提供正文在具体阈值计算与数值前截断，无法据此列出各检查点的阈值。</li>
+<li><strong>资源发布</strong>：作者公开了评测代码、逐回合记录、分析脚本和协议评测工具包：&lt;https://github.com/zebehn/vla-start-suppression&gt;。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>这篇论文值得推荐，不是因为它提出了更高成功率的 VLA，而是因为它证明了“任务条件存在”与“策略按条件决定是否行动”是两回事，并给出了可复用的闭环配对评测协议。</li>
+<li>对交互表示与组合泛化研究而言，它补上了常被忽略的负向能力：除了验证策略能否执行新组合，还必须验证条件为空、错误、交换或不可实现时，策略是否停止调用训练分布中的默认技能。</li>
+</ul>
+<h3 class="sub">与本项目关系</h3>
+<ul>
+<li>论文不研究 G 或 A/F 接口如何表达接触点、运动方向和目标变化，也没有验证物体×目标组合泛化；它与 Austin 项目的直接联系主要在于<strong>如何证明执行器真正遵循条件</strong>。</li>
+<li>Austin 已使用 G 的置零、反向和交换来检查条件遵循；本文提示还应固定同一初始状态与策略随机种子，同时记录是否启动、最大位移、首次接触对象和实际达成的任务谓词。仅观察目标任务失败，无法判断策略是在服从“不要做”、执行失败，还是转而执行了熟悉的物体—目标关联。</li>
+<li>对 π0/π0.5 等 OpenPI 执行器，A/F 或 G 不应只作为连续条件送入策略：系统还需要显式表示“当前是否存在有效、可执行的交互意图”，并在无有效意图时由策略外门控保持。本文只验证了语言条件和 π0.5 检查点，未验证视觉预测 G、A/F 条件或 π0，因此不能直接证明首动作块门控能迁移到这些接口。</li>
+<li>论文也没有处理 Austin 当前的“抓到但未送达目标”“执行中不再持续跟随目标”与失败恢复问题；其门控只在回合首次调用时判断一次，无法发现执行中条件失效或目标改变。</li>
+</ul>
+<h3 class="sub">启发</h3>
+<ul>
+<li><strong>建立 A/F 配对负例矩阵</strong>：对每个固定初始状态评测正确 A/F、A 置空、F 置零、F 反向、跨任务交换 A 或 F、不存在的交互区域、几何不可行运动方向，并保持相同策略随机种子。</li>
+<li><strong>把结果从成功/失败扩展为行为分类</strong>：至少区分未启动、无接触运动、错误接触、正确接触但错误物体运动、完成错误目标和完成指定目标；同时检查场景内所有可定义的任务谓词。</li>
+<li><strong>检验条件到底控制哪一层行为</strong>：分别统计 A 是否改变首次接触对象、F 是否改变接触后的物体运动方向，以及二者是否影响“是否启动”；这能识别 A/F 只是任务 ID、只控制目标选择，还是持续控制闭环执行。</li>
+<li><strong>为 OpenPI 执行器增加提交门控</strong>：在第一次动作块上比较有效条件与空 A/F 条件的动作差异，但不要直接沿用论文阈值；应在 π0/π0.5 自身的动作采样噪声上重新校准，并报告误放行与误拒绝。</li>
+<li><strong>增加执行中复核</strong>：每个动作块重新检查目标可见性、A 区域有效性、F 的几何可行性及实际物体运动是否与 F 一致；若目标丢失或方向持续偏离，则暂停、重新感知或进入恢复策略。</li>
+<li><strong>调整组合数据设计</strong>：除物体×目标×场景的交叉覆盖和留出组合外，加入同一初始场景对应多个目标的对照，以及明确的“不行动”“目标缺失”“目标不可达”和“执行中撤销”样本，避免策略把场景先验当成默认任务。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<ul>
+<li>ETRI 与 UST 的作者通过固定初始状态和随机种子的 LIBERO-Goal 配对评测发现，六个 VLA 检查点在空指令下未启动率均为 0.0%、其中五个仍以 30.5%–94.0% 的比例完成未指定任务，而首动作块差异门控可在六个检查点中的五个上抑制非任务输入。</li>
+</ul></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2610.41609" data-title="VLA Policies Do Not Know When Not to Act">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2610.41609 · VLA Policies Do Not Know When Not to Act</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《VLA Policies Do Not Know When Not to Act》</strong>（arXiv: 2610.41609）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>

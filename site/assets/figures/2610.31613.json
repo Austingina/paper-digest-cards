@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.31613",
+  "title": "Progress Probes P²",
+  "fig_label": "Figure 1",
+  "source_file": "figures/p2_banner.pdf",
+  "width": 2000,
+  "height": 651,
+  "caption": "Progress Probes (P²) decode task progress directly from the VLA’s internal activations. Using only successful demonstrations, we assign each timestep a normalized progress τ_t and fit a linear probe to predict it from z_t^i, enabling lightweight zero-overhead runtime failure monitoring.",
+  "walkthrough_zh": "- **进度标签构建（Progress Labeling）**：仅利用成功演示轨迹，将时间步 $t$ 映射为归一化剩余时间 $\\zeta_t = 1 - t/T$ 作为监督信号。该模块确立了“进度即剩余时间”的线性假设，无需失败样本即可生成稠密奖励代理，为后续探针训练提供无偏基准。\n- **内部激活提取（Activation Extraction）**：从预训练视觉-语言-动作模型 $\\pi_{0.5}$ 的前向传播中截取中间层特征 $z_t^i$。此过程复用策略推理时的计算图，不引入额外前向开销，直接捕获多模态输入在潜空间中的语义表征，作为进度预测的原始特征源。\n- **线性探针拟合（Linear Probe Fitting）**：对提取的特征 $z_t^i$ 训练轻量级线性回归器 $\\phi(\\cdot)$，建立从内部状态到进度标签 $\\zeta_t$ 的映射关系。该模块通过最小化均方误差优化权重，实现从高维潜变量到低维标量进度的解耦解码，具备极强的可解释性与低计算复杂度。\n- **运行时异常监测（Runtime Monitoring）**：实时计算监测分数 $s = \\hat{\\zeta}(o_t) - (1 - t/\\mu_T)$，其中 $\\mu_T$ 为成功轨迹平均长度。当估计进度显著落后于标称进度（即 $s > \\delta$）时触发报警，该机制仅惩罚执行迟滞而不干扰快速成功路径，实现零开销的在线失败检测。",
+  "image_rel": "../assets/figures/2610.31613.png"
+}

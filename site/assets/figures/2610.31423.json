@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.31423",
+  "title": "FocusVLA",
+  "fig_label": "Figure 4",
+  "source_file": "images/methods.pdf",
+  "width": 2000,
+  "height": 834,
+  "caption": "Architecture of FocusVLA. Given multi-view observations, language instructions, robot states, and action history, FocusVLA predicts future action intent and uses it to guide action-side dynamic view routing for adaptive multi-view feature modulation.",
+  "walkthrough_zh": "- **多模态输入与骨干编码**：系统接收多视角图像、语言指令、机器人状态及动作历史，经 $\\pi_{0.5}$ 骨干提取视觉-语言特征。这些特征作为上下文基础，同时流向意图预测分支与动作生成主干，为后续动态路由提供原始表征。\n- **Future Intent Bridge（未来意图桥接）**：利用跨模态注意力编码上下文，预测未来 $H$ 步动作意图序列 $I_t$。每个时间步意图值 $i_t^{(k)} \\in [0,1]$ 量化局部交互导向概率。通过弱监督标签（基于夹爪闭合或低速运动自动生成）以 BCE 损失训练，并将意图聚合为 Chunk 级 Token $z_{\\mathrm{intent}}$，经线性映射 $f_{\\mathrm{route}}$ 生成全局/局部路由权重 $\\alpha^{(k)} = [\\alpha_g^{(k)}, \\alpha_l^{(k)}]$。\n- **Action-Side Dynamic Routing（动作侧动态路由）**：在动作生成阶段实施非侵入式调制。动作特征作为 Query，分别与全局和局部视觉特征进行 Cross-Attention 得到上下文 $c_g^{(k)}$ 和 $c_l^{(k)}$。利用预测权重 $\\alpha^{(k)}$ 加权融合为 $c^{(k)} = \\alpha_g^{(k)} c_g^{(k)} + \\alpha_l^{(k)} c_l^{(k)}$，并通过残差连接注入动作特征流，实现自适应多视角特征调制。",
+  "image_rel": "../assets/figures/2610.31423.png"
+}

@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.31299",
+  "title": "PiHand",
+  "fig_label": "Figure 2",
+  "source_file": "method_larger_text.png",
+  "caption": "Method Overview. In Stage I we train expert policies that can track mocap hand-object interactions in a physically simulated environment. In Stage II we then distill the expert knowledge into a VAE-like student network via behavior cloning. The VAE embeds hand-object interactions into a latent space which we leverage in Stage III for efficient sampling and exploration for object trajectory guided motion generation.",
+  "walkthrough_zh": "- **Stage I：物理交互专家跟踪（Interaction Tracking）**：将仿真器状态与动作捕捉（MoCap）参考轨迹输入专家策略 $\\pi$，输出积分残差PD目标 $\\mathbf{Q}_t = \\hat{\\mathbf{q}}_t + \\mathbf{a}_t$ 驱动 Isaac Gym 物理仿真，并联合优化物体表面采样损失 $L^{\\text{samp}}$、手部关键点损失 $L^{\\text{key}}$ 与接触图损失 $L^{\\text{cont}}$ 获取高保真手物交互轨迹。\n- **Stage II：条件交互先验蒸馏（Interaction Prior Distillation）**：全量观测 $\\mathbf{o}_t$（含未来手姿、目标物体轨迹与仿真状态）经特权编码器 $\\mathcal{E}$ 采样潜变量 $\\mathbf{z}_t \\sim \\mathcal{E}(\\mathbf{z}|\\mathbf{o}_t)$，而仅含物体轨迹与状态的局部观测 $\\tilde{\\mathbf{o}}_t$ 输入可学习条件先验 $\\mathcal{P}$ 输出均值 $\\boldsymbol{\\mu}_{\\mathcal{P}}(\\tilde{\\mathbf{o}}_t)$；两者通过 $\\mathrm{KL}(\\mathcal{E} \\parallel \\mathcal{P})$ 对齐，并由动作解码器 $\\mathcal{D}$ 结合 $\\mathbf{o}_t^{\\text{sim}}$ 以行为克隆损失 $\\mathcal{L}_{\\text{BC}} = \\|\\mathbf{Q}_t - \\mathbf{Q}_t^*\\|_1$ 拟合专家动作 $\\mathbf{Q}_t^*$。\n- **Stage III：有界潜空间残差探索（Latent Exploration）**：面对新物体与目标轨迹，冻结先验 $\\mathcal{P}^*$ 与解码器 $\\mathcal{D}^*$，仅靠单一任务奖励训练探索策略 $\\pi_{\\text{explore}}$ 输出有界潜残差 $\\Delta\\mathbf{z}_t$（受界 $B$ 约束），叠加于 $\\boldsymbol{\\mu}_{\\mathcal{P}}(\\tilde{\\mathbf{o}}_t)$ 得到 $\\mathbf{z}_t$ 并解码为控制指令 $\\mathbf{Q}_t$。",
+  "width": 3200,
+  "height": 1437,
+  "image_rel": "../assets/figures/2610.31299.png"
+}

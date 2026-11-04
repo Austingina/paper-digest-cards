@@ -1,0 +1,11 @@
+{
+  "arxiv_id": "2610.30814",
+  "title": "DRILL",
+  "fig_label": "Figure 1",
+  "source_file": "drill.pdf",
+  "width": 2000,
+  "height": 877,
+  "caption": "Overview of DRILL. The policy first learns inside the current world model through imagined GRPO. The resulting policy-improvement signal is then fed back to the world model: DRILL-VWI uses the same imagined rollouts to form a signed, visitation-weighted dynamics update, while DRILL-IMG differentiates the imagined policy objective through differentiable rollouts.",
+  "walkthrough_zh": "- **内层想象优化 (Inner Imagined GRPO)**：VLA策略 $\\pi_\\theta$ 在当前世界模型 $\\mathcal{W}_\\phi$ 生成的想象轨迹上执行一步GRPO更新，得到临时策略 $\\theta^+$。该模块输入为离线演示数据与当前模型参数，输出为经过策略梯度优化的中间策略，旨在利用模型内部信号快速提升策略性能。\n- **外层信用分配 (Outer Credit Assignment)**：将策略改进信号反馈至世界模型以最大化真实环境回报 $J(\\pi_{\\theta^+})$。图中展示两种变体路径：DRILL-VWI 直接复用想象轨迹，构建带符号的访问加权动力学更新；DRILL-IMG 则通过可微分 rollout 对内部GRPO目标进行反向传播，实现端到端元梯度优化。\n- **双路反馈机制 (Dual Feedback Paths)**：DRILL-VWI 作为轻量级代理，利用策略访问频率、组相对优势及模型置信度重加权像素MSE损失，无需额外真实交互；DRILL-IMG 则结合少量真实仿真 rollout ($B_{real}=30$) 计算外层梯度，更忠实于目标函数但计算成本较高。两者共同构成双层优化闭环，动态修正世界模型偏差以指导策略学习。",
+  "image_rel": "../assets/figures/2610.30814.png"
+}
