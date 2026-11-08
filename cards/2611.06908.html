@@ -537,12 +537,12 @@ details.fold .fold-body {
     <img src="/assets/figures/2611.06908.png" onerror="this.onerror=null;this.src='../assets/figures/2611.06908.png'" alt="Perceptive Humanoid Motion from Simulation Figure 1 模型结构图" loading="lazy">
   </a>
   <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
-<li><strong>程序化房间生成（Procedural Rooms）</strong>：上半部分展示由 $\textsc{Infinigen}$ 程序化采样的训练房间，并以路径追踪（Path Tracing）生成高保真 RGB 图像 $I_{\mathrm{PT}}\in\mathbb{R}^{H\times W\times3}$；多样化几何、材质、家具布局与照明共同构成合成训练环境。</li>
-<li><strong>场景烘焙（Scene Baking）</strong>：将稠密客厅的几何、材质、纹理及光照信息转换为可被不同仿真引擎加载的烘焙场景 $\mathcal{S}_{\mathrm{bake}}$，目标是在无需实时路径追踪的条件下保持跨引擎视觉一致性。</li>
-<li><strong>跨引擎渲染（Multi-engine Rendering）</strong>：对同一未见视角与相机参数，分别在 Blender、MuJoCo 和 Isaac Sim 中渲染 $I_e=\mathcal{R}_e(\mathcal{S}_{\mathrm{bake}})$，并与路径追踪参考图 $I_{\mathrm{PT}}$ 逐像素对齐比较。</li>
-<li><strong>误差评估（Error Map）</strong>：采用平均绝对误差 $\mathrm{MAE}_e=\frac{1}{3HW}\lVert I_e-I_{\mathrm{PT}}\rVert_1$；三引擎误差分别为 $4.2$、$4.5$、$4.7$ 灰度级。误差主要集中于落地灯光斑和物体边缘；误差图中白色表示 $0$，深蓝表示 $\ge32$ 灰度级。</li>
+<li><strong>高层任务编排（VLM / Composer）</strong>：自然语言请求 $q$ 与头部相机自视角图像 $I_t^{\mathrm{ego}}$ 输入视觉语言模型；VLM 以约 $0.5\,\mathrm{Hz}$ 解析场景与意图，输出按时序排列的语言子任务 $\mathcal{S}=(s_1,\ldots,s_K)$，负责长时程行为分解与当前子任务切换。</li>
+<li><strong>中层运动生成（Motion Generator / Planner）</strong>：将激活子任务 $s_k$ 和当前自视角 RGB 图像 $I_t^{\mathrm{RGB}}$ 映射为全身运动计划 $\hat{\tau}_{t:t+T}$。规划窗口为 $5\,\mathrm{s}$、频率为 $30\,\mathrm{Hz}$，即 $T=150$ 帧；每帧含 $29$ 个关节角及相对骨盆位姿，共 $36$ 维运动参考。</li>
+<li><strong>底层运动跟踪（Motion Tracker）</strong>：学习式跟踪策略以参考轨迹 $\hat{\tau}$、机载深度观测 $D_t$ 和本体感觉 $p_t$ 为输入，输出低层关节命令 $a_t$，在真实硬件上闭环复现运动，同时利用深度感知处理环境几何与接触扰动。</li>
+<li><strong>机载执行链路（Onboard Autonomy Stack）</strong>：整体数据流为 $(q,I^{\mathrm{ego}})\!\rightarrow\!\mathcal{S}\!\rightarrow\!\hat{\tau}\!\rightarrow\!a_t$；除低频 VLM 编排外，后续规划与控制均在机器人端执行，无需预先场景重建、外部动作捕捉或特权物体状态。</li>
 </ul></div></div>
-  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Procedural rooms and scene baking. Top: path-traced training rooms from \textsc{Infinigen}. Bottom: a held-out view of a dense living room rendered from the bake in three engines, where the mean absolute error relative to path tracing is $4.2$ (Blender), $4.5$ (MuJoCo) and $4.7$ (Isaac Sim) grey levels and mostly lies in the light pool of the lamp on the floor and at object edges (error map: white is $0$, dark blue is $32$ grey levels or more).</div></details>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Onboard autonomy stack. (A) A VLM (~0.5 Hz) processes a natural-language request and egocentric visual input and outputs a sequence of subtasks. The rest of the stack executes those subtasks onboard.</div></details>
 </div>
 <ul>
 <li>HALO 采用三级分层闭环：高层 VLM 将自由语言请求分解为“技能＋目标物体”的子任务序列；中层运动生成器根据当前第一视角 RGB 和活动子任务生成 5 秒全身运动计划；低层跟踪器结合深度与本体感觉，将运动计划转化为关节级执行命令。</li>
