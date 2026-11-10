@@ -518,75 +518,85 @@ details.fold .fold-body {
 <div class="wrap">
 <article class="card">
 <header class="header">
-<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.11894" rel="noopener noreferrer" target="_blank">arXiv 2611.11894</a></span><span class="badge">深读</span></div>
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.11894" rel="noopener noreferrer" target="_blank">arXiv 2611.11894</a></span><span class="badge">深读</span></div>
 <h1>深读｜Distilling Instructions into Weights</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.11894" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
-<li>通用 VLA 策略常常已经具备完成任务所需的视觉与操作技能，却会因语言绑定错误在某一步失败；常规修复需要收集示范并微调，成本高，也难判断究竟是在补能力还是纠正指令理解。</li>
-<li>在 RoboLab 仿真中，零样本 π0.5 面对“put the cube then the banana in the bowl”时，通常会先抓起方块，却在到达碗之前松手；等价但更明确的改写指令可以成功，说明故障更像是把“in the bowl”错误绑定到了香蕉，而不是缺少抓取或搬运能力。</li>
-<li>论文研究的是闭环机器人策略的直接权重编辑：不使用梯度、优化器、微调数据，也不改变部署时的原始指令；编辑 VLM 的部分 MLP 权重，其余策略结构与动作生成流程保持不变。</li>
-<li>作者目标是把“已知有效的指令改写”产生的内部计算效果写入原策略权重，以低成本修复特定误读，同时通过配对种子和留出评测确认成功率提升并控制副作用。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
-<li>整体流程为：记录原策略的失败决策 → 固定图像、机器人状态和 flow-matching 噪声，仅替换指令进行离线重放 → 找到能消除错误的 known-good instruction → 提取两种指令的逐层激活差 → 用闭式更新写入 VLM MLP → 离线筛查后，在 practice seeds 和 held-out seeds 上进行闭环配对验证。</li>
-<li>诊断阶段重放了提前松手决策。给方块改名并不能消除松手，而把“in the bowl”紧邻方块后，21 个错误决策中只剩 1–3 个仍会松手；结合一个 VLM 注意力头对相邻名词更强的关注，作者将故障定位为语言绑定错误。</li>
-<li>在每个被编辑的 VLM 层中，作者把原指令下 MLP down-projection 的输入均值作为 key，把明确改写相对原指令造成的残差增量作为 value，通过正则化多键最小范数解求出一次性权重增量。该过程只依赖已有权重、记录输入与激活，不执行反向传播。</li>
-<li>完整编辑在 VLM 第 0–16 层分别使用 72 个 key：40 个来自两种提示共享的文本/机器人状态位置，32 个来自两路相机的图像单元；每层更新秩至多为 72。</li>
-<li>编辑没有把改写后的指令用于部署：闭环评测仍输入原始指令，权重编辑负责让网络内部计算接近明确改写产生的计算。</li>
-<li>作者还把同一蒸馏目标分别写入动作专家和动作头进行定位对照。结果显示修复应放在产生语言误读的 VLM，而非更下游的动作模块；后者容易同时改变无关阶段的夹爪行为。</li>
+<li>通用 VLA 策略常能完成任务的大部分步骤，却因语言绑定错误在关键一步失败；常规补救需要采集示范并微调，难以判断问题究竟来自指令理解、感知、动作能力还是接触物理。</li>
+<li>本文研究零样本 OpenPI π0.5 在 RoboLab 仿真中的两阶段任务：收到“put the cube then the banana in the bowl”后，策略通常先抓起方块，却在到达碗前提前松手；等义的显式改写则能显著改善行为，说明执行技能可能已经存在，但原指令被误读。</li>
+<li>设定为闭环控制与配对随机种子评测；基础检查点未在这些任务上训练，也不使用梯度、优化器或新增示范，但方法会直接编辑策略权重，部署时仍使用原始指令。</li>
+<li>作者目标是把“已知有效改写”产生的内部计算效果蒸馏进权重，以低成本修复局部语言误读，同时避免破坏原有任务能力。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.11894.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.11894.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.11894.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.11894.png'">
+    <img src="/assets/figures/2611.11894.png" onerror="this.onerror=null;this.src='../assets/figures/2611.11894.png'" alt="Distilling Instructions into Weights Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>配对视觉输入（Matched Control Steps）</strong>：图上半部自左向右展示同一留出初始状态（held-out start）在四个对齐控制步的腕部相机观测 $I_t^{\mathrm{wrist}}$，并并列比较未编辑策略 $\pi$ 与编辑后策略 $\pi'$ 的执行轨迹，使场景、时刻与指令保持一致。</li>
+<li><strong>动作与事件记录（Commanded Gripper / Logged Events）</strong>：图下半部给出夹爪指令 $g_t$ 及事件时间线；实心标记表示闭合（$g_t=1$），空心表示张开（$g_t=0$），抓取、释放等日志用于定位策略编辑具体改变的动作节点。</li>
+<li><strong>行为编辑效果（Unedited $\rightarrow$ Edited）</strong>：在原指令不变时，$\pi'$ 精确移除抓取后三个控制步发生的释放动作，即抑制 $g_{t_g+3}:1\!\rightarrow\!0$，同时尽量保持其余视觉—动作序列不变；显式改写指令 “Put the cube … then put the banana …” 仅用于构造该编辑。</li>
+<li><strong>留出成功率评估（Held-out Success）</strong>：右侧在 $N=128$ 个未见初始状态上统计成功率 $\hat p=k/128$，分别报告编辑前后结果，并以 Wilson 95% 置信区间呈现不确定性，从而检验局部动作修正能否跨初始状态泛化。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">One held-out start, unedited and edited. Top: wrist-camera inputs at four matched control steps. Bottom: commanded gripper (filled where closed) and logged events. Right: held-out success over 128 starts, with Wilson 95\% intervals. With the instruction unchanged, the edit removes the release three steps after the grasp. The explicit rewording ``Put the cube in the bowl then put the banana in the bowl&#x27;&#x27; was used only to build the edit.</div></details>
+</div>
+<ul>
+<li>整体流程为：记录失败轨迹中的决策输入 → 固定图像、机器人状态和 flow-matching 噪声，仅替换指令进行离线回放 → 找到能消除失败的 known-good instruction → 将其逐层激活差异写入权重 → 先离线检查，再在 practice seeds 和未见 held-out seeds 上闭环验证。</li>
+<li>诊断阶段回放了 21 个提前松手决策。改写方块名称不能消除松手，而把“in the bowl”紧邻 cube 后，21 次中仅剩 1–3 次松手；结合一个 VLM 注意力头对相邻名词的偏好，作者将故障归因为目的地短语绑定到了错误物体，而非缺少抓取或搬运技能。</li>
+<li>在每个被编辑的 VLM 层，方法以原指令下 MLP down-projection 的输入均值作为 key，以显式改写相对原指令造成的残差增量作为 value，并用正则化多键最小范数闭式解构造权重更新；无需反向传播或迭代训练。</li>
+<li>完整编辑在各层使用 72 个 key：40 个两种提示共有的文本/机器人状态位置，以及来自双相机的 32 个图像单元；更新秩每层至多为 72。部署时不再提供显式改写，仍输入原始指令。</li>
+<li>方法只改写 VLM 的 MLP 权重，不替换 π0.5 的动作生成流程。作者另把同类蒸馏放入 action expert 或 action head，以检验错误究竟位于语言解释还是下游控制模块。</li>
+<li>离线门控同时检查目标失败是否消失以及正确行为是否保留：完整编辑消除了全部 21 个提前松手决策，并保持 9 个正确搬运决策和 19 个第二阶段取香蕉决策不变。</li>
 </ul></section><section class="section"><h2>实验与结果</h2><ul>
-<li>在 128 个留出种子上，完整 VLM 编辑将成功率从 27/128（21.1%）提高到 106/128（82.8%），绝对提升 61.7 个百分点；81 个 episode 被修复、2 个被破坏，95% 配对 bootstrap 区间为 52.3–70.3 个百分点，精确 McNemar 检验 \(p=7.2\times10^{-22}\)。</li>
-<li>成功 episode 的平均完成长度由 412 步降至 300 步。在81个被修复的起点中，未编辑策略有75次在运输途中、碗外丢下方块；编辑后这一现象仍出现15次，但策略能够恢复并最终成功。</li>
-<li>同层、同秩且具有相同奇异值的随机方向更新在首批64个留出种子上仅得到9/64，与未编辑策略两次运行的13/64和9/64一致；蒸馏编辑在相同种子上达到50/64，说明收益来自特定更新方向，而非扰动规模本身。</li>
-<li>仅编辑第8–16层的32个图像 key，并以低秩因子保存时，存储量为530万参数、约占总参数量0.16%；该版本在同一批128个种子上达到102/128，对照为19/128，修复86例、破坏3例。不过在另一组64个新留出种子上，它以41/64落后于完整编辑的55/64（\(p=0.007\)）。</li>
-<li>完整编辑未经修改迁移到另外15项任务：捡眼镜由22/64升至44/64（31修复、9破坏，\(p=6.8\times10^{-4}\)）；把方块放到碗左侧由8/64升至36/64（33修复、5破坏，\(p=4.3\times10^{-6}\)）。其余13项任务均未检测到显著差异，但“放到碗右侧”仍为0/32，说明它不是通用空间语言修复器。</li>
-<li>在共享的64个新留出种子上，完整 VLM 编辑为55/64，未编辑策略为5/64；动作专家编辑为20/64，最小范数动作头编辑为0/64，带门控的动作头编辑为30/64。只有 VLM 编辑还在两项迁移任务上获得提升。</li>
-<li>发布的 <code>weightsmith distill</code> 工具用规则自动选择失败决策，并按0.16%版本的配方端到端构建编辑；在一组全新的64个留出种子上，成功数由8/64提高到36/64，修复33例、破坏5例，\(p=4.3\times10^{-6}\)。</li>
-<li>七个彼此隔离的 Claude Opus 编辑器分别处理一种失败类型，只有获得“指令被误读”线索的编辑器产生了通过留出评分的编辑。针对感知、缺失抓取能力、接触物理或夹爪阈值的编辑均未奏效，支持“已有有效输入可供蒸馏”是该方法成功的重要前提。</li>
+<li>核心 held-out 结果：在 128 个未参与编辑的配对种子上，成功率由 27/128（21.1%）升至 106/128（82.8%），绝对增加 61.7 个百分点；81 个 episode 被修复、2 个被破坏，95% bootstrap 区间为 52.3–70.3 个百分点，精确 McNemar \(p=7.2\times10^{-22}\)。成功 episode 的平均完成长度也由 412 步降至 300 步。</li>
+<li>增益来自特定编辑方向而非更新规模：在前 64 个 held-out seeds 上，匹配层、秩和奇异值的随机方向更新为 9/64，与未编辑策略两次运行的 13/64 和 9/64 一致；蒸馏编辑达到 50/64，显式改写达到 57/64。</li>
+<li>仅编辑第 8–16 层的 32 个图像单元，并以低秩因子存储时，编辑包含 530 万参数，占原策略参数量的 0.16%；在同一批 128 个种子上达到 102/128，对照为 19/128，修复 86 次、破坏 3 次。不过在另一组 64 个种子的直接比较中，它为 41/64，低于完整编辑的 55/64（\(p=0.007\)）。</li>
+<li>完整 VLM 编辑可迁移到两个其他任务：拾取眼镜由 22/64 升至 44/64，方块放在碗左侧由 8/64 升至 36/64；碗右侧任务仍为 0/32，其余 13 个任务均未检测到显著差异（精确 \(p\geq0.12\)），因此它不是通用空间语言开关。</li>
+<li>编辑位置决定效果。在共享的 64 个新 held-out seeds 上，完整 VLM 编辑为 55/64，而共同未编辑对照为 5/64；action expert 编辑为 20/64，最小范数 action-head 编辑为 0/64，带门控的 action-head 编辑为 30/64。只有 VLM 编辑迁移到眼镜和“方块在碗左侧”任务，支持故障主要位于语言条件解释，而非动作专家能力。</li>
+<li>发布的 <code>weightsmith distill</code> 工具在新的项目、practice episodes 和 held-out seeds 上端到端复现流程：成功率由 8/64 升至 36/64，修复 33 次、破坏 5 次，精确 McNemar \(p=4.3\times10^{-6}\)。该自动流程的增益小于手工构建版本，但决策选择、激活捕获和编辑均由工具完成。</li>
 </ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
-<li>主要证据来自 Isaac Sim 中的 RoboLab，而非真实机器人；仿真中的语言绑定修复是否能抵抗真实相机噪声、控制延迟、物体遮挡和接触动力学偏差，尚未得到验证。</li>
-<li>核心方法只在一个明确的双物体顺序指令故障上完整开发，自动化工具也只在这一任务上运行过。迁移到另外两项任务的原因尚不清楚，不能据此推断方法能普遍修复组合语言或空间关系。</li>
-<li>方法依赖能够找到一个“同义但有效”的 known-good instruction。如果失败源于缺失技能、感知混淆或物理执行问题，激活差蒸馏没有可复制的正确内部计算，论文中的相应编辑也没有带来改善。</li>
-<li>闭环评测噪声较大：相同权重的重复运行会翻转约三分之一的配对结果。因此单次成功率或未配对对照不足以证明编辑有效；后续实验应固定场景种子、交替运行顺序、重复未编辑基线，并同时报告 fixed/broke。</li>
-<li>可在 OpenPI 中建立分层编辑接口：分别捕获 VLM、动作专家与动作头激活，先用离线反事实重放判断故障位于语言理解还是执行层，再只开放对应模块的低秩编辑，避免盲目修改动作输出。</li>
-<li>可进一步测试多种语言现象与多种 π0.5 检查点，例如长程顺序、否定、左右关系、属性绑定和多对象指代；同时加入未见任务与真机回归集，以测量编辑的跨任务副作用和长期稳定性。</li>
+<li>方法依赖一个已经有效的指令改写：它能把现有能力在另一种语言条件下的内部效应写回权重，却不能凭空创造缺失的抓取、接触、放置或失败恢复技能。论文中针对感知、缺失抓取能力、接触物理和夹爪阈值的编辑均未奏效。</li>
+<li>核心证据来自 Isaac Sim/RoboLab、一个 OpenPI π0.5 DROID 检查点和一个主要两阶段任务；尚未证明编辑能在真机观测噪声、动力学偏差、长时序任务或其他 VLA 架构中保持效果。发布工具也只在该任务上运行过。</li>
+<li>“其余 13 个任务未检测到显著伤害”不等于已证明完全无副作用：部分任务样本量较小，而且编辑确实会迁移到非目标任务；需要更大规模的语言、视觉和动作保持集，以及编辑前后的分布外安全评测。</li>
+<li>相同权重重复闭环运行时，约三分之一的配对结果会翻转，因此单次成功率或未配对比较容易误判编辑效果。后续实验应固定初始场景并配对种子，同时复跑未编辑策略、交替运行顺序，并报告 fixed/broke 而不只报告均值。</li>
+<li>可进一步构造“同一场景、不同对象—目标绑定”的系统化留出集，比较原指令、显式改写、权重编辑和随机方向编辑；再分别测试提前释放、错误放置、目标持续跟随与失败后重抓，以区分条件误读和能力缺失。</li>
+<li>对多次编辑还需研究组合性与干扰：例如依次蒸馏多个对象—目标关系后，测试编辑是否可叠加、是否产生顺序依赖，以及低秩存储能否在保持原任务的前提下支持撤销或选择性启用。</li>
 </ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
-<li>平台：RoboLab 任务套件，运行于 Isaac Sim；每次评估使用16个并行环境。</li>
-<li>策略：OpenPI 的 π0.5 DROID joint-position 检查点，约33.5亿参数；由18层 PaliGemma VLM和18层 Gemma动作专家组成。</li>
-<li>训练关系：检查点训练于 DROID 数据，未在论文的16项 RoboLab 任务上训练，因此所有任务结果均为零样本。</li>
-<li>输入：两路 \(224\times224\) 相机图像，以及关节和夹爪状态。</li>
-<li>输出：每次生成15步动作块，每步包含7个关节命令和1个夹爪命令；夹爪输出以0.5为阈值二值化。</li>
-<li>成功判定：RoboLab 的 terminal success flag 被置位。</li>
-<li>完整编辑：VLM第0–16层；每层72个key，其中40个来自共享文本/机器人状态位置、32个来自两路相机图像单元；由6个记录的提前松手决策取均值构建。</li>
-<li>闭式更新的正则项：\(\lambda=10^{-3}\mathrm{tr}(K_\ell K_\ell^\top)/72\)；每层更新秩至多72。</li>
-<li>小型版本：仅使用32个图像key并编辑第8–16层；低秩因子共530万参数，占策略总参数量约0.16%。</li>
-<li>开发协议：先在practice seeds上开发和筛选，随后冻结编辑，在从未用于编辑的held-out seeds上评估。</li>
-<li>比较协议：编辑与未编辑策略从相同模拟器起点运行；两种策略在前后半组种子中交替运行顺序。</li>
-<li>统计：报告配对fixed/broke结果、20,000次bootstrap得到的95%区间、精确McNemar检验，以及单一成功率的Wilson区间。</li>
-<li>工具复现实验：<code>weightsmith distill</code>只负责选择决策、重放、构建编辑与离线检查，不自动启动闭环评测。</li>
+<li>仿真平台：RoboLab 任务运行于 Isaac Sim，共调查 16 个任务；每次评测使用 16 个并行环境。</li>
+<li>策略：OpenPI π0.5 DROID joint-position checkpoint，约 33.5 亿参数；由 18 层 PaliGemma VLM 和 18 层 Gemma action expert 组成，未在本文任务上训练，所有结果均为 zero-shot。</li>
+<li>输入：两个 \(224\times224\) 相机图像，以及关节和夹爪状态。</li>
+<li>输出：每次生成 15 步 action chunk，包含 7 个关节命令和夹爪命令；夹爪命令以 0.5 为阈值二值化。</li>
+<li>成功标准：RoboLab 的 terminal success flag 被触发。</li>
+<li>编辑数据：完整编辑使用 6 个记录下来的提前松手决策计算 key；离线诊断总计回放 21 个提前松手决策，并固定图像、机器人状态与 flow-matching 噪声。</li>
+<li>完整编辑位置：VLM 第 0–16 层的 MLP down-projection；每层 72 个 key，包括 40 个共有文本/状态位置和双相机的 32 个图像单元。</li>
+<li>正则项：\(\lambda=10^{-3}\operatorname{tr}(KK^\top)/72\)；每层更新秩至多为 72。</li>
+<li>小型版本：仅使用第 8–16 层的 32 个图像单元，低秩存储为 530 万参数，即总参数量的 0.16%。</li>
+<li>评测协议：编辑先在 practice seeds 上开发和门控，通过后冻结；held-out seeds 不参与编辑。编辑与未编辑策略从相同 simulator slots 启动，并交替两者在前后半批种子上的运行顺序。</li>
+<li>统计：报告 fixed/broke 配对结果；差值区间通过四类配对结果上的 20,000 次 bootstrap 得到，显著性使用精确 McNemar 检验，单一成功率使用 Wilson 95% 区间。</li>
+<li>编辑约束：不允许梯度、优化器、微调或黑盒搜索；指令覆盖只用于诊断，最终评测始终使用原始指令。</li>
 </ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
-<li>这篇论文不是再训练一个更大的VLA，而是展示如何在已有π0.5策略中区分“不会做”与“读错了”，并针对后者进行无需梯度的局部权重修复。</li>
-<li>它同时提供了较完整的编辑评测规范：同种子配对、fixed/broke统计、未编辑重复运行噪声、随机方向对照、模块位置消融和留出种子冻结评测。这些设计比只比较两组平均成功率更适合高方差的闭环机器人实验。</li>
+<li>这篇论文的价值不只在于把 π0.5 成功率从 21.1% 提到 82.8%，更在于给出一套定位“技能不会”与“条件误读”的可检验流程：固定决策输入做条件改写，再通过配对闭环评测确认修复是否真正成立。</li>
+<li>它也提供了少见的负面对照：随机方向、action expert、action head，以及针对感知、物理和夹爪阈值的编辑并不能复现完整 VLM 编辑的效果，从而把因果解释约束在语言绑定层，而不是只展示一个成功补丁。</li>
 </ul>
-<h3 class="sub">与π系列的关系</h3>
+<h3 class="sub">与本项目关系</h3>
 <ul>
-<li>本文直接使用OpenPI中的π0.5 DROID检查点作为实验载体，修改的是其PaliGemma VLM部分的MLP权重；没有提出新的π系列基础模型，也没有重新训练π0.5。</li>
-<li>论文没有给出与π0、π0-FAST或其他OpenPI策略变体的直接实验对比，因此不能断言闭式编辑对这些模型同样有效。</li>
-<li>π0.5的动作专家与flow-matching动作生成机制保持原样。完整方法只在语言侧写入已知有效改写的激活效应；将相同目标直接写入动作专家或动作头时，效果明显较弱，并出现过早闭合夹爪等副作用。</li>
-<li>该结果说明，对π系列策略进行故障修复时，编辑位置应与故障来源一致：语言绑定问题优先处理VLM表示，而不是在动作端强行覆盖输出。</li>
-<li>与常见的示范收集和微调相比，这项工作利用少量记录决策和一次闭式求解完成修复；但它要求先找到能让原权重正确工作的指令改写，适用范围小于通用后训练。</li>
+<li>论文与 Austin 项目“把 G 或 A/F 输入策略，不等于策略真正理解并遵循条件”的发现直接相关。这里原指令和显式改写表达近似相同目标，但 π0.5 的闭环行为不同；作者通过固定输入回放、条件改写、paired seeds 和 held-out 闭环测试，验证问题是条件解释错误而非执行技能缺失。</li>
+<li>对 G/A-F 而言，可把论文中的 instruction rewording 类比为“已知有效的几何条件表达”：若同一观测下，某个 G 表达能产生正确动作，而等义或原始 G 不能，可比较两者在 OpenPI VLM/动作专家中的逐层效应，判断条件在哪一模块被误解。论文只处理语言提示，并未验证连续引导场、A/F 接口或视觉预测 G，因此不能直接认定闭式编辑会迁移。</li>
+<li>论文没有系统研究物体×目标的交叉覆盖或未见组合；对“方块在碗左侧”有迁移、对“方块在碗右侧”仍为 0/32，反而说明局部编辑不能替代组合数据设计。它同样不能补足未学会的接触、放置和失败恢复技能。</li>
 </ul>
-<h3 class="sub">对Austin研究的启发</h3>
+<h3 class="sub">启发</h3>
 <ul>
-<li>在OpenPI执行器中增加“反事实指令重放”接口：固定图像、状态和flow-matching噪声，批量替换等价指令，检查错误动作是否随语言表达变化。若变化明显，再进入权重编辑；否则转向感知或控制诊断。</li>
-<li>为引导场 \(G\) 或条件遵循模块记录逐层激活，比较原条件与明确条件在共享图像单元、状态token和文本token上的差异，以判断错误是对象绑定、动作阶段识别还是下游执行偏移。</li>
-<li>把编辑安全门设为三层：离线错误决策必须被消除、原本正确的携带与第二阶段决策必须保留、闭环practice seeds必须表现为fixed显著多于broke；通过后再冻结并进入held-out seeds。</li>
-<li>同时维护未编辑重复运行控制组。由于论文观察到相同权重重跑也会翻转约三分之一的配对结果，Austin侧评测不应只报告单次成功率，应至少报告paired fixed/broke、运行顺序和噪声基线。</li>
-<li>优先实现低秩可插拔补丁，而不是覆盖完整检查点：0.16%存储版本仍达到102/128，适合作为OpenPI中的任务级adapter；但应保留完整编辑作为上限，并通过新种子正面对比两者。</li>
-<li>将失败类型作为编辑前置条件：只有当现有策略在某个改写输入下已经能完成任务时才允许蒸馏；对于缺失技能、接触物理或感知失败，直接转入数据收集、控制器调整或视觉训练流程。</li>
+<li>在 LIBERO/OpenPI 实验中加入“同观测、同噪声、只改条件”的离线回放：分别输入正确 G、置零 G、反向 G、交换对象或目标后的 G，并比较 action chunk、夹爪时序及各层激活，定位策略是在忽略 G、把 G 当任务 ID，还是错误绑定对象与目标。</li>
+<li>建立与本文一致的 paired closed-loop 协议：相同初始场景分别运行原条件和干预条件，交替运行顺序，复跑未修改策略估计噪声，并报告“修复/破坏”次数。尤其要单独记录抓取后是否持续向正确目标移动、是否提前释放、错误放置后是否重抓。</li>
+<li>设计物体×目标×场景交叉矩阵：训练集同时包含同一物体去不同目标、不同物体去同一目标，并留出未见组合；这样才能区分 G/A-F 被组合使用，还是策略依赖熟悉的物体—目标关联。</li>
+<li>若发现“某个 G 表达有效、等义 G 表达失效”，可先尝试只在 OpenPI 的条件解释模块蒸馏有效表达的内部效应，并与 action expert/action head 编辑比较；若所有表达都不能完成任务，则应优先补充接触、放置或恢复数据，而不是继续做权重编辑。</li>
+<li>对视觉预测的 G，应把表示误差与策略误读分开评测：先用 oracle G 验证执行器是否遵循条件，再换视觉估计 G；只有 oracle G 有效而预测 G 无效时，才把问题归到视觉提取或表示精度。</li>
 </ul>
 <h3 class="sub">一句话总结</h3>
-<p>Northeastern University RIVeR Laboratory与General Motors的作者在OpenPI π0.5上用无梯度闭式VLM权重编辑蒸馏有效指令改写，将128个留出种子上的成功率从27/128提升到106/128，而0.16%参数存储版本仍达到102/128。</p></div></details>
+<p>Ali-Adeeb Abbas 与 Esmaeil Seraj（Northeastern University RIVeR Laboratory、General Motors）用无梯度闭式更新把有效指令改写蒸馏进 π0.5 的 VLM 权重，使 128 个未见种子上的成功率由 27/128 提升至 106/128，并以编辑位置和配对闭环对照表明该失败主要是语言绑定误读而非动作能力缺失。</p></div></details>
 <section id="paper-qa" class="qa-section" data-arxiv="2611.11894" data-title="Distilling Instructions into Weights">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
