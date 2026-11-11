@@ -518,15 +518,15 @@ details.fold .fold-body {
 <div class="wrap">
 <article class="card">
 <header class="header">
-<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.13732" rel="noopener noreferrer" target="_blank">arXiv 2611.13732</a></span><span class="badge">深读</span></div>
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.13732" rel="noopener noreferrer" target="_blank">arXiv 2611.13732</a></span><span class="badge">深读</span></div>
 <h1>深读｜CIALLO</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.13732" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
-<li>跨本体数据复用的核心障碍不只是动作维度不同：关节角、末端位姿、夹爪命令、控制频率及单双臂布局都会把相同操作意图编码成不同控制序列。</li>
-<li>现有统一动作布局或本体专属模块可以接收异构数据，但仅靠动作重建，并不能保证不同机器人执行相似行为时得到相近的潜在表示，因而新机器人仍可能需要大量动作数据重新适配。</li>
-<li>论文同时考察仿真与真机迁移。真机阶段只用一段最长 10 秒的记录校准本体参数，随后冻结动作编解码器；仿真实验则允许联合微调动作解码器，因此两类结果的适配强度并不相同。</li>
-<li>作者目标是学习一个可跨控制接口复用的短时行为意图空间，把“新本体校准”与“具体任务学习”分离，以极少校准数据支持后续策略训练。</li>
+<li>跨具身数据中的动作坐标、维度、控制频率以及单臂/双臂布局并不统一；同一抓取或搬运动作可能由末端位姿增量、关节角或其他控制量表达，因而难以直接复用。</li>
+<li>现有统一动作布局或具身专属模块可以接入异构动作，但仅靠动作重建，并不能保证不同机器人上语义相近、效果相似的行为落入相近表示。</li>
+<li>论文同时研究仿真与真机：先在 8 种具身上预训练，再校准未见机器人；真机策略学习阶段冻结校准后的 codec，仿真实验则额外微调动作解码器。原文节选未明确把执行协议归类为开环或闭环。</li>
+<li>作者的目标是把短时行为意图与机器人控制接口解耦，使新机器人只需极短校准记录，便能复用共享控制表示并以少量任务示范学习策略。</li>
 </ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
   <div class="arch-figure-bar">
     <span class="arch-badge">📐 论文原版模型结构图（Figure 4）</span>
@@ -543,66 +543,58 @@ details.fold .fold-body {
   <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 4 Caption）</summary><div class="arch-cap-text">Overview of CIALLO. (A) During pretraining, three encoders map an action chunk with proprioception, a pair of current and future frames, and an instruction grounded in the current frame into a shared intent space. We align their outputs with contrastive losses and train a shared decoder to reconstruct the demonstrated actions from each intent, conditioned on the robot&#x27;s embodiment parameters. (B) To learn a policy, Qwen-CIALLO predicts intent from observations and instructions, using the frozen action encoder as a teacher and the demonstrated actions to supervise the decoder output. CS denotes cosine similarity loss. (C) To transfer the codec to a new robot, we first calibrate its essential vector and arm and axis embeddings while keeping the shared weights fixed, then train the policy with the calibrated codec frozen.</div></details>
 </div>
 <ul>
-<li>整体流程为：动作片段、当前/未来图像以及“指令＋当前观测”分别经动作、视觉和文本编码器映射到共享意图空间，再由本体条件动作解码器将意图还原为目标机器人的连续动作。</li>
-<li>CIALLO 将动作片段表示成带时间戳和有效掩码的控制标量集合，而非固定语义的全局动作向量；统一接口由 2 个、每个 512 维的意图 token 构成，可容纳不同动作维度、频率、时域长度和单双臂布局。</li>
-<li>本体差异由 128 维 essential vector、手臂 embedding、控制轴 embedding、执行时间及当前本体状态显式提供。条件归一化在编码端去除本体特征、在解码端重新注入目标本体特征。</li>
-<li>视觉分支使用冻结的 DINOv2 提取当前帧与未来帧特征，再由本体条件的 ConvNeXt 交互编码器提取短时视觉变化；文本分支使用冻结的 BERT 压缩指令，并结合当前帧将任务级语义落到当前动作片段。</li>
-<li>三种意图都通过同一个动作解码器重建示范动作，并以三组对称 InfoNCE 对齐；文本分支另有掩码文本重建损失，使共享空间既保持几何接近，也保留可执行的控制信息。</li>
-<li>解码器针对每个控制标量预测区间 \([-1,1]\) 上 256 个有序 bin 的 logits，以 softmax 期望一次前向得到连续动作。迁移到新机器人时只更新本体向量及手臂/控制轴 embedding，不更新共享编解码网络。</li>
-<li>Qwen-CIALLO 以 Qwen3.5-4B 预测共享意图：冻结的动作编码器提供教师 token，策略同时接受余弦意图对齐和动作回归监督。该工作没有修改或继承 π0 的策略骨干；π0 仅作为真机全量微调基线。</li>
+<li>整体流程为“异构示范 → 共享意图编码 → 具身条件解码”：动作块与本体状态、当前—未来图像对、当前观测下定位的语言指令分别经过三个编码分支，映射为统一的短时意图；解码器再依据目标机器人的本体状态、执行时间和控制轴定义恢复原生动作。</li>
+<li>共享接口由两个 512 维意图 token 构成。动作被表示为带时间戳、轴类型和机械臂身份的控制标量集合，而不是塞入一个具有固定语义位置的全局动作向量，因此可适配不同动作维数、控制频率和单/双臂布局。</li>
+<li>具身差异由 essential vector、机械臂嵌入和控制轴嵌入显式承载，并通过条件归一化在编码侧“去具身化”、在解码侧“重新具身化”。迁移到新机器人时只优化这些具身参数，共享网络保持不变。</li>
+<li>视觉分支用冻结的 DINOv2 提取当前帧与未来帧特征，再由具身条件化的局部交互编码器提取短时视觉变化；文本分支用冻结的 BERT 压缩任务指令，并结合当前图像将任务级语义定位为当前动作块对应的意图。</li>
+<li>三种意图均经过同一个动作解码器重建示范动作，并以 action–vision、action–text、vision–text 的对称 InfoNCE 对齐；文本分支还通过掩码文本重建保持指令信息。总损失以动作重建为主，对三项对比损失分别赋予 0.1、0.05、0.05 权重。</li>
+<li>Qwen-CIALLO 用 Qwen3.5-4B 根据观测和指令预测意图：冻结的动作编码器提供教师 token，余弦损失约束意图一致性，解码后的动作回归损失约束可执行性。它没有改变 Qwen 骨干去预训练大规模机器人动作，而是外挂并学习 CIALLO 意图接口；真机上校准后的 codec 保持冻结，仿真中则联合微调动作解码器。</li>
 </ul></section><section class="section"><h2>实验与结果</h2><ul>
-<li>CIALLO 在 8 种本体、125,434 个 episode 上预训练。对 2,048 个留出样本，动作—视觉、动作—语言的双向 top-1 检索准确率分别为 96.68% 和 91.94%，视觉—语言检索为 96.88%。</li>
-<li>共享解码器从动作、视觉和落地语言意图重建动作时，归一化 masked MAE 分别为 0.00761、0.01853 和 0.02429，说明三个分支均保留了可供动作解码的信息，但跨模态路径的误差高于直接动作自编码。</li>
-<li>在真实 SO-101 和单臂 Piper 上，每项任务使用 20 条示范，Qwen-CIALLO 的平均成功率为 76.7%，高于全量微调 π0 的 70.0%，绝对提高 6.7 个百分点、相对提高约 9.6%。</li>
-<li>仿真中，在允许联合微调动作解码器的协议下，Qwen-CIALLO 在 LIBERO 训练 10k 个策略 step 后达到 97.3%；同一 LIBERO 策略不做额外微调，在 LIBERO-Plus 分布偏移测试上达到 80.8%。</li>
-<li>在 RoboTwin 2.0 上，一个联合训练的策略经过 40k step 后达到 52.7%。该数字明显低于 LIBERO 结果，但所给正文未包含任务级拆分或失败类型，无法判断主要瓶颈来自感知、意图预测还是动作解码。</li>
-<li>对比消融中，完整目标相对仅重建目标将 action-to-action 误差降低 7.1%；action–vision 单独对齐获得最低的 vision-to-action 误差。所给正文在表 1 中途截断，未提供这些消融项的完整绝对数值。</li>
+<li>在 2,048 个预训练留出样本上，动作—视觉、动作—定位语言的双向 top-1 检索准确率分别为 96.68% 和 91.94%，视觉—定位语言检索为 96.88%，表明三个分支在该留出协议下形成了较强的配对对齐。</li>
+<li>共享解码器从动作、视觉变化和定位语言意图重建动作时，归一化 masked MAE 分别为 0.00761、0.01853 和 0.02429；语言分支误差最高，但仍保留了可供动作解码的信息。</li>
+<li>在保持所有重建损失不变的对比学习消融中，完整对齐目标相对“仅重建”将 action-to-action 误差降低 7.1%，并改善 vision-to-action 重建；论文节选在表格中断处未给出这些消融项的完整绝对数值。</li>
+<li>真机 SO-101 与单臂 Piper 上，每个任务使用 20 条示范，Qwen-CIALLO 的平均成功率为 76.7%，高于全量微调 π0 的 70.0%，绝对提高 6.7 个百分点、相对提高约 9.6%。现有节选只给出跨两种机器人的平均值，未披露逐机器人、逐任务结果。</li>
+<li>仿真中联合微调动作解码器后，LIBERO 在 10k 个策略训练步达到 97.3%；同一策略不做额外微调，在 LIBERO-Plus 分布偏移测试中达到 80.8%。联合训练的 RoboTwin 2.0 单策略在 40k 步后达到 52.7%。</li>
+<li>原文提供的节选没有报告专门的失败恢复、目标持续跟随或“抓取成功但放置目标错误”等分类统计，因此不能据此判断共享意图是否改善了这些具体失败模式。</li>
 </ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
-<li>所给论文正文未包含完整讨论或局限章节；以下边界主要来自实验协议本身，不能等同于作者明确声明的全部局限。</li>
-<li>真机平均成功率只覆盖 SO-101 与单臂 Piper。尽管预训练包含 8 种本体，这仍不足以证明对移动操作、灵巧手、明显不同自由度或不同控制语义的普遍可扩展性。</li>
-<li>真机使用“校准后冻结 codec”，但仿真会进一步微调动作解码器；因此 97.3%、52.7% 和 80.8% 不能直接作为纯冻结跨本体接口能力的证据。可增加仿真 frozen-decoder 与 finetuned-decoder 的严格配对实验。</li>
-<li>论文报告校准只需最长 10 秒的一段记录，却未在所给正文中给出不同记录长度、动作覆盖度、初始化或随机种子下的敏感性。可测试 1/3/5/10 秒校准、静态或低激励轨迹，以及多次独立校准的方差。</li>
-<li>当前证据主要是任务成功率和表示检索/重建误差。可进一步记录闭环中的意图漂移、动作饱和、解码误差累积和恢复成功率，并分析离线 MAE、跨模态检索与真实任务成功率之间是否相关。</li>
-<li>对 π 系列的实验只给出全量微调 π0 的平均结果；未报告参数量、训练算力、推理频率、任务级置信区间，也没有 π0-FAST、π0.5 或 OpenPI 对照。后续应在相同数据、执行器、控制频率和评测次数下补齐比较。</li>
+<li>论文的主要证据支持“跨具身控制接口迁移”，并未专门构造物体×目标×场景的未见组合测试；高检索准确率和动作重建精度也不能单独证明策略会组合或持续遵循意图。</li>
+<li>真机结果只给出 SO-101 与单臂 Piper 的总体平均成功率；所给节选未披露逐任务成功率、评测回合数、置信区间及失败类型，因而难以判断 6.7 个百分点提升是否均匀、稳定。</li>
+<li>真机实验冻结校准后的 codec，但仿真结果额外微调了解码器，因此 LIBERO、LIBERO-Plus 与 RoboTwin 2.0 的数字不能直接视为“只校准具身嵌入即可迁移”的证据。</li>
+<li>CIALLO 的两个意图 token 是通过动作、视觉变化和语言共同对齐得到的潜变量，没有显式的接触区域、期望物体运动方向或阶段语义；其可解释性和可控编辑能力弱于显式 A/F 或几何场接口。</li>
+<li>可以增加三类可核验实验：对意图 token 做置零、跨样本交换与受控插值；在同一初始场景下改变目标或运动方向；按接近、接触、搬运、放置和失败恢复阶段记录成功率，以区分“识别任务关联”与“持续执行给定意图”。</li>
 </ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
-<li>预训练数据：125,434 个 episode，覆盖 8 种本体，并在本体之间进行均衡采样。</li>
-<li>数据来源：LIBERO、SimplerEnv 所使用的 Bridge 与 Fractal，以及 RoboTwin 2.0。</li>
-<li>新本体：真实 SO-101 与单臂 Piper；两者未以相同配置出现在预训练中，预训练中的 Piper 是仿真双臂配置。</li>
-<li>校准协议：每个新机器人使用一段最长 10 秒的记录，只优化 essential vector、手臂 embedding 和控制轴 embedding；共享网络权重保持固定。</li>
-<li>校准开销：单 GPU 约 30 分钟。论文将校准记录与后续任务示范分开统计。</li>
-<li>真机任务学习：每项任务 20 条示范；校准完成后冻结 action codec，训练 Qwen3.5-4B 骨干及 intent projector。</li>
-<li>仿真任务学习：联合微调 Qwen3.5-4B 骨干、intent projector 和动作解码器；LIBERO 使用 10k policy step，RoboTwin 2.0 使用 40k step。</li>
-<li>策略实现：Qwen3.5-4B 通过 StarVLA 接入，形成 Qwen-CIALLO；Qwen 骨干在策略微调前不需要大规模机器人动作预训练。</li>
-<li>表示参数：短时意图为 \(K=2\) 个 token、宽度 \(D=512\)；文本分支另有 4 个 task-level intent token；essential vector 维度为 128。</li>
-<li>动作输出：每个标量使用 \([-1,1]\) 上 256 个均匀 bin，并通过 softmax 期望读出连续值。</li>
-<li>视觉与文本骨干：视觉使用冻结 DINOv2；语言使用冻结 BERT。视觉分支支持多相机有效性掩码。</li>
-<li>总损失：三条路径的动作重建和文本重建采用单位权重；action–vision、action–text、vision–text 的对称 InfoNCE 权重依次为 0.1、0.05、0.05。</li>
-<li>表示评测：使用 2,048 个留出样本计算跨模态双向 top-1 检索和归一化 masked MAE。</li>
-<li>对齐消融：固定 8 种本体、2 个意图 token、2,000 个训练 step，并使用相同验证集。</li>
-<li>所给正文未披露真机任务总数、每项评测 episode 数、相机型号、控制频率、GPU 型号及 π0 基线的具体检查点。</li>
+<li>预训练数据：125,434 个 episode，来自 LIBERO、Bridge、Fractal 和 RoboTwin 2.0，共覆盖 8 种具身，并在具身之间均衡采样。</li>
+<li>共享意图：\(K=2\) 个 token，每个宽度 \(D=512\)；文本分支另有 4 个内部任务级意图 token。</li>
+<li>具身参数：essential vector 维度为 128，并包含机械臂嵌入、控制轴嵌入、执行时间和有效性 mask。</li>
+<li>动作输出头：对每个控制标量预测 \([-1,1]\) 范围内 256 个均匀 bin 的 logits，再以 softmax 期望输出连续动作。</li>
+<li>视觉与语言骨干：视觉分支使用冻结的 DINOv2；文本分支使用冻结的 BERT。视觉分支接收当前帧、动作块末端对应的未来帧以及可变数量的相机视角。</li>
+<li>预训练目标：三个分支各自承担 masked L1 动作重建；另有掩码文本重建，以及 action–vision、action–text、vision–text 对称 InfoNCE，权重分别为 0.1、0.05、0.05。</li>
+<li>预训练评测：使用 2,048 个留出样本测量跨模态双向 top-1 检索和归一化 masked MAE。</li>
+<li>对比损失消融：保持 8 种具身、两个意图 token、相同验证集和 2,000 步训练预算。</li>
+<li>新机器人校准：只使用一段不超过 10 秒的记录，优化 essential vector 及机械臂/控制轴嵌入，共享网络固定；单 GPU 优化约需 30 分钟。</li>
+<li>真机：SO-101 与单臂 Piper；两者的具体配置均未出现在预训练具身中，尽管预训练包含仿真双臂 Piper。每任务使用 20 条策略示范，校准后 codec 在策略训练中冻结。</li>
+<li>策略：Qwen3.5-4B 加意图投影器，通过 StarVLA 实现；冻结的动作编码器作为教师。推理时只需策略预测意图，不再使用教师编码器。</li>
+<li>仿真：联合微调 Qwen 骨干、意图投影器和动作解码器；LIBERO 使用 10k 个策略训练步，RoboTwin 2.0 使用 40k 步；LIBERO-Plus 不做额外微调。</li>
 </ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
-<li>这篇论文值得纳入 π 系列日报，因为它不再把跨本体迁移完全交给 VLA 骨干，而是提出一个可独立校准、可冻结复用的动作接口，直接触及多机器人数据共享时最难统一的控制语义问题。</li>
-<li>真机实验提供了与全量微调 π0 的直接对照，同时仿真结果展示了冻结迁移与解码器联合微调之间的不同使用方式，适合用于讨论“通用策略骨干”和“通用动作表示”应如何分工。</li>
+<li>推荐这篇的核心原因不是它又提出了一个 VLA，而是它把“策略应该输出什么”改写为一个与机器人原生动作接口分离的短时意图 codec，并明确区分了具身校准与任务学习。</li>
+<li>论文同时提供跨模态检索、动作重建、真机少样本策略学习和仿真分布偏移结果，适合用来讨论“共享表示能否真正成为可迁移控制接口”，而不只是比较最终成功率。</li>
 </ul>
-<h3 class="sub">与π系列的关系</h3>
+<h3 class="sub">与本项目关系</h3>
 <ul>
-<li>CIALLO 不是 π0、π0-FAST、π0.5 或 OpenPI 的扩展，也没有继承 π 系列的 flow-matching 动作专家；其策略骨干是 Qwen3.5-4B，核心贡献是动作、视觉变化和落地语言共享的意图 codec。</li>
-<li>论文与 π0 的直接关系仅是基线比较：在真实 SO-101 与单臂 Piper、每任务 20 条示范的协议下，Qwen-CIALLO 为 76.7%，全量微调 π0 为 70.0%。</li>
-<li>CIALLO 改变的是 VLA 的动作接口：策略预测固定形状的短时意图，再由本体条件解码器输出机器人原生动作；它没有证明这一接口已能直接替换 π0 的 action expert。</li>
-<li>论文未报告与 π0-FAST、π0.5 的直接比较，也未提供与 OpenPI 的代码级集成。因此不能据此断言 CIALLO 优于这些系统，或能够无修改接入其训练和推理栈。</li>
-<li>与 π 系列常见的“大规模机器人动作预训练后适配”路线相比，CIALLO 尝试把跨本体先验集中到独立 codec 中，使 Qwen 骨干无需预先接受大规模机器人动作训练；但仿真中的 decoder 微调也说明当前接口尚未在所有设置下完全冻结通用。</li>
+<li>CIALLO 与 Austin 的 G/A-F 路线都试图将任务意图和具体机器人动作解耦：A/F 显式表达“接近哪个交互区域”和“物体应该如何运动”，CIALLO 则把动作块、短时视觉变化和定位语言压缩到两个潜在意图 token，再由具身条件解码器生成控制量。</li>
+<li>两者的关键差距在于可控性证据。CIALLO 展示了跨模态检索、动作重建和跨具身成功率，但没有报告置零、反向或交换意图后的闭环行为，也没有证明 token 持续编码期望的物体运动，而非熟悉的任务或物体—目标关联。</li>
+<li>它可作为 OpenPI π0/π0.5 执行器之外的共享动作接口候选，但论文并未将 CIALLO 接到 π0/π0.5 内部作为条件接口；π0 在文中是全量微调对照。现有结果也未单独回答正确放置、目标持续跟随和失败恢复问题。</li>
 </ul>
-<h3 class="sub">对Austin研究的启发</h3>
+<h3 class="sub">启发</h3>
 <ul>
-<li>可在 OpenPI 执行器前增加统一的 intent-to-action adapter：保留 π 策略的视觉语言部分，让其输出 \(2\times512\) 的固定意图，再针对每台机器人仅维护 essential、arm 和 axis embedding；首先验证能否在不改 π 骨干的情况下切换 SO-101、Piper 或其他执行器。</li>
-<li>做两组严格对照：一组完全冻结 codec，只训练策略；另一组允许微调 decoder。统一控制频率、示范数和评测 episode，以量化跨本体先验究竟来自共享意图，还是来自目标域解码器再训练。</li>
-<li>为引导场 \(G\) 增加条件遵循监控：在线计算策略意图与动作教师意图的余弦距离、解码动作的饱和比例及跨时刻意图突变；超过阈值时触发减速、重规划或回退，而不是只依赖最终成功率。</li>
-<li>校准数据应主动覆盖各控制轴和工作空间，而非随机截取 10 秒。可比较随机记录、人工设计激励轨迹和任务相关轨迹，并报告不同长度下的成功率、校准方差及轴级重建误差。</li>
-<li>闭环评测应加入扰动恢复：改变物体位置、遮挡相机或短时阻塞机械臂，分别观察共享意图是否保持任务语义，以及本体解码器能否把更新后的意图稳定转换为动作。</li>
-<li>Austin 的具体项目和系统边界在所给材料中未定义，因此以上建议只能落到 OpenPI 执行器、引导条件与闭环监控层面，不能可靠断言其与某项现有实现已经兼容。</li>
+<li>在 Austin 的数据上增加一个 CIALLO 式辅助目标：把 A/F 或视觉提取的 G，与对应动作块及“当前—短时未来”的物体视觉变化做对比对齐；比较只做动作回归、动作+G、动作+G+视觉变化对齐三种训练方式。</li>
+<li>设计同一初始观测下的成对样本，只改变目标位置或物体期望运动方向；随后执行 G/F 置零、反向和跨目标交换。如果输出仍主要由物体身份决定，就说明模型把条件当作任务 ID，而没有学习可组合意图。</li>
+<li>将评测拆成接近正确区域、建立有效接触、物体沿目标方向运动、到达正确放置目标、扰动后恢复五个阶段，并逐步测量策略预测意图与视觉估计物体变化之间的一致性。</li>
+<li>构造物体×目标×场景的交叉覆盖和严格留出组合，同时保留少量新机器人校准记录；这样可以把“跨具身接口迁移”和“未见任务组合泛化”分开测量，避免由其中一项替代另一项。</li>
+<li>可在 OpenPI 执行器旁增加一个固定维度的意图投影头，让 π0/π0.5 同时预测动作与 G/A-F；再比较直接动作解码、潜在 CIALLO token 和显式 A/F 三类接口在条件交换、目标变化及失败恢复中的表现。</li>
 </ul>
 <h3 class="sub">一句话总结</h3>
-<p>清华大学团队提出 CIALLO，以动作、视觉变化和落地语言对齐的共享短时意图接口实现最长 10 秒新本体校准，Qwen-CIALLO 在真实 SO-101 与单臂 Piper 上以每任务 20 条示范取得 76.7% 平均成功率，对比全量微调 π0 的 70.0%。</p></div></details>
+<p>清华大学提出的 CIALLO 用动作、短时视觉变化和定位语言共同学习两个 512 维共享意图 token，经不超过 10 秒的新机器人校准后，在每任务 20 条真机示范下取得 76.7% 平均成功率，高于全量微调 π0 的 70.0%，但尚未证明该潜变量具备显式、可编辑的组合条件遵循能力。</p></div></details>
 <section id="paper-qa" class="qa-section" data-arxiv="2611.13732" data-title="CIALLO">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
