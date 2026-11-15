@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Decide Before You Move</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.15093" rel="noopener noreferrer" target="_blank">arXiv 2611.15093</a></span><span class="badge">深读</span></div>
+<h1>深读｜Decide Before You Move</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.15093" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>开放词汇 ObjectNav 面临两类失效：依赖预建对象地图的方法会在杯子、钥匙等物体被移动后返回过期位置；完全在线的方法则需持续建图、反复选择局部目标，甚至每隔数步调用视觉—语言模型，推理与重规划开销较高。</li>
+<li>论文聚焦“半静态”室内环境：墙体和大型家具基本不变，而待搜索的小型物体可能移动、消失或重新出现。问题是能否只保留持久结构，不维护易变物体的位置，仍然有效规划搜索顺序。</li>
+<li>设定包含 Gibson 仿真 ObjectNav 和真实移动机器人实验。查询到达后，系统先一次性生成全局搜索参考；执行阶段沿参考搜索，并在在线检测到目标后转入目标接近，因此全局决策近似开环，目标检测与接近仍是闭环。</li>
+<li>作者目标是以一次性的语言共现推理和扩散式全局规划，替代导航过程中的重复基础模型调用与查询条件重规划，同时保持任意文本目标的零样本支持和跨场景迁移能力。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.15093.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.15093.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.15093.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.15093.png'">
+    <img src="/assets/figures/2611.15093.png" onerror="this.onerror=null;this.src='../assets/figures/2611.15093.png'" alt="Decide Before You Move Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>语义共现评分（LLM Co-occurrence Scoring）</strong>：输入自由文本查询 $q$ 与家具词表 $\mathcal C$；LLM 综合目标位于家具“上/内/附近”的关系，为每类 $c$ 输出搜索效用 $r_c(q)\in[0,100]$。该分数仅离线计算一次并缓存。</li>
+<li><strong>家具条件空间先验（Furniture-Conditioned Search Prior）</strong>：以查询自适应温度 $\tau_q=0.65\sigma_q$ 归一化得 $\alpha_c(q)=\frac{\exp(r_c/\tau_q)}{\sum_{c'}\exp(r_{c'}/\tau_q)}$，再投影至地图中的对应家具区域，形成空间先验 $D_q$；其与墙体栅格 $\mathcal W$、起点图 $S(s_0)$ 堆叠为三通道条件输入。</li>
+<li><strong>扩散式全局搜索生成器（Diffusion-based Global Search Generator）</strong>：在 $[D_q,\mathcal W,S(s_0)]$ 条件下，将随机点逐步去噪为单条全局搜索参考；输出中心线规定家具区域的访问顺序，青色带状区域则在高权重家具附近自适应加宽。上述生成仅在机器人移动前执行一次。</li>
+<li><strong>真实机器人执行（Real-Robot Execution）</strong>：筛选满足 $\alpha_c(q)$ 超过阈值且与搜索带重叠的重点区域（紫色），沿中心线依序采样覆盖视点；机器人按序访问，利用开放词汇检测器在线识别目标，随后接近目标，无需重复调用LLM或进行查询条件全局重规划。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">\textbf{Overview of \method{}.} (a)~For a query $q$, an LLM scores how useful each furniture category $c$ is for finding the target; the scores $r_c(q)$ are computed once and cached. (b)~The normalized weights $\alpha_c(q)$, projected onto the mapped furniture, form the spatial prior $D_q$, which is stacked with the wall raster $\mathcal{W}$ and the start map $S(s_0)$. (c)~Conditioned on these three channels, a diffusion model denoises random points into the search reference. (d)~The reference on the real lab map: a centerline that fixes the visiting order, and a band (teal) that widens over high-scoring furniture (outlined). (e)~Real-robot execution: viewpoints are sampled near the centerline to cover where the band overlaps furniture whose weight $\alpha_c(q)$ clears a threshold---the regions most worth searching, shown in violet. The robot visits them in order, detects the target with an open-vocabulary detector, and approaches it. Steps (a)--(d) run once, before the robot moves.</div></details>
+</div>
+<ul>
+<li>整体流程为：自由文本目标查询 → LLM 计算目标与家具类别的共现/搜索价值 → 将类别权重投影到持久家具地图 → 条件扩散模型联合墙体、起点和空间先验生成搜索参考 → 机器人按顺序覆盖参考带，在线发现目标后接近目标。</li>
+<li>LLM 针对目标“位于家具上、家具内、家具附近”三种关系评分，并输出每类家具的搜索价值 \(r_c(q)\)。系统按每个查询的分数标准差自适应设置 softmax 温度，得到类别权重 \(\alpha_c(q)\)；分数只在移动前计算一次并缓存，不在导航过程中重复调用 LLM。</li>
+<li>每个家具实例被投影为二维各向异性高斯，类别权重决定其贡献，叠加并归一化后形成空间先验 \(D_q\)。该先验表示“哪些家具支撑区域值得搜索”，而不是直接预测目标占据位置，因此目标在兼容家具之间重定位后仍可使用。</li>
+<li>扩散模型以墙体/自由空间栅格、起始位姿高斯图和查询空间先验组成的三通道条件为输入，输出 100 个 \((y,x,w)\) 点：中心线规定访问顺序，逐点半宽 \(w\) 构成需要覆盖的搜索带。</li>
+<li>训练监督由离线 TSP with Neighborhoods 教师生成：CP-SAT 在起点及家具邻域中选取访问点和闭合顺序，以 A* 路径代价连接，再插值为固定长度参考。TSP 只用于制作训练标签，部署时不运行求解器。</li>
+<li>模型采用标准扩散噪声预测损失，并在低噪声时间步加入墙体碰撞惩罚；相对于 SGM 等在线地图方法，PreNav 没有修改为逐步语义选点，而是把查询相关的全局搜索顺序前置为一次生成。生成器只在 ScanNet++ 房间级场景训练，迁移至 Gibson 楼层级场景时不微调。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>在六类别 Gibson 子集的 600 个 episode 上，PreNav 使用墙体和 SGM 可支持的家具先验时达到 <strong>64.3% SR、39.2% SPL</strong>；结构先验匹配的 SGM 为 <strong>62.0% SR、36.2% SPL</strong>。</li>
+<li>当 PreNav 使用完整场景家具先验时，六类别结果进一步达到 <strong>70.3% SR、39.8% SPL</strong>。该结果与仅使用 SGM 支持家具类别的设置并非完全同等先验，不能直接归因于扩散规划器本身。</li>
+<li>在完整十类别、1,000 个 episode 的 Gibson 评测中，匹配家具支持范围时，PreNav 为 <strong>44.2% SR、26.9% SPL</strong>，对应 SGM 为 <strong>42.8% SR、26.9% SPL</strong>；完整家具先验下 PreNav 为 <strong>44.5% SR、26.1% SPL</strong>，说明更多家具信息没有在该协议中同步提高 SPL。</li>
+<li>四类目标 book、bottle、clock 和 cup 的表现主要受目标检测而非搜索限制，因此论文将 chair、oven、potted plant、refrigerator、tv、vase 六类作为主比较和后续分析对象。这也解释了十类别整体指标明显低于六类别结果。</li>
+<li>论文称扩散生成器的导航性能接近离线 TSP 教师，同时把参考生成时间从 TSP 的数十秒降至约 1 秒；但所提供正文片段未包含对应表格，无法核对二者具体 SR、SPL 和精确耗时。</li>
+<li>真实机器人实验覆盖物体重定位和开放词汇查询，验证了系统可以利用持久家具重新搜索已移动目标；当前原文片段未披露真实实验的任务数、成功率或误差统计，因此只能视为部署可行性的定性证据。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>核心假设是墙体和大型家具保持稳定；若桌椅大规模挪动、房间重新布置，预存结构先验与真实环境不一致，生成的访问顺序和搜索带可能失效。可加入结构变化检测，并在地图差异超过阈值时局部更新或重新生成参考。</li>
+<li>全局参考在机器人移动前一次生成，执行中不会根据未发现目标、临时障碍或新观测重新排序。可比较“一次生成”与事件触发式再规划，例如在参考带覆盖一定比例仍未检测到目标时，仅重规划剩余家具区域。</li>
+<li>搜索质量依赖 LLM 给出的目标—家具共现关系；罕见目标、组合描述或文化/场景分布差异可能产生错误先验。可记录各家具区域的实际发现频率，在线校准 LLM 权重，并测试替换不同 LLM 后的敏感性。</li>
+<li>十类别实验显示部分目标受检测器限制，当前结果无法把搜索规划错误与视觉检测漏检彻底分离。建议增加 oracle detector、固定检测器和真实检测器三组协议，分别报告路径覆盖率、发现率、SR 与 SPL。</li>
+<li>跨数据集证据目前是 ScanNet++ 房间级训练到 Gibson 楼层级测试，真实机器人结果又缺少统计规模。可进一步做跨建筑类型、跨家具词表和结构扰动强度分层评测，并报告生成参考的墙体碰撞率、家具覆盖率及跨楼层长程性能。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>训练数据来自 ScanNet++，共 83 个符合条件的场景，按 75 个训练场景、8 个验证场景划分；Gibson 不参与生成器训练。</li>
+<li>Gibson v1.1 使用五个验证场景：Collierville、Corozal、Darden、Markleeville 和 Wiconisco。</li>
+<li>Gibson 的 15 个语义类别中，5 类作为持久家具，10 类作为查询目标；每类 100 个 episode，共 1,000 个 episode。</li>
+<li>主结果使用六个目标类别：chair、oven、potted plant、refrigerator、tv、vase，共 600 个 episode。</li>
+<li>条件地图分辨率为 \(64\times64\)；家具高斯核的每轴标准差取对应包围盒尺度的一半，并至少为 1.5 个栅格；起点高斯图标准差为 1.25 个栅格。</li>
+<li>家具类别权重使用查询自适应温度 \(\tau_q=0.65\sigma_q\)；构建条件图时忽略 \(\alpha_c(q)&lt;0.01\) 的家具类别。</li>
+<li>搜索参考长度 \(L=100\)；监督半宽范围为 1 至 12 个栅格。</li>
+<li>条件编码器输出 768 通道的 \(16\times16\) 特征图，再形成 256 个地图 token 并投影到 256 维。</li>
+<li>去噪器为四层 pre-norm Transformer decoder，使用 8 个注意力头和 1,024 维前馈层；模型共有 5.24M 个可训练参数。</li>
+<li>训练采用 1,000 个 squared-cosine 扩散步；墙体损失只用于 \(k&lt;200\) 的低噪声样本，损失权重为 0.2。</li>
+<li>推理从高斯噪声开始，采用 50 步 DDPM 采样，一次生成 100 点搜索参考。</li>
+<li>数据增强包括水平翻转、垂直翻转和 \(90^\circ\) 倍数旋转，并同步变换条件图与参考坐标。</li>
+<li>真实机器人平台、传感器配置、开放词汇检测器检查点、任务数量和重复次数未出现在所提供正文片段中。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇工作的原因不是单纯把扩散模型用于导航，而是它明确利用半静态环境的时间尺度分离：保留低维护成本的墙体和家具几何，主动舍弃最容易过期的目标位置。</li>
+<li>它还提供了一个工程上清晰的接口：语言模型只输出家具类别权重，扩散模型负责几何访问顺序和覆盖宽度，在线导航栈只需执行参考并运行目标检测，便于分别替换语义、规划和控制模块。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>与 VLN 方法不同，PreNav 不把自然语言查询直接映射为动作序列，也不需要用户提供包含路线信息的场景特定指令；文本只定义要找的物体，路线来自持久结构地图和目标—家具共现先验。</li>
+<li>与经典 GoalNav/ObjectNav 在线建图方法相比，PreNav 在 episode 开始前已经拥有墙体和大型家具地图，并一次性决定全局搜索顺序；代价是依赖熟悉建筑及结构稳定假设，但减少了逐步语义决策和重复基础模型调用。</li>
+<li>与 HOV-SG、ConceptGraphs 等开放词汇语义地图相比，它不查询重建时记录的目标位姿，而只保留较稳定的结构载体，因此对小物体重定位更稳健；但也失去了利用仍然有效的历史目标位置加速搜索的机会。</li>
+<li>与传统 SLAM/路径规划的点目标接口相比，搜索参考同时包含有序中心线和可变宽度搜索带，表达的是“按什么顺序看哪些区域”，不是单一路径终点。工程权衡是下游局部规划器必须把连续搜索带转成可见性充分、可避障的实际观测位姿。</li>
+<li>与 TSP 教师相比，扩散模型学习近似组合求解过程，把在线生成压缩到约 1 秒，但不提供显式最优性保证；其优势主要是快速生成和跨地图尺度迁移，而不是替代所有具有约束保证的规划器。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li>在空间几何表示上，可将现有占据栅格或语义 SLAM 地图拆成“稳定结构层、家具支撑层、易变目标层”，并为每层设置不同更新频率；首先验证只保留前两层时，对重定位目标的 SR/SPL 影响。</li>
+<li>在分层规划接口上，可采用“全局搜索带—候选观测位姿—局部控制器”三级结构：全局模型输出顺序和宽度，中层依据相机视场、遮挡与家具边界采样 viewpoint，底层继续使用成熟的避障与轨迹跟踪模块。</li>
+<li>为防止一次性规划在动态场景中僵化，可加入三个触发器：结构地图不一致、局部路径不可达、已覆盖高权重区域但仍未发现目标；触发后只对未覆盖区域重新采样，而不是每一步调用 VLM。</li>
+<li>跨场景泛化实验应同时控制几何尺度和语义词表：分别测试房间到楼层、已见到未见家具布局、同义词到组合查询，并报告 oracle 检测与真实检测两套结果，避免把检测器瓶颈误判为规划器泛化失败。</li>
+<li>可增加搜索参考自身的诊断指标，包括高权重家具覆盖率、搜索带可见面积、墙体穿越率、参考长度以及实际执行轨迹相对参考的偏差，从而定位失败发生在语言先验、几何生成还是控制执行。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>上海科技大学、波恩大学与 Lamarr 研究所提出的 PreNav 以一次性 LLM 家具共现先验和扩散生成搜索带实现半静态环境零样本开放词汇 ObjectNav，在 Gibson 六类别 600 个 episode 上以完整家具先验取得 70.3% SR、39.8% SPL，并将全局参考生成压缩至约 1 秒。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.15093" data-title="Decide Before You Move">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.15093 · Decide Before You Move</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Decide Before You Move》</strong>（arXiv: 2611.15093）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
