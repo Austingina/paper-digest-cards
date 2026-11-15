@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜GraSLA</title>
+<title>深读｜2611.15659</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.15659" rel="noopener noreferrer" target="_blank">arXiv 2611.15659</a></span><span class="badge">深读</span></div>
-<h1>深读｜GraSLA</h1>
+<h1>深读｜2611.15659</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.15659" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>基于目标位姿与运动规划的方法可以从多个 6-DoF 抓取候选中选择动作，但通常开环执行，环境变化后难以及时修正；连续控制策略支持闭环执行，却受模仿数据覆盖限制，容易只复现示教中的少数行为模式。</li>
 <li>论文研究 LIBERO 仿真环境中的单臂、平行夹爪操作：策略依据当前多视角点云、语言、机器人状态及腕部点云生成的抓取假设，反复预测连续动作块；BERT 与 GSNet 冻结，其余模块通过行为克隆训练。</li>
 <li>作者的目标是把多样的抓取假设变成连续策略可利用的几何先验，在保持轻量和低延迟的同时提高语言条件操作成功率。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.15659.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.15659.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.15659.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.15659.png'">
+    <img src="/assets/figures/2611.15659.png" onerror="this.onerror=null;this.src='../assets/figures/2611.15659.png'" alt="2611.15659 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>(a) Pose-based Methods／位姿式管线</strong>：视觉观测 $o_t$ 先经感知模块估计物体或末端位姿 $T_t\in\mathrm{SE}(3)$，再由规划器生成轨迹并交给低层控制器执行；数据流为“观测→位姿→规划→动作”，中间位姿瓶颈会累积感知误差。</li>
+<li><strong>(b) Continuous-control Methods／连续控制管线</strong>：策略 $\pi_\theta(a_t\mid o_t)$ 从图像、点云及机器人状态直接回归连续动作 $a_t$，省去显式位姿估计与规划，但单峰连续分布容易平均化多个可行动作模式。</li>
+<li><strong>(c) GraSLA／抓取空间潜动作管线</strong>：GraSLA以观测 $o_t$ 为条件，先在抓取空间中选择结构化潜变量 $z_t$，再由动作解码器生成控制指令 $a_t$；即 $o_t\!\rightarrow\!z_t\!\rightarrow\!a_t$，以离散模式选择结合连续参数化保留多解性。</li>
+<li><strong>(d) Behavioral Diversity／行为多样性</strong>：右侧对比显示，位姿式与连续控制方法倾向集中于少数轨迹，而 GraSLA 可通过采样不同 $z_t\sim p_\theta(z\mid o_t)$ 产生多种有效抓取与操作路径，在任务成功约束下覆盖更丰富的行为模态。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Comparison of manipulation pipelines: (a) pose-based methods, (b) continuous-control methods, and (c) GraSLA. (d) Comparison of behavioral diversity.</div></details>
+</div>
+<ul>
 <li>整体流程为：多视角彩色点云经 Utonia 得到空间 token，指令经 BERT 得到语言 token，腕部点云经 GSNet 得到 6-DoF 抓取假设、局部特征与碰撞状态；三路表示融合后，与机器人状态共同输入 ACT 式解码器，输出连续动作块。</li>
 <li>每个抓取假设包含夹爪位姿、开口宽度、夹爪高度、抓取深度和预测质量。候选经过碰撞检查、坐标系变换，并跨几何区域与碰撞状态采样，再由可学习的 GraspEncoder 和碰撞状态嵌入编码。</li>
 <li>SLG 交互模块先对空间与语言 token 做双向交叉注意力，再让抓取 token 与拼接后的空间—语言 token 双向交互；随后用语言自注意力和前馈网络进一步更新任务表示。</li>
@@ -577,12 +593,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>国防科技大学团队提出的 GraSLA 将 GSNet 生成的多组 6-DoF 抓取假设作为几何先验，经空间—语言—抓取双向交叉注意力驱动 ACT 式闭环动作预测，以 0.3B 参数在 LIBERO 四套件取得 99.3% 平均成功率和 RTX 5090 上 54.3 ms 端到端延迟，但尚未验证显式 F 条件、条件反事实遵循或未见物体×目标组合泛化。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.15659" data-title="GraSLA">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.15659" data-title="2611.15659">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.15659 · GraSLA</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.15659 · 2611.15659</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -592,7 +608,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《GraSLA》</strong>（arXiv: 2611.15659）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.15659》</strong>（arXiv: 2611.15659）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">
