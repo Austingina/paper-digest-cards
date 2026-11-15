@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜GOOSELoc</title>
+<title>深读｜2611.16162</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.16162" rel="noopener noreferrer" target="_blank">arXiv 2611.16162</a></span><span class="badge">深读</span></div>
-<h1>深读｜GOOSELoc</h1>
+<h1>深读｜2611.16162</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.16162" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -529,19 +529,19 @@ details.fold .fold-body {
 <li>作者目标是建立覆盖四季、铺装与非铺装地形的地空跨视角定位基准，检验现有方法的跨区域泛化能力，并量化 LiDAR 几何信息能否改善越野定位。</li>
 </ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
   <div class="arch-figure-bar">
-    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <span class="arch-badge">📐 论文原版模型结构图（Figure: Our architecture）</span>
     <a href="/assets/figures/2611.16162.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.16162.png'">🔍 点击放大查看高清原图 ↗</a>
   </div>
   <a href="/assets/figures/2611.16162.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.16162.png'">
-    <img src="/assets/figures/2611.16162.png" onerror="this.onerror=null;this.src='../assets/figures/2611.16162.png'" alt="GOOSELoc Figure 1 模型结构图" loading="lazy">
+    <img src="/assets/figures/2611.16162.png" onerror="this.onerror=null;this.src='../assets/figures/2611.16162.png'" alt="2611.16162 Figure: Our architecture 模型结构图" loading="lazy">
   </a>
   <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
-<li><strong>环视相机输入（Surround Cameras）</strong>：车顶四路相机 $\{\text{front},\text{right},\text{back},\text{left}\}$ 分别采集 $2448\times1000$ 像素图像；校正后单相机水平视场角为 $94.71^\circ$，四视图共同形成 $360^\circ$ 地面环境覆盖。</li>
-<li><strong>激光雷达模态（LiDAR Sweep）</strong>：车顶 128 线旋转式 LiDAR 输出一帧环周点云扫描，可与四路 RGB 观测按车辆位姿对齐融合，为林地、道路边界及几何结构提供深度信息。</li>
-<li><strong>俯视地图输入（Bavarian Orthophoto）</strong>：全局参考来自巴伐利亚正射影像；航拍图采集于夏季晴天，而地面图像记录于冬季，二者存在显著的季节与时间域差异，构成跨视角定位的主要挑战。</li>
-<li><strong>定位监督（Ground-Truth Pose）</strong>：Oxford RT3000v3 INS 结合基于 NTRIP 的差分 RTK-GNSS，输出全局位置与航向 $\mathbf{p}^{gt}=(x^{gt},y^{gt},\theta^{gt})$；图中星标表示真值位置及朝向。该 Figure 1 是 GOOSELoc 数据样本总览，而非后文多模态网络结构图。</li>
+<li><strong>共享特征编码</strong>：地面相机图像与 LiDAR 分别送入冻结的 DINOv3 和 Utonia，得到统一空间中的相机 token、LiDAR token 及相机 $[\mathrm{CLS}]$；DOP20 正射影像被切分并编码为航拍块特征 $\{a_i\}$。</li>
+<li><strong>位置分支（Position Branch）</strong>：相机与 LiDAR 各自形成查询 $q_c,q_l$，分别和 $\{a_i\}$ 做相关匹配，生成二维得分图 $S_c,S_l$；Evidence Gate 预测权重 $g_c,g_l$，融合为 $S=g_cS_c+g_lS_l$，抑制低可信模态。</li>
+<li><strong>位置解码与监督</strong>：对融合图归一化得 $p(i)=\operatorname{softmax}(S_i)$，通过 soft-argmax 输出连续坐标 $\hat{\mathbf{x}}=\sum_i p(i)\mathbf{x}_i$；训练采用其与真值中心软高斯分布 $p^\ast$ 的 KL 散度。</li>
+<li><strong>朝向分支（Orientation Branch）</strong>：相机 token 与按方位切分的 LiDAR-wedge token 分别同航拍 tile 相关，所得匹配图连同相机 $[\mathrm{CLS}]$ 输入 72-bin Heading Classifier；输出航向分布 $\hat{\mathbf{h}}\in\mathbb{R}^{72}$，以软环形交叉熵处理 $0^\circ/360^\circ$ 周期性。</li>
 </ul></div></div>
-  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">GOOSELoc Dataset Sample. The 4 roof-mounted cameras \outlinedcolor{surround_front}{$\blacksquare$} \outlinedcolor{surround_right}{$\blacksquare$} \outlinedcolor{surround_back}{$\blacksquare$} \outlinedcolor{surround_left}{$\blacksquare$} each have a $2448\times1000$\,px resolution and a \SI{94.71}{\degree} horizontal field of view after rectification, giving us a \SI{360}{\degree} coverage of the surroundings. This can be fused with a sweep of the roof-mounted 128-beam rotating LiDAR scanner \outlinedcolor{lidar}{$\blacksquare$}. The Bavarian orthophotos \outlinedcolor{aerial}{$\blacksquare$} are taken on a clear day in the summer and have a temporal mismatch to the ground-view images recorded during winter. The ground truth global location and heading \outlinedcolor{star}{$\bigstar$} are obtained by an Oxford RT3000v3 INS system with differential RTK-GNSS corrections using the NTRIP protocol to receive accurate readings in forested areas.</div></details>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure: Our architecture Caption）</summary><div class="arch-cap-text">Our architecture. Frozen DINOv3 and Utonia yield a shared token set. In the position branch each modality correlates its own query with the DOP20 patch features, and an evidence gate weights the two resulting score maps before they are summed. The orientation branch correlates the camera and LiDAR-wedge tokens against the tile and feeds the match maps, with the camera [CLS] tokens, to a 72-bin heading classifier.</div></details>
 </div>
 <ul>
 <li>每个场景由四路同步车顶相机组成的 \(360^\circ\) RGB 环视、一次同步的 128 线 LiDAR 扫描、地理配准正射影像裁剪和绝对位姿构成；模型需要在正射影像块内恢复车辆位置与朝向。</li>
@@ -607,12 +607,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>GOOSELoc由慕尼黑联邦国防军大学与慕尼黑工业大学团队提出，以9,356个四季、地理隔离的越野场景和RGB–LiDAR融合基线揭示现有跨视角方法的迁移退化，但所给原文片段未披露可核对的SR、SPL或定位误差数值。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.16162" data-title="GOOSELoc">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.16162" data-title="2611.16162">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.16162 · GOOSELoc</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.16162 · 2611.16162</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -622,7 +622,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《GOOSELoc》</strong>（arXiv: 2611.16162）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.16162》</strong>（arXiv: 2611.16162）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">
