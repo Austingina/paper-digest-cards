@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Genie Sim Benchmark</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.15020" rel="noopener noreferrer" target="_blank">arXiv 2611.15020</a></span><span class="badge">深读</span></div>
+<h1>深读｜Genie Sim Benchmark</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.15020" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>仿真基准只有在任务结果能够预测真机表现时才有价值；仅对齐关节轨迹或夹爪运动不足以覆盖物体几何、接触响应、旋转阻力和初始状态所造成的现实差距。</li>
+<li>现有评测常把任务成功、阶段得分和底层物理误差混为一谈，难以判断偏差来自策略能力、机器人执行链，还是物体接触与仿真引擎。</li>
+<li>本文在实例级配对的真实—仿真布局中，使用同一个由真实机器人数据监督微调得到的任务特定 π0.5 策略分别进行真机和仿真闭环推理；评测期间不再更新策略权重，并分别记录阶段 Score、执行误差与交互响应。</li>
+<li>作者目标是建立一个可分层核验的 Real2Sim 评测体系：既检验仿真任务 Score 是否与真机一致，也通过机器人系统辨识和物体接触回放定位可能改变任务结果的物理偏差。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2611.15020.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.15020.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.15020.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.15020.png'">
+    <img src="/assets/figures/2611.15020.png" onerror="this.onerror=null;this.src='../assets/figures/2611.15020.png'" alt="Genie Sim Benchmark Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>整体流程（Implemented Real2Sim workflow）</strong>：Figure 2 按箭头组织从真实世界采集、仿真复现到成对评测的流程；箭头仅表示步骤关系，并不意味着所有证据来自同一个端到端实验。</li>
+<li><strong>机器人辨识（Robot Identification）</strong>：以真实机器人执行轨迹及其观测为输入，在仿真器中调整机器人模型与动力学参数，使仿真运动响应逼近真实响应；该模块提供机器人本体层面的 Real2Sim 一致性证据，并输出经校准的仿真机器人。</li>
+<li><strong>物体回放（Object Replay）</strong>：将真实交互中的物体状态、运动或接触过程映射到仿真环境并重放，对比真实与仿真的物体行为；其输出是物体级复现结果，用于检验场景几何、接触与动力学建模是否能够解释真实观测。</li>
+<li><strong>成对任务评测（Paired Task Evaluation）</strong>：在真实环境与对应仿真环境中执行配对任务，分别获得任务表现并进行对照；该模块与机器人辨识、物体回放形成互补测量，最终从本体响应、物体行为和任务结果三个层面评估 Real2Sim 的可信度，而非汇报单一端到端指标。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Implemented Real2Sim workflow and corresponding evidence. Robot identification,\allowbreak{} object replay and paired task evaluation provide complementary measurements; arrows organize the process rather than denote a single end-to-end experiment.</div></details>
+</div>
+<ul>
+<li>整体流程为：构建实例级配对任务与场景 → 实例化机器人和交互资产 → 回放真实记录的控制命令 → 分别辨识机器人动力学与物体响应 → 在真机和仿真中运行同一任务策略 → 对比任务 Score、失败阶段和物理响应。</li>
+<li>证据被拆成三个互补层次：G2 crsB 双臂系统辨识衡量机器人执行一致性；5 个代表性物体录制衡量接触与物体运动一致性；22 个机器人—任务对衡量最终任务结果的一致性。各层使用各自指标，不把位置、力矩、图像误差和任务 Score 合并成单一“保真度”。</li>
+<li>任务级评测严格对齐真实与仿真的场景布局、测试条件、试验次数和评分标准。真机由测试人员人工判分并裁定失败或超时，仿真则依据相同标准自动评分。</li>
+<li>新增任务使用真实机器人数据对 π0.5 进行任务特定 SFT；微调后的同一策略分别在真机与仿真中推理。本文没有修改 π0.5 架构、训练目标或动作表示，主要贡献是外挂式 Real2Sim 基准、辨识和诊断流程。</li>
+<li>机器人辨识将刚体惯性、反射到关节侧的 armature、库仑/黏性摩擦及电流—力矩偏置纳入约束估计，并用未参与机械参数辨识和伺服增益搜索的遥操作轨迹做独立回放检查。</li>
+<li>物体回放直接施加记录的 22 个关节位置目标和 2 个夹爪位置目标；物体始终作为自由刚体积分，不使用抓取焊接、逐帧覆盖物体位姿或逆运动学重写，以避免用人为约束掩盖接触误差。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>在覆盖 16 个任务名称的 22 个最终机器人—任务对上，真实与仿真 Score 的 Pearson 相关系数为 0.9686；MAE 为 0.0405，RMSE 为 0.0520，平均有符号差值为 -0.0068，单任务的 Sim−Real 差值范围为 -0.110 至 +0.080。这里衡量的是阶段平均 Score 差异，不等同于二元成功率差异或置信区间。</li>
+<li>对 14 个 G2/Arx 机器人—任务对进行辨识前后比较，Pearson 相关系数由 0.9518 提升到 0.9669；MAE 从 0.0554 降至 0.0443，下降 20.0%；RMSE 从 0.0653 降至 0.0551，下降 15.6%。</li>
+<li>14 个条件中，8 个绝对 Sim−Real 差距缩小、5 个不变、1 个增大。分机器人看，G2 Swiftpicker 的 MAE 从 0.0583 降至 0.0392，G2 Wuji 从 0.0750 降至 0.0500；Arx X5 的 MAE 仅从 0.0500 降至 0.0479，RMSE 约为 0.0601，且尺寸识别任务在辨识后反而变差。</li>
+<li>G2 crsB 左臂的 60 秒耦合 Fourier、7 条 30 秒摩擦和 7 条 30 秒正弦闭环回放中，21 个“关节×激励族”单元的位置 RMSE 为 0.035°–1.002°，中位数为 0.293°；全部运行完成且无数值警告，但 J2 力矩失配及换向、跨频率误差仍然可见。</li>
+<li>在未用于机械辨识和伺服增益搜索的 32.6503 秒双臂遥操作轨迹上，各关节位置 RMSE 为 0.00614–0.03522 rad，基于电流推算的力矩 RMSE 为 0.73545–4.00099 N·m，说明任务 Score 高相关并不意味着执行链的力矩响应已经完全一致。</li>
+<li>5 个物体案例被用于辨识与跨引擎接触迁移；原生 PhysX 适配恢复了其中 3 个录制交互任务，但改善幅度依案例而异，所给原文未提供可统一汇总的接触误差或成功率数字。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>0.9686 是 22 个已完成机器人—任务对上的描述性相关系数，而非仿真对未见策略、未见机器人或新任务的因果预测保证；各任务等权，论文也未报告置信区间或重复采样的不确定性。</li>
+<li>22 个最终对混合了 G1 Genie Sim 3.0 的参考结果和其他配置辨识后的结果；G1 未在本研究中专门做系统辨识，因此不同机器人配置的证据链并不完全对称。</li>
+<li>机器人、物体与任务级实验采用不同冻结配置和分母。机器人辨识结果本身不能证明某项资产调整一定改善基准任务，任务 Score 的改善也不能直接归因于某个机械或接触参数。</li>
+<li>RGB-D 中心点属于模型辅助观测而非动作捕捉真值；所谓 held-out 时间窗只是同一录制的后段，并受到整段可行性筛选和开发期检查影响，不能视为严格盲测。</li>
+<li>可继续做的实验是对同一批任务同时报告 Score、E2E 成功、失败阶段、关节位置/力矩误差和接触观测误差，并通过逐项关闭机器人辨识、物体辨识和引擎适配来确定每一层对任务结果的因果贡献。</li>
+<li>对 Austin 更直接的外推检验应加入未参与 SFT 的任务布局、未见物体材质与相机扰动，并使用同一冻结 OpenPI 检查点跨真机和多个引擎闭环运行；同时用 bootstrap 给出相关系数、MAE 和任务排序稳定性的置信区间。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>基准平台：Genie Sim Benchmark，共包含 78 个仿真任务，覆盖指令遵循、空间推理、鲁棒性和通用操作四个能力维度。</li>
+<li>Real2Sim 覆盖：4 种机器人配置，即 G1 Omnipicker、G2 Swiftpicker、G2 Wuji 和 Arx X5；共 16 个任务名称、22 个最终机器人—任务对。</li>
+<li>任务分布：G1 Omnipicker 8 对、G2 Swiftpicker 6 对、G2 Wuji 1 对、Arx X5 7 对；任务族包括选择与推理、放置与分拣、双臂交接、堆叠和纺织物操作。</li>
+<li>策略：新增实验采用任务特定 π0.5，以对应任务的真实机器人数据进行监督微调；同一微调模型在真实和仿真环境中推理。原文未披露 SFT 数据量、训练步数、学习率、π0.5 检查点名称或算力配置。</li>
+<li>配对协议：仿真使用固定 Genie Sim 实验分支；真实与仿真逐实例对齐布局、条件、设置、试验次数和评分标准。真机人工评分，仿真自动评分。</li>
+<li>Score 协议：若一个固定布局含 \(S\) 个计分阶段和 \(N\) 个 episode，则未取整前的 Score 为各 episode、各阶段完成值之和除以 \(NS\)；实现中会对指令级阶段均值取整、按 episode 数加权并将结果保留四位小数。Score、E2E 字段和二元任务成功彼此不同。</li>
+<li>辨识比较：14 个 G2/Arx 条件具有辨识前后仿真 Score；它们是现有任务的重复条件，不是额外的任务覆盖。22 个最终对使用 G1 参考 Score，以及其他配置辨识后的 Score。</li>
+<li>G2 crsB 辨识：双臂各 7 个活动关节，每臂 18 条录制，共 36 条；模型每臂包含 70 个惯性、7 个 armature、14 个摩擦和7个偏置未知量，共 98 个标量，但作者明确不宣称这些参数均可唯一辨识。</li>
+<li>约束：每个连杆的伪惯性矩阵须为半正定；质量限制在原始 URDF/CAD 参考值的 50%–150%；armature 和摩擦系数非负；偏置符号不受限；摩擦平滑尺度 \(C_0=0.001\) rad/s。</li>
+<li>独立遥操作验证：轨迹长度 32.6503 秒，不参与机械参数辨识或伺服增益搜索；外部位置目标经过模拟运动控制器命令整形和标定位置伺服。</li>
+<li>物体回放：完整 G2 模型以真实反馈初始化机器人与 mimic joints；记录目标约以 100 Hz 保持，物理仿真采用 1 ms 子步。</li>
+<li>执行栈：MuJoCo 3.10.0 CPU；MuJoCo-Warp 3.10.0 CUDA 与 Newton 1.4.0；Isaac Sim 6.0.0 RC 的 CPU TGS PhysX。</li>
+<li>传感与力矩：动力学拟合使用电机电流换算的关节侧力矩，不使用关节侧或末端力传感器；物体观测包含 RGB-D 中心点，且没有真实接触力参考。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>这篇论文适合 π 系列日报，因为它不再只问“π0.5 在仿真中得多少分”，而是检查由真实数据微调的同一策略在真机和仿真中的闭环表现是否保持任务级对应关系。</li>
+<li>它把任务 Score 与机器人执行、物体接触拆开验证，可避免把策略失败错误归因于 VLA，也可避免仅凭高相关系数就宣称仿真已达到物理一致。</li>
+</ul>
+<h3 class="sub">与π系列的关系</h3>
+<ul>
+<li>本文直接采用任务特定的 π0.5 作为配对评测策略：先在对应任务的真实机器人数据上做 SFT，再用同一模型分别在真机和仿真中推理。</li>
+<li>论文贡献不是新的 π0.5 架构、损失函数、动作分块或训练配方；从所给原文看，也没有对 π0、π0-FAST 或 OpenPI 做正式横向基线比较。</li>
+<li>因而 0.9686 的相关系数应解读为“在本文任务、场景配对和 π0.5 策略集合下，仿真 Score 与真机 Score 高度对应”，不能外推为 π 系列各版本普遍具有相同的 Sim2Real 性能。</li>
+<li>对 OpenPI 的合理连接方式是把 Genie Sim 式评测做成策略外部 harness：冻结模型和执行接口，只替换场景、机器人参数或接触引擎，从而区分 VLA 决策误差与执行/仿真误差，而不是修改 OpenPI 骨干后把收益统称为仿真改进。</li>
+</ul>
+<h3 class="sub">对Austin研究的启发</h3>
+<ul>
+<li>在 OpenPI 执行器中固定记录观测时间戳、原始动作、命令整形后的关节目标、实际关节状态、电流推算力矩和阶段事件，使同一个 episode 能同时产生策略级、执行级和接触级诊断。</li>
+<li>对引导场 \(G\) 或条件遵循模块，除最终成功率外增加“选对目标—稳定抓取—运输—释放/放置”等阶段 Score，检查仿真与真机是否在同一阶段失败，避免总分接近但失败机制不同。</li>
+<li>设计“冻结策略、只改系统辨识参数”的消融：依次启用关节伺服标定、摩擦/armature 参数、物体材质与接触参数，报告每一步对 Score MAE、RMSE、失败阶段和轨迹误差的影响。</li>
+<li>增加多引擎闭环测试，将同一 OpenPI 检查点和同一动作序列分别接入 MuJoCo/MJWarp 与 PhysX；若任务结果分歧大于机器人执行误差，可优先排查接触模型，而非重新训练 VLA。</li>
+<li>为线上监控设置双阈值：一类监控任务 Score 或 E2E 偏差，另一类监控位置、力矩和接触观测偏差；只有两层均稳定时，才把仿真回归结果用作真机性能代理。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>Genie Sim Benchmark 作者团队以真实数据 SFT 的任务特定 π0.5 在 22 个真实—仿真机器人任务对上得到 Pearson \(r=0.9686\)、MAE 0.0405，并用系统辨识与接触回放揭示高任务相关性仍不等于物理响应完全一致；作者机构在所给原文节选中未披露。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.15020" data-title="Genie Sim Benchmark">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.15020 · Genie Sim Benchmark</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Genie Sim Benchmark》</strong>（arXiv: 2611.15020）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
