@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜What Makes a VLA Reactive? A Study of Execution Strategies for Dynamic Manipulation</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.15491" rel="noopener noreferrer" target="_blank">arXiv 2611.15491</a></span><span class="badge">深读</span></div>
+<h1>深读｜What Makes a VLA Reactive? A Study of Execution Strategies for Dynamic Manipulation</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.15491" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>VLA 通常一次预测一段未来动作；面对移动物体时，动作块会在推理和执行期间迅速“过期”，导致抓取或放置目标已偏离原预测位置。</li>
+<li>缩短执行时域虽然能提高重规划频率，却会增加推理调用与等待开销，并可能在相邻动作块之间产生轨迹跳变；因此“更频繁地重规划”不必然等于“更强的反应性”。</li>
+<li>现有工作分别从低延迟生成、异步执行、动作块连续性、运动信息和策略适配切入，但这些机制缺少在统一 VLA 骨干和动态任务协议下的系统比较。</li>
+<li>论文以预训练 π0.5 为统一框架，在 DOM、DOMINO 仿真基准和三项 Franka Panda 真机动态任务上研究预测/执行时域、同步/异步调度、轨迹连续性、运动线索与潜空间强化学习；不同干预会冻结或微调不同组件，并非所有实验都冻结策略权重。</li>
+<li>作者的目标是辨明策略本身与执行流水线分别如何影响动态操控成功率，并找出能兼顾观测新鲜度、动作可用性和轨迹稳定性的执行方式。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 7）</span>
+    <a href="/assets/figures/2611.15491.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.15491.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.15491.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.15491.png'">
+    <img src="/assets/figures/2611.15491.png" onerror="this.onerror=null;this.src='../assets/figures/2611.15491.png'" alt="What Makes a VLA Reactive? A Study of Execution Strategies for Dynamic Manipulation Figure 7 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>观测输入与动作预测（Prediction Horizon，预测时域）</strong>：策略 $\pi_\theta$ 接收当前观测 $o_t$，一次生成长度为 $H_p$ 的动作块 $\hat{\mathbf A}_t=(\hat a_t,\ldots,\hat a_{t+H_p-1})$；$H_p$ 决定策略能够前瞻的时间范围及长程动作一致性。</li>
+<li><strong>分块执行（Execution Horizon，执行时域）</strong>：控制器仅执行预测块前 $H_e$ 步，即 $\mathbf A_t^{\rm exec}=\hat{\mathbf A}_t[:H_e]$，随后利用新观测重新规划。较小的 $H_e$ 提高闭环反馈频率，但也会放大推理延迟与动作切换影响。</li>
+<li><strong>推理调度与块连续性（Inference Scheduling &amp; Chunk Continuity）</strong>：推理周期 $\Delta_{\rm inf}$ 协调“预测—执行—再预测”流水线；相邻动作块在边界处需保持 $\hat a_{t+H_e-1}\approx\hat a'_{t+H_e}$，否则频繁重规划会造成停顿、抖动或轨迹不连续。</li>
+<li><strong>策略行为与任务结果（Policy Behavior）</strong>：最终性能由 $(H_p,H_e,\Delta_{\rm inf})$ 与策略对新观测的响应共同决定；只有当更新信息带来的纠错收益超过延迟及块边界误差时，提高重规划频率才会改善动态 VLA 操作成功率。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 7 Caption）</summary><div class="arch-cap-text">Dynamic VLA manipulation depends on the interaction between prediction and execution horizons, inference scheduling, chunk continuity, and policy behavior, which together determine whether frequent replanning improves task performance.</div></details>
+</div>
+<ul>
+<li>整体流程为：输入当前视觉观测、语言指令和本体状态，π0.5 预测长度为 \(H\) 的动作块；执行器只提交其中 \(s\le H\) 步，再根据新观测生成或切换到下一动作块，从而独立研究“预测多远”和“承诺执行多久”。</li>
+<li>调度方面比较同步与异步执行：同步模式执行完当前动作块后等待下一次推理；异步模式让推理与机器人运动重叠，并需处理推理延迟期间机器人已发生的位移。</li>
+<li>RTC 通过推理时 inpainting，使新预测与上一动作块的重叠动作对齐，无需额外策略训练；ABPolicy 使用双向预测和带连续性约束的样条重拟合，本文将其适配到笛卡尔动作，并训练策略预测样条控制点。</li>
+<li>FASTER 通过时域感知采样、动作流式输出和提前停止，更早提供近期动作；DynamicVLA 采用连续推理和延迟感知的动作跳过，并加入最小执行窗口，同时保留 π0.5 的架构与输入。</li>
+<li>AAC 采样多个候选动作块，以预测动作熵决定是否提前结束当前块，并加入笛卡尔空间中的最小动作幅度约束；它改变执行时域的选择机制，而非重新设计 π0.5。</li>
+<li>PUMA 在训练中加入历史光流和未来物体中心特征监督；DSRL-SAC 则冻结底层 VLA，只训练潜空间 actor/critic，以短视觉历史的时间卷积表示调整输入噪声，间接引导已有动作分布。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>最优预测时域约为 1 秒：DOM 在 25 Hz 下以 \(H=25\) 最佳，DOMINO 在 30 Hz 下以 \(H=30\) 最佳。更长动作块会持续执行基于旧物体位置生成的计划。</li>
+<li>最优执行时域取决于检查点，而非简单遵循“越短越好”：传送带任务中，1k checkpoint 在 \(s=5\) 时最佳，5k checkpoint 在 \(s=15\) 时最佳。后者每个动作块开头移动缓慢，过早重规划会反复生成相似的慢启动动作。</li>
+<li>短执行时域主要在异步流水线中有效：当 \(s=10\) 时，同步 π0.5 和同步 PUMA 均只有 20% 成功率，而异步方法达到 60%–75%。同步模式中的等待会随重规划次数增加，抵消新观测带来的收益。</li>
+<li>连续性比单纯降低延迟更关键：ABPolicy 是传送带比较中的最佳方法；RTC 尽管延迟高于 FASTER，成功表现仍与其相当。作者据此认为，新动作到达得早并不足够，相邻动作块还必须能平滑衔接。</li>
+<li>快速传送带上，将控制频率从 20 Hz 提高到 30 Hz，ABPolicy 成功率由 13% 升至 93%，FASTER 由 0% 升至 33%；更高频率使同一动作块更快执行完，减少目标在下一次观测前的位移。</li>
+<li>PUMA 的运动信息收益不一致：它在传送带任务上优于 π0.5，却在滚动罐抓取上更差；异步运行时，PUMA 在各执行时域达到 60%–70%，同步短时域下仍像基线一样失败。</li>
+<li>DSRL 对定向失败有效：目标条件下，DOM 成功率由 32% 提高到 47%，最难传送带条件由 0% 提高到 60%。但九种传送带条件上的平均变化仅为 4–20 个百分点，且部分条件退化；1k checkpoint 经 DSRL 达到 64%–69%，仅将执行时域改为 \(s=5\)、不做训练即可达到 71%。</li>
+<li>AAC 从未超过最佳固定执行时域，并在静止与快速传送带条件下失败；额外候选采样增加推理延迟，而且动作熵不能可靠反映“重新观察后决策是否会改变”。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>结论来自 π0.5 及其适配配置、两个仿真基准和少量真机任务，尚不能直接外推到其他 VLA 架构、机器人形态或更开放的动态环境。</li>
+<li>真机每个设置仅评测 15–20 次；滚动罐与移动杯任务的物体运动由人工触发，因此小幅成功率差异可能受到运动轨迹不一致和有限样本量影响。</li>
+<li>论文实现的是 RTC、FASTER、DynamicVLA、ABPolicy、PUMA、AAC 和 DSRL 的选定机制，并非逐项复现各方法的完整原系统；结果应理解为统一 π0.5 框架下的适配比较。</li>
+<li>DSRL 只能从冻结 VLA 已包含的行为中进行潜空间引导，收益依赖检查点和噪声幅度，并可能损害非目标条件；后续可加入跨条件验证、保守更新或最坏条件约束，检查局部修复是否牺牲整体能力。</li>
+<li>可进一步把执行时域选择建模为“重规划预期收益—推理开销—轨迹不连续代价”的联合决策，而不是只依据动作熵；应同时记录观测年龄、动作可用时间、块间位置/速度跳变量与成功率。</li>
+<li>可在更多目标速度、加速度、遮挡和随机延迟条件下做二维消融：固定同一 checkpoint，联合扫描预测时域、执行时域、控制频率与推理延迟，以判断约 1 秒预测时域是否具有跨任务稳定性。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>策略骨干：π0.5；各方法在共同 π0.5 框架中实现，但干预位置不同，包括模型、推理、执行和动作表示。</li>
+<li>仿真任务：DOM 与 DOMINO；控制频率分别为 25 Hz 和 30 Hz。</li>
+<li>真机平台：Franka Panda。</li>
+<li>真机任务：移动杯放置、滚动罐抓取、传送带拾取。</li>
+<li>传送带物体：三个方块，其中红色方块为目标；传送带条件为静止、慢速 \(2.5\,\mathrm{cm/s}\) 和快速 \(5\,\mathrm{cm/s}\)。</li>
+<li>目标位置：Left、Middle、Right；静止条件表示目标沿传送带的位置，运动条件表示目标在三个方块序列中的相对位置，共形成九种传送带条件。</li>
+<li>RQ1 的 AAC/固定时域比较采用 \(H=20\)、异步执行，每种传送带速度条件评测 45 次。</li>
+<li>RQ2 的方法比较中，每个柱状结果为 15 次试验；ABPolicy 仅在 \(s=9\) 评测，因为其有效执行时域受推理延迟影响。</li>
+<li>DSRL 使用 SAC，在 VLA 冻结的情况下训练潜空间 actor 和 critic；actor/critic 通过时间卷积聚合短视觉历史，VLA 本身仍只接收当前观测。</li>
+<li>DSRL 传送带目标条件的原始结果为 5 次试验，适配后为 15 次；九种条件上原始 checkpoints 的平均成功率为 48.9%。</li>
+<li>真机各设置总体为 15–20 次试验；正文所给原文未披露相机型号、计算硬件、完整训练数据规模、优化器参数及全部检查点训练配置。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>这篇论文不再把动态操控失败简单归因于 VLA“不够快”或“缺少运动理解”，而是把预测时域、执行承诺、推理调度和块间连续性放进同一因果链条中比较。</li>
+<li>对 π 系列实践者最有价值的结论是：在重新训练模型之前，应先把 VLA 与执行器作为整体评测；仅调整执行时域或控制频率，就可能达到甚至超过潜空间强化学习的收益。</li>
+</ul>
+<h3 class="sub">与π系列的关系</h3>
+<ul>
+<li>本文直接以 π0.5 为统一骨干，研究其在动态操控中的执行策略与适配方式；贡献是执行层和评测层的系统研究，而不是提出新的 π 模型。</li>
+<li>论文没有表明使用或比较 π0、π0-FAST，也没有声称基于 OpenPI 实现；因此不能把本文结果直接视为这些模型或 OpenPI 软件栈上的验证。</li>
+<li>RTC 和 DynamicVLA 保留 π0.5 架构与输入，主要改变推理或执行接口；FASTER改变动作生成调度；ABPolicy还改变动作表示并训练样条控制点预测；PUMA加入运动信息训练；DSRL则冻结 VLA、外挂潜空间 actor/critic。</li>
+<li>这项研究提示，比较 π0.5 与其他 π 系列检查点时，必须统一推理并发方式、控制频率、执行时域和块切换规则，否则“模型能力差异”可能实际来自执行流水线。</li>
+</ul>
+<h3 class="sub">对Austin研究的启发</h3>
+<ul>
+<li>在 OpenPI 执行器中把 prediction horizon、execution horizon、控制频率和同步/异步调度拆成独立配置项，并允许在不重训策略的情况下扫描 \(s\)；不同 checkpoint 不应共用未经验证的默认执行时域。</li>
+<li>增加动作块切换监控：记录旧块末端与新块起点的位置、速度和加速度跳变，以及观测时间戳、推理完成时间和动作实际提交时间，用于区分“策略判断错误”“动作过期”和“轨迹不可执行”。</li>
+<li>对引导场 \(G\) 或潜空间 steering 的条件遵循评测，不应只看目标条件提升；可按九宫格式的速度×相对位置条件报告平均值、最差值和退化条件，防止定向适配只修复局部失败。</li>
+<li>设计闭环动态评测时，至少加入同步/异步、20/30 Hz、多个执行时域和随机推理延迟的交叉实验；若某种 steering 的收益可由调整 \(s\) 复现，应优先采用无需训练的执行层改动。</li>
+<li>自适应重规划触发器不宜只使用动作熵；可显式估计目标在推理延迟内的位移、重新观测后动作发生实质变化的概率，以及切换造成的连续性代价。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>KIT Intuitive Robots Lab（Rudolf Lioutikov 另隶属 Robotics Institute Germany）的研究表明，π0.5 的动态反应性同样取决于执行流水线：约 1 秒预测时域、异步推理和连续动作块最有效，30 Hz 下 ABPolicy 在快速传送带上的成功率由 13% 升至 93%，而 DSRL 的局部提升可被简单调整执行时域匹敌。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.15491" data-title="What Makes a VLA Reactive? A Study of Execution Strategies for Dynamic Manipulation">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.15491 · What Makes a VLA Reactive? A Study of Execution Strategies for Dynamic Manipulation</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《What Makes a VLA Reactive? A Study of Execution Strategies for Dynamic Manipulation》</strong>（arXiv: 2611.15491）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
