@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>深读｜On the Utility of Pre-Trained Visual Representations for Policy Learning of Contact-Rich Insertion Tasks</title>
+<title>深读｜2611.17631</title>
 <style>
 :root {
   --bg: #ffffff;
@@ -519,7 +519,7 @@ details.fold .fold-body {
 <article class="card">
 <header class="header">
 <div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.17631" rel="noopener noreferrer" target="_blank">arXiv 2611.17631</a></span><span class="badge">深读</span></div>
-<h1>深读｜On the Utility of Pre-Trained Visual Representations for Policy Learning of Contact-Rich Insertion Tasks</h1>
+<h1>深读｜2611.17631</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.17631" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
@@ -527,7 +527,24 @@ details.fold .fold-body {
 <li>接触密集插入会放大这一问题：毫米级位姿误差可能使结果从成功突变为卡死或楔紧，而真正决定接触的表面与间隙又常在接近和插入阶段被遮挡。</li>
 <li>论文在 ManiSkill 仿真和真实机器人书本插入上比较视觉表示；策略本身均需通过示教训练，并以 5 Hz 重规划、由 1 kHz 阻抗控制器执行，属于闭环视觉运动控制，而不是冻结策略或开环轨迹回放。</li>
 <li>作者目标是判断通用预训练视觉特征、物体分割和显式接触表示能否提高紧公差插入策略的成功率，并检验这一结论在遮挡、物理公差及仿真到真实变化下是否稳定。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.17631.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.17631.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.17631.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.17631.png'">
+    <img src="/assets/figures/2611.17631.png" onerror="this.onerror=null;this.src='../assets/figures/2611.17631.png'" alt="2611.17631 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>总览（Figure 1 / 开篇示意图）</strong>：该图展示本书插入任务执行过程中，论文对照评测的四类视觉表征，而非单独的网络框图。作者将从零训练的原始 RGB-D 策略，与接触中心特征、被抓物体分割掩码，以及预训练 Theia 特征进行比较，并在遮挡、公差和仿真到真实迁移等轴上检验结论是否稳定。</li>
+<li><strong>(a) 原始 RGB-D 输入</strong>：面板为任务开始附近的原始相机帧，对应仅用 RGB-D 从零训练的扩散策略基线。策略以 ResNet-18 编码观测，条件化 U-Net 去噪器，预测 $1.4\,\mathrm{s}$ 视野、以 $25\,\mathrm{Hz}$ 子采样的 $\mathrm{SE}(3)$ 末端轨迹，再由 $1\,\mathrm{kHz}$ 阻抗控制器执行。</li>
+<li><strong>(b) 接触中心特征</strong>：插入楔入阶段的估计接触区域图，颜色由蓝到绿表示接触概率升高。该表征把与接触相关的几何（接触区域、距离与法向等）显式提供给策略，论文将其作为“空间落地、接触中心信息”的对照，用于检验接触密集插入是否更依赖这类线索。</li>
+<li><strong>(c) 被抓物体分割掩码</strong>：插入中途以绿色标出被抓物体，向策略提供物体级空间先验，减轻背景和任务无关外观变化的干扰。它比原始像素更结构化，但仍不是直接的接触几何。</li>
+<li><strong>(d) Theia 预训练视觉特征</strong>：任务末期 Theia 特征的 PCA 可视化，代表互联网尺度预训练表征。论文同时对照 DINOv2 等基础模型，并发现最佳表征在两个相近插入任务之间就会改变；尽管如此，空间落地尤其是接触中心信息在仿真与真实实验中仍显示出独特价值，同时也暴露了在真实视觉复杂度与传感器噪声下可靠估计接触线索的困难。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Execution of book-insertion task showcasing different visual representations evaluated in this work. We evaluate policies trained from scratch with raw RGB-D inputs (a), policies augmented with contact-centric features (b), segmentation masks of the grasped object (c), and Theia features (d).</div></details>
+</div>
+<ul>
 <li>整体流程为：单个外部 RGB-D 相机与末端位姿、历史动作输入视觉运动策略，ResNet-18 编码后条件化 U-Net 扩散去噪器，输出未来 1.4 秒的 SE(3) 末端轨迹，再交给低层阻抗控制器执行。</li>
 <li>从头训练基线使用 RGB、深度、当前末端位姿和由小型一维卷积网络编码的短动作历史；各增强方法保持扩散策略主体不变，只增加不同视觉表示，以隔离表示本身的效用。</li>
 <li>通用预训练表示包括 DINOv2 的稠密 patch token，以及面向机器人视觉蒸馏 CLIP、DINOv2 和 ViT 信息的 Theia 特征。</li>
@@ -582,12 +599,12 @@ details.fold .fold-body {
 </ul>
 <h3 class="sub">一句话总结</h3>
 <p>宾夕法尼亚大学 GRASP Laboratory 的 Leon Kim、Dinesh Jayaraman 和 Michael Posa 通过 3 mm 公差插销与 3.5 mm 负间隙书本插入发现，真值接触中心表示在所有设置中持续优于其他表示，而 Theia 等预训练特征的收益随任务和仿真实域变化，说明接触几何有价值但其可靠视觉估计仍是核心瓶颈。</p></div></details>
-<section id="paper-qa" class="qa-section" data-arxiv="2611.17631" data-title="On the Utility of Pre-Trained Visual Representations for Policy Learning of Contact-Rich Insertion Tasks">
+<section id="paper-qa" class="qa-section" data-arxiv="2611.17631" data-title="2611.17631">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
     <span class="qa-model-badge">qwen3.8-flash-next</span>
   </div>
-  <div class="qa-paper-pill">📌 默认选中本篇：2611.17631 · On the Utility of Pre-Trained Visual Representations for Policy Learning of Contact-Rich Insertion Tasks</div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.17631 · 2611.17631</div>
   <div class="qa-chips">
     <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
     <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
@@ -597,7 +614,7 @@ details.fold .fold-body {
   <div class="qa-messages" id="qa-messages">
     <div class="qa-msg assistant">
       <div class="qa-role">本地千问 · 论文助读</div>
-      <div class="qa-body">已默认选中本篇论文<strong>《On the Utility of Pre-Trained Visual Representations for Policy Learning of Contact-Rich Insertion Tasks》</strong>（arXiv: 2611.17631）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《2611.17631》</strong>（arXiv: 2611.17631）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
     </div>
   </div>
   <div class="qa-input-row">
