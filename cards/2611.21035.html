@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜FlowRow</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.21035" rel="noopener noreferrer" target="_blank">arXiv 2611.21035</a></span><span class="badge">深读</span></div>
+<h1>深读｜FlowRow</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.21035" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>半结构化果园与葡萄园中的目标导航不能简化为“朝目标直行”：目标即使空间上很近，也可能位于另一条作物行内，机器人必须先沿当前行驶出、在地头转向，再跨行或跳行进入目标行。</li>
+<li>传统农业导航通常依赖已知行距、株距等场地几何和预先规划的 GNSS 参考路径；树冠遮挡、多径、轮胎打滑和里程计漂移会放大定位误差，导致参考路径跟踪失效。</li>
+<li>现有感知式方法多聚焦行内跟随，并用状态机或基于几何先验的固定动作处理地头转弯，通常只支持相邻行切换，难以处理任意目标位置、非相邻跳行及多行为连续组合。</li>
+<li>论文研究未知农业环境中的闭环目标导航：策略完全在仿真中训练，以自中心深度观测和机器人坐标系下的相对目标为输入，不使用先验地图或作物行几何；仿真基准之外还进行了真实环境零样本部署。</li>
+<li>作者目标是用一个统一的局部规划策略组合行内行驶、地头转弯、跳行和跨行等行为，提高长时域农业导航的成功率及对场景变化、定位误差的适应性。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.21035.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.21035.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.21035.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.21035.png'">
+    <img src="/assets/figures/2611.21035.png" onerror="this.onerror=null;this.src='../assets/figures/2611.21035.png'" alt="FlowRow Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>任务场景与行为组合（a）</strong>：在半结构化行作物环境中执行长时程导航，机器人需依次组合行内直行（in-row driving，蓝色）、地头转弯与跳行（headland turning and row skipping，橙色）以及跨行连接（粉色），从而在多条作物行间连续推进至目标区域。</li>
+<li><strong>条件观测输入（b）</strong>：FlowRow 接收机器人第一视角深度观测 $D_t$ 与目标 $g$（红色图钉）；深度图提供局部几何和障碍信息，目标则在机器人当前坐标系中给出导航条件，共同约束局部路径分布 $p(\tau\mid D_t,g)$。</li>
+<li><strong>Flow-Matching 路径生成</strong>：策略以局部 $\mathrm{SE}(2)$ 轨迹 $\tau=\{(x_k,y_k,\theta_k)\}_{k=1}^{H}$ 为生成对象，通过学习条件速度场 $v_\phi(\tau_s,s\mid D_t,g)$，将初始噪声轨迹 $\tau_0$ 沿流时间 $s\in[0,1]$ 连续变换为多条候选局部路径 $\tau_1^{(i)}$（蓝色），以覆盖可行的多模态机动方式。</li>
+<li><strong>候选筛选与闭环执行</strong>：系统依据各候选路径对目标的推进程度进行评估，选择使目标距离下降且满足局部可通行性的路径 $\tau^\ast$；机器人跟随其中的执行段（绿色），随后利用新深度观测重新生成与选择路径，形成面向长距离跨行导航的滚动闭环。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">(a) Long-horizon navigation in semi-structured row-crop environments requires combining multiple behaviors, including in-row driving~(blue), headland turning and row skipping~(orange) to traverse between rows~(pink). (b) FlowRow addresses this setting with a flow-matching policy that performs goal-directed navigation from egocentric depth observations. Given a goal (red pin), FlowRow generates candidate local $\mathrm{SE}(2)$ paths (blue) and follows the path that progresses toward the goal (green).</div></details>
+</div>
+<ul>
+<li>整体流程是：相对目标与最近的深度图历史分别编码，经 Transformer 融合为上下文；条件流匹配模型从噪声生成多组局部路径控制位姿；控制位姿被解码为连续的 SE(2) B 样条，候选路径经排序后由 pure-pursuit 控制器跟踪，并在下一规划时刻重新观测和规划。</li>
+<li><strong>长时域目标编码</strong>：将机器人坐标系下的目标表示为归一化并截断的距离以及方位角的正余弦。这样既保留远距离目标方向，又避免距离无界和角度在 ±π 处不连续。</li>
+<li><strong>双时域监督（Bi-Horizon）</strong>：训练样本同时包含预测路径范围内的近目标和范围外的远目标。近目标教会策略在目标处终止路径，远目标则迫使策略学习符合行结构的局部动作，而不是贪心地横穿作物驶向目标。</li>
+<li><strong>时空上下文建模</strong>：共享的 ResNet-18 对连续深度图提取空间 token，并加入二维位置编码和帧序号编码；目标被编码为单独 token，与视觉 token 一起送入 Transformer，使策略能够利用短期运动历史判断行结构和障碍变化。</li>
+<li><strong>面向轮式运动的动作表示</strong>：不同于只生成三维位置样条控制点的 SanD-Planner，FlowRow 直接生成带位置和朝向的 SE(2) 控制位姿，并以距离、位置方位角和相对朝向的正余弦编码大角度转弯，随后通过三次累积 Lie-group B 样条恢复连续路径。</li>
+<li><strong>多模态候选生成</strong>：条件流匹配学习从高斯噪声到专家路径分布的连续速度场，一次采样多条可行路径，以表达同一观测和目标下可能存在的不同绕行或转弯方式；论文改变了目标条件、双时域监督和 SE(2) 路径表示，但沿用了 SanD-Planner 的 tokenized depth encoder，并仍由传统跟踪控制器执行所选局部路径。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>在作者提出的 RowNavBench 上，FlowRow 的总体成功率为 <strong>87%</strong>；在相同专家示范数据上重新训练的最强生成式行为克隆基线为 <strong>44%</strong>，绝对提高 <strong>43 个百分点</strong>，约为后者的 <strong>1.98 倍</strong>。</li>
+<li>RowNavBench 覆盖葡萄园、柠檬园和苹果园，包含不同的行长、行距、曲率、植株位置、缺株、杂草与石块条件；87% 的结果对应这一多配置综合协议，而不是单一规则场景。</li>
+<li>作者报告 FlowRow 在整套基准上相对深度局部规划基线取得“超过 40%”的成功率提升；但所提供原文截断在方法部分，未包含完整结果表，无法核对各基线名称、逐场景成功率、误差条或显著性检验。</li>
+<li>在加入定位误差的评测中，作者称 FlowRow 比跟踪预规划全局参考路径的 oracle 出现更少导航失败，说明基于实时深度观测的滚动局部规划可能比强依赖定位的参考路径跟踪更稳健；原文片段没有给出噪声幅度和对应数值。</li>
+<li>论文还报告了真实农业环境中的零样本部署验证，但现有文本未披露真实测试的任务数、成功率、轨迹误差或失败案例，因此不能将其视为定量的 sim-to-real 结论。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>策略虽然不需要先验地图或作物行几何，但仍假设机器人能持续估计世界位姿，以便把世界坐标目标转换到机体坐标系；“无地图”并不等于完全不依赖定位，位姿漂移如何影响长距离目标更新仍需完整实验验证。</li>
+<li>主要定量证据来自 Isaac Sim。真实环境只报告零样本验证，现有原文片段没有测试规模、农业机器人平台、地形条件及成功率，跨传感器、跨季节和跨农场泛化的证据不足。</li>
+<li>基准目标最多跨越三条作物行，并限制在初始朝向 ±90° 内以避免起步 U-turn；因而尚不能说明策略能处理更大规模田块、目标位于后方、闭环回访或长距离多次行间切换。</li>
+<li>候选路径最终依赖一个路径排序机制和 pure-pursuit 恒速跟踪器，但所给正文未包含排序代价、碰撞过滤方式及执行频率。可进一步分别消融候选数、排序器和控制器，并统计碰撞率、路径效率、最小障碍间距与规划延迟，而不只比较任务成功率。</li>
+<li>可面向 Austin 的工作补充“定位退化 × 感知退化”联合压力测试：系统扫描目标坐标漂移、深度缺失、树冠动态、坡地侧滑和窄行宽度，并与局部建图、经典 SLAM 全局规划以及无定位反应式策略在相同协议下比较。</li>
+<li>可尝试把 FlowRow 作为局部行为层，上接拓扑行图或几何 SLAM 的长程任务规划器：上层选择目标行、地头和中间子目标，下层继续使用流匹配生成可执行 SE(2) 路径，以扩展到超过三行的任务并保留感知闭环鲁棒性。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li><strong>仿真平台</strong>：Isaac Sim。</li>
+<li><strong>基准</strong>：RowNavBench，共 <strong>900 个</strong>点目标导航 episode、<strong>15 个</strong>场景和 <strong>3 类</strong>作物环境——葡萄园、柠檬园、苹果园。</li>
+<li><strong>场景变化</strong>：行长、行距、行曲率、株距与植株位置、缺株，以及杂草和石块密度。</li>
+<li><strong>任务范围</strong>：目标位于可通行区域，最多与起点相隔三条作物行；目标相对初始朝向限制在 ±90° 内。</li>
+<li><strong>成功判据</strong>：机器人在规定时间预算内到达距目标 <strong>1 m</strong> 以内；所给文本未披露具体时间步预算。</li>
+<li><strong>感知与状态</strong>：仅以自中心深度相机作为环境观测，但假设可以估计当前世界位姿，用于计算机器人坐标系下的相对目标。</li>
+<li><strong>深度历史</strong>：最近 <strong>4 帧</strong>深度图；每帧由共享的截断 ResNet-18 编码为 <strong>8×12</strong> 网格，即每帧 <strong>96 个</strong>视觉 token。</li>
+<li><strong>上下文网络</strong>：token 维度 <strong>256</strong>，使用四层 Transformer；目标由三层 MLP 映射为 256 维 token。</li>
+<li><strong>目标编码</strong>：距离截断上限 \(r_{\max}=30\,\mathrm{m}\)，并与目标方位角的正余弦共同输入。</li>
+<li><strong>双时域采样</strong>：示范路径段弧长从 <strong>6–10 m</strong> 均匀采样；以 <strong>0.15</strong> 的概率在该路径段内采近目标，否则沿示范轨迹额外采样最多 <strong>22 m</strong> 的远目标。</li>
+<li><strong>动作表示</strong>：每条路径含 <strong>12 个</strong> SE(2) B 样条控制位姿，每个位姿编码为 5 维；最大控制位姿距离 \(R_c=10.5\,\mathrm{m}\)。</li>
+<li><strong>推理输出</strong>：每次生成 <strong>32 条</strong>候选路径，即 <strong>32×12</strong> 个 SE(2) 控制位姿。</li>
+<li><strong>执行方式</strong>：滚动时域闭环规划；所选路径由 pure-pursuit 控制器以恒定速度跟踪。</li>
+<li><strong>训练方式</strong>：策略完全在仿真中由专家示范训练；流匹配采用独立耦合的条件流匹配目标。</li>
+<li><strong>对照协议</strong>：生成式行为克隆基线使用与 FlowRow 相同的示范数据重新训练；完整基线清单、训练轮数、优化器、推理频率、速度、评测重复次数及模型参数量未出现在所给原文中。</li>
+<li><strong>权重状态</strong>：原文未说明 ResNet-18、Transformer 或其他模块是否使用预训练权重及是否冻结。</li>
+<li><strong>发布状态</strong>：作者表示将在论文接收后发布基准、数据和代码；当前文本未说明已经公开。</li>
+<li><strong>真实验证</strong>：报告了仿真训练后的零样本真机部署，但所给片段未披露机器人型号、相机规格、场地规模和定量协议。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>这篇工作的价值不只是把扩散策略替换成流匹配，而是把农业导航中长期割裂的行内跟随、地头转弯、跨行和跳行统一为一个目标条件局部规划问题。</li>
+<li>论文同时提供了面向半结构化农业环境的系统评测集，并用相同示范数据重训生成式基线；87% 对 44% 的差距使“双时域目标监督 + SE(2) 多候选路径”成为值得进一步拆分验证的组合。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>与主流 VLN 不同，FlowRow 不处理自然语言指令、图像目标或语义地标，而处理二维相对点目标；它输出可由轮式机器人直接跟踪的连续 SE(2) 局部路径，因此更接近 PointNav/GoalNav 与局部运动规划的交界。</li>
+<li>与经典 SLAM 导航栈相比，它不先构建占据地图、提取作物行参数并搜索全局路径，而是从深度历史和相对目标直接生成局部候选轨迹。收益是减少对准确地图和行距先验的依赖，代价是缺少显式全局记忆、可解释的可达性推理和完备性保证。</li>
+<li>与农业领域常见的“中心线检测 + 固定地头动作”相比，FlowRow 的核心增量是让单一策略根据目标与局部结构自动组合行为，尤其支持非相邻跳行和跨行目标，而不需要手工指定“转 90°—行进一个行距—再转 90°”。</li>
+<li>与 NoMaD、FlowNav 等生成式导航方法相比，FlowRow 不依赖预先采集的拓扑图，并将任务改为农业环境中的相对点目标导航；与 SanD-Planner 相比，它继承深度 token 编码思路，但把位置样条改为带朝向的 SE(2) Lie-group B 样条，并加入远近目标联合监督。</li>
+<li>工程权衡在于：一次生成多条路径可以覆盖多模态决策并交由外部机制筛选，但计算量随候选数增加，而且最终安全性取决于排序、碰撞检查和低层跟踪；论文片段尚不足以判断其推理延迟能否支持高速平台。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li><strong>空间几何表示</strong>：可将 SE(2) 控制位姿作为学习策略与传统规划器之间的标准接口，并与位置控制点做严格消融，检查显式朝向是否真正改善地头大角度转弯、曲率连续性和 pure-pursuit 跟踪误差。</li>
+<li><strong>分层规划接口</strong>：保留 FlowRow 的感知闭环局部层，在上层维护轻量级“行—地头”拓扑图；上层输出相对子目标，下层生成多条 SE(2) 候选路径，可同时获得长程可解释规划和对局部植被变化的适应性。</li>
+<li><strong>候选监控</strong>：不要只输出排序最高的一条轨迹；记录 32 条候选的终点分布、曲率、障碍净空和评分间隔，把候选塌缩或评分接近作为不确定性信号，触发减速、重规划或切换经典避障器。</li>
+<li><strong>跨场景泛化</strong>：训练和评测应按农场配置拆分，而非随机拆 episode；可做 leave-one-crop-type-out、未见行距/曲率、季节变化及不同深度相机的测试，以区分对视觉纹理的拟合和对行结构几何的泛化。</li>
+<li><strong>评测扩展</strong>：除成功率外，增加 SPL、实际路径/专家路径长度比、最小净空、碰撞类别、控制曲率、重规划次数和单位距离定位漂移；同时报告无噪声定位、系统性偏置和随机漂移三种条件，才能判断相对目标接口的真实鲁棒边界。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>FlowRow 由 Georgia Tech-CNRS IRL2958 提出，以深度历史和长时域相对目标驱动流匹配模型生成 32 条 SE(2) 局部路径，在 900 回合 RowNavBench 上取得 87% 成功率、对比同数据重训的最强生成式行为克隆基线 44%，但原文未报告 SPL，真实零样本部署也缺少可核对的定量结果。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.21035" data-title="FlowRow">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.21035 · FlowRow</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《FlowRow》</strong>（arXiv: 2611.21035）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
