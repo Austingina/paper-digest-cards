@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Unreasonable Confidence from Simulator Misspecification</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* Local Qwen Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.20321" rel="noopener noreferrer" target="_blank">arXiv 2611.20321</a></span><span class="badge">深读</span></div>
+<h1>深读｜Unreasonable Confidence from Simulator Misspecification</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向千问提问本篇论文</a><a href="https://arxiv.org/abs/2611.20321" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>在轨航天器几乎没有带精确位姿标签的真实图像，视觉导航模型通常只能用仿真图像训练；一旦渲染器没有正确刻画金属与聚酯薄膜的镜面反射、硬阴影及传感器饱和，模型首次接触真实目标时就会遭遇显著的辐射域偏移。</li>
+<li>现有研究多关注合成域与真实域之间的平均精度差距，但精度提升是否真正跨域迁移、模型在失效时是否仍给出过高置信度，以及数据扩充、特征维度、骨干适配和光度增强各自贡献了什么，仍缺少受控分析。</li>
+<li>论文研究单目航天器位姿估计：仅用 SPEED+ 合成图像训练和选择检查点，在 lightbox 与 sunlamp 两个真实硬件在环域上测试；它是逐帧直接位姿回归，而非闭环制导或完整 SLAM，真实图像不参与训练、调参或模型选择。</li>
+<li>作者目标是通过固定模型主体的 2×2 实验，量化合成域收益向真实域迁移的方向性，并检验在仿真器失配下，合成数据校准出的不确定性是否仍可信。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.20321.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.20321.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.20321.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.20321.png'">
+    <img src="/assets/figures/2611.20321.png" onerror="this.onerror=null;this.src='../assets/figures/2611.20321.png'" alt="Unreasonable Confidence from Simulator Misspecification Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（本地千问 Qwen 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>配置与表征模块</strong>：Figure 1 并非网络数据流图，而是旋转误差迁移对比图。每个 configuration 分别采用 frozen-backbone head（冻结主干预测头）或 layer-4 arm（第四层可训练分支），前者仅更新读出头，后者允许高层视觉特征适配。</li>
+<li><strong>合成域评测</strong>：各配置接收 synthetic rotation 样本，由模型输出旋转预测 $\hat{R}$，并与真值 $R$ 计算 rotation error；该误差构成散点图的一维坐标，用于衡量模型在合成数据上的拟合能力。</li>
+<li><strong>真实域迁移评测</strong>：同一配置在 real rotation 数据上计算对应误差，形成另一维坐标。空心圆表示 frozen-backbone heads，方块表示 layer-4 arms；每个点及误差条汇总多随机种子结果，即 mean $\pm$ s.d.。</li>
+<li><strong>参照线与判读</strong>：灰色直线表示 perfect transfer，即合成域与真实域误差一致；点越接近该线，跨域迁移越充分。虚线表示 chance 水平；位于其优侧说明预测优于随机，而两类标记的相对位置揭示高层适配是否降低真实域旋转误差。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Synthetic against real rotation error for every configuration: frozen-backbone heads (open circles) and layer-4 arms (squares), mean $\pm$ s.d.\ over seeds. The grey line marks perfect transfer and the dashed line chance.</div></details>
+</div>
+<ul>
+<li>整体流程为：将灰度单目图像输入 ImageNet 预训练 ResNet-50，经全局平均池化得到 2048 维特征，再由两层 MLP 同时回归三维平移和单位四元数姿态。</li>
+<li>平移目标按分量做 z-score 标准化；旋转使用符号不变损失 \(1-\langle\hat q,q\rangle^2\)，并将四元数标签规范到同一半球，以避免 \(q\) 与 \(-q\) 表示相同旋转所造成的监督冲突。</li>
+<li>核心采用“骨干冻结或训练 ResNet 第 4 阶段”×“无增强或光度增强”的 2×2 设计：冻结组只训练回归头并保留 ImageNet BatchNorm 统计，适配组同时更新最后一个 ResNet stage 及其 BatchNorm 统计。</li>
+<li>光度增强被明确视为对仿真器误差的假设模型，而非真实物理校正；增强链覆盖亮度、对比度、gamma、软高斯眩光、模糊、噪声和随机擦除，用于检验其收益是否只沿所模拟的外观偏移方向迁移。</li>
+<li>论文还使用 split conformal prediction：在独立合成校准集上构造目标覆盖率为 90% 的平移与旋转预测区域，再直接测量其在合成测试集和两个真实域上的实际覆盖率；这项分析不假设域偏移后仍满足交换性。</li>
+<li>相对更复杂的 SPEED+ 方法，论文没有加入关键点检测、PnP、多任务表示或对抗式域适配，而是保持一个简单直接回归器，以隔离表示适配、数据规模和增强策略对迁移的影响。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>最突出的失败来自不确定性：在合成数据上按 90% 覆盖率校准的旋转预测区域，到了 sunlamp 域仅覆盖 9%–15% 的真实误差，在 lightbox 域也只有 21%–38%；测试时 BatchNorm 适配仅将 sunlamp 覆盖率提高到 11%–20%，无法恢复可信校准。</li>
+<li>对冻结骨干的回归头，将训练数据从 4,000 张扩到 28,000 张并将输入特征从 1,000 维 ImageNet logits 换成 2,048 维池化特征，使合成验证集旋转误差由 \(1.651\pm0.024\) 降至 \(1.030\pm0.017\) rad；但 sunlamp 仅由 \(2.040\pm0.051\) 降至 \(1.986\pm0.031\) rad，改善 0.054 rad，小于预注册判据所用的两倍种子标准差。</li>
+<li>训练 ResNet 第 4 阶段带来更可迁移的收益：相对冻结、无增强配置，合成旋转误差约由 1.03 降至 \(0.317\pm0.010\) rad，lightbox 由约 1.76 降至 \(1.166\pm0.018\) rad，sunlamp 由约 1.99 降至 \(1.534\pm0.075\) rad；额外合成收益中约 83% 和 63% 分别迁移到了 lightbox 与 sunlamp。</li>
+<li>增强具有明显方向性：在训练第 4 阶段时，光度增强将 lightbox 旋转误差从 \(1.166\pm0.018\) 降至 \(0.987\pm0.010\) rad，三个种子均改善；sunlamp 则从 \(1.534\pm0.075\) 变为 \(1.468\pm0.119\) rad，变化没有超过种子间波动。冻结骨干时趋势相反，增强对 sunlamp 的改善更明显，但同时使合成误差变差。</li>
+<li>即使是表现更好的第 4 阶段适配、无增强模型，官方误差和 \(S=E_T+E_R\) 仍从合成域的 0.353 增至 lightbox 的 1.335 和 sunlamp 的 1.845，对应 3.8–5.2 倍退化；因此较低的真实域旋转误差并不意味着 sim-to-real 缺口已经消失。</li>
+<li>失败并非只由均值驱动：较弱配置的姿态置信锥可扩大到约覆盖全部方向的一半，虽然形式上更可能覆盖真值，却已经失去导航决策价值；而较窄的合成域校准区域在真实域又表现出严重欠覆盖，形成“错误位姿却像正确位姿一样自信”的风险。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>证据集中在 SPEED+ 的 Tango 单一目标、两种实验室照明和一个 ResNet-50 直接回归器；结果不能直接外推到其他航天器、在轨背景、相机响应、关键点加 PnP、SPNv2 或视觉语言导航模型。</li>
+<li>评测是逐帧开环位姿估计，没有接入轨迹滤波、视觉惯性融合、主动观测、制导控制或闭环安全约束；因此尚未量化过度自信会如何累积为轨迹漂移、错误接近或碰撞风险。</li>
+<li>真实域只用于离线测试，符合纯 sim-to-real 设定，但也意味着论文未验证少量真实无标签数据、目标域自监督、对抗式适配或带反馈的在线校准能否修复覆盖率。</li>
+<li>可以继续做的实验是将直接回归结果接入时序因子图或 EKF，对比“固定合成协方差”“按外观域分层校准”“创新残差触发协方差膨胀”，测量真实域轨迹误差及滤波一致性，而不只看单帧 \(E_R\)。</li>
+<li>可把辐射失配拆成可控轴，分别扫描高光、硬阴影、曝光截断、噪声和相机响应曲线，并在每个方向报告误差与 conformal coverage；这比继续扩大无结构的随机增强更容易定位 sunlamp 失效来源。</li>
+<li>面向跨场景泛化，可进一步比较冻结骨干、末级适配、全骨干适配及几何关键点接口，并使用独立预注册规则判断合成收益的真实迁移比例，避免仅依据合成验证集选择方案。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>数据集：SPEED+；合成训练图像来自官方训练标签，真实测试图像来自物理 Tango 模型的 lightbox 与 sunlamp 域。</li>
+<li>数据划分：28,000 张合成训练图像、2,000 张合成验证图像；另从官方验证集取两个互不重叠的 1,000 张集合，分别用于 conformal 校准和合成域内测试。</li>
+<li>真实测试集：lightbox 6,740 张，sunlamp 2,791 张，均完整评测；没有真实图像参与训练、调参或检查点选择。</li>
+<li>输入：下采样为 \(320\times512\) 的灰度图像。</li>
+<li>模型：ImageNet 预训练 ResNet-50、全局平均池化的 2,048 维特征和两层 MLP 位姿头；输出三维平移与单位四元数。</li>
+<li>训练臂：骨干冻结/训练 ResNet 第 4 阶段，与无增强/光度增强交叉组成四组；每组使用种子 42、43、44。</li>
+<li>优化：Adam，学习率 \(10^{-3}\)，batch size 16，训练 20 个 epoch；每两个 epoch 保存检查点，并按合成验证集旋转误差选择最佳检查点。</li>
+<li>损失：平移 MSE 与符号不变四元数损失之和，旋转项权重 \(\lambda=1\)；预测四元数做 \(\ell_2\) 归一化。</li>
+<li>增强参数：亮度因子 0.65–1.5、对比度变化 \(\pm0.5\)、gamma 在 [0.5, 2] 内对数均匀采样；眩光、模糊、噪声和随机擦除等随机组件的应用概率为 0.5。</li>
+<li>指标：归一化平移误差 \(E_T\)、SO(3) 测地旋转误差 \(E_R\) 以及 SPEED+ 分数 \(S=E_T+E_R\)；论文采用 2.207 rad 作为均匀随机旋转猜测的参照误差。</li>
+<li>conformal 协议：在独立合成校准集上按 90% 目标覆盖率构造预测区域，再测量合成测试集、lightbox 和 sunlamp 上的实际覆盖率。</li>
+<li>硬件：已发表的八次运行使用免费层 Colab GPU；评审后新增实验使用 Apple M5 GPU，缓存特征的回归头在其 CPU 上训练。</li>
+<li>复现材料：代码、配置、逐种子结果、逐图像预测、conformal 分析和预注册记录由作者公开在 <code>https://github.com/lokindoo/spacecraft-pose-estimation</code>。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的原因不在于提出更复杂的定位网络，而在于它把“合成域精度提高”“真实域精度提高”和“真实域置信度可信”拆成三个不同问题，并用可审计的受控实验说明三者不能相互替代。</li>
+<li>对导航系统尤其有价值的是其安全结论：视觉前端不仅可能在真实照明下出错，还可能输出与正确预测相似的置信度；下游规划器或滤波器若直接相信该不确定性，会把感知域偏移转化为决策风险。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>这不是典型 VLN、GoalNav 或完整 SLAM 论文：没有语言指令、地图构建、回环检测、路径规划、SPL/SR 或闭环轨迹评测，研究对象是航天器相对导航中的单帧六自由度位姿前端。</li>
+<li>与主流几何 SLAM 相比，本文不依赖特征匹配、多视图约束或显式重投影残差，而是直接从单目外观回归位姿；优点是接口简单，代价是对渲染外观和相机辐射响应更敏感，也缺少几何残差作为在线失效信号。</li>
+<li>与常见“冻结视觉编码器，仅训练任务头”的迁移方案相比，论文表明扩大数据和特征维度可以显著改善合成域，却几乎不改善最困难的 sunlamp 域；只适配 ResNet 最后阶段反而迁移了 63%–83% 的额外合成收益，说明任务相关表征适配比单纯扩头更关键。</li>
+<li>与宽泛 domain randomization 或风格增强相比，本文的核心增量是量化增强的方向性：增强只对其较接近的 lightbox 外观稳定有效，未能可靠解决带强高光、硬阴影和饱和的 sunlamp 域。工程上不能把“做过增强”当作覆盖未知域偏移的证据。</li>
+<li>与 SLAM 中由重投影误差或创新序列驱动的协方差估计相比，本文直接展示了仅在合成分布上校准的预测区域会在真实域严重欠覆盖；这提示学习式位姿前端的置信度必须接受目标域一致性监控，而不能作为固定测量噪声直接送入后端。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li>在空间几何表示上，可保留网络输出 SO(3) 姿态分布或 conformal 姿态区域，同时增加可解释的几何接口，如关键点、轮廓、可见面或重投影残差；比较这些表示在相同辐射偏移下的覆盖率，而不只比较平均姿态误差。</li>
+<li>在分层规划/控制接口上，应让视觉前端同时输出位姿、预测区域和域偏移告警；当区域异常收缩、滤波创新过大或连续帧几何不一致时，控制层可降低接近速度、请求新视角或切换到保守模式。</li>
+<li>在跨场景泛化评测中，可将“迁移比例”设为固定指标：分别计算合成域改进中有多少迁移到每个真实场景，并按漫反射、强定向光、饱和及遮挡分别报告，避免用一个平均真实域分数掩盖方向性失效。</li>
+<li>可复用论文的预注册思路：在查看新场景结果前，先规定最小有效改善、种子波动阈值和校准覆盖要求；若提升不超过种子方差或只在单一外观方向成立，就不宣称获得普遍鲁棒性。</li>
+<li>对现有 SLAM/VLN 管线，可优先实施一个低成本诊断：冻结后端，仅替换不同程度适配的视觉骨干，在合成与真实外观扰动上同时测定位误差、轨迹误差和置信度覆盖率，从而判断问题来自表征、几何接口还是后端融合。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>独立研究者 Nikolay Dolgov 在 SPEED+ 上证明，适配 ResNet-50 第 4 阶段可将合成旋转误差由约 1.03 降至 0.32 rad并把 63%–83% 的额外收益迁移到真实域，但合成校准为 90% 的姿态区域在 sunlamp/lightbox 仅有 9%–15%/21%–38% 覆盖率，揭示了航天视觉定位中“精度可迁移、置信度却失效”的关键风险。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.20321" data-title="Unreasonable Confidence from Simulator Misspecification">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答 · 本地千问</h2>
+    <span class="qa-model-badge">qwen3.8-flash-next</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.20321 · Unreasonable Confidence from Simulator Misspecification</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">本地千问 · 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Unreasonable Confidence from Simulator Misspecification》</strong>（arXiv: 2611.20321）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置本地千问问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', '本地千问 · qwen3.8-flash-next', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = '千问正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用本地千问失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
