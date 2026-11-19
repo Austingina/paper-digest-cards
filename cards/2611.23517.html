@@ -518,15 +518,15 @@ details.fold .fold-body {
 <div class="wrap">
 <article class="card">
 <header class="header">
-<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.23517" rel="noopener noreferrer" target="_blank">arXiv 2611.23517</a></span><span class="badge">深读</span></div>
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.23517" rel="noopener noreferrer" target="_blank">arXiv 2611.23517</a></span><span class="badge">深读</span></div>
 <h1>深读｜RageVLA</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.23517" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
-<li>LIBERO 常规四套评测已接近饱和，但训练演示中物体身份、初始位置、场景和指令措辞高度相关；策略可能靠复现固定轨迹获得高成功率，而非根据当前场景规划动作。</li>
-<li>LIBERO-PRO 分别改变物体外观、位置、语义、任务和环境。已有 VLA 在外观或措辞变化下仍能工作，却常在位置移动和任务变化时失效；其总分还可能被较容易的 Obj、Sem 项掩盖。</li>
-<li>本文研究的是 LIBERO 仿真中的闭环操作：策略接收 agentview、腕部相机、机器人本体状态和指令，生成动作块，执行前半段后重新感知与规划；不是冻结现有 VLA 后外挂模块，而是冻结预训练感知编码器、从头训练动作模型。</li>
-<li>作者的目标是通过数据与策略输入的双重解耦，以较小模型提升位置、任务和环境变化下的成功率，而不是继续扩大视觉语言骨干。</li>
+<li>LIBERO 常规四套评测已接近饱和，但高成功率可能来自对训练布局和轨迹的复现：在 LIBERO-PRO 中，已有 VLA 面对物体位置变化或任务变化时普遍显著退化，甚至在多数 Pos、Task 单元上成功率为零。</li>
+<li>原始 LIBERO 每个任务只有 50 条示范，且布局近似固定，导致物体身份与位置、操作轨迹与环境背景、任务语义与指令措辞相互耦合；仅扩大视觉语言骨干并不会迫使策略解除这些捷径。</li>
+<li>论文研究纯仿真、闭环操作策略：策略根据 agentview、腕部相机、机器人本体状态和语言指令生成动作块，执行其中前半段后重新规划；预训练 DINOv3 与 TinyCLIP 冻结，感知适配器和动作模型分别训练。</li>
+<li>作者目标是通过通用数据增强与显式、解耦的场景表示，让较小的 VLA 不再依赖固定布局，在 LIBERO-PRO 的位置、任务、环境和语言变化下获得更高成功率。</li>
 </ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
   <div class="arch-figure-bar">
     <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
@@ -544,61 +544,64 @@ details.fold .fold-body {
   <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">LIBERO-PRO&#x27;s official total (grey) against the mean over the position and task perturbations only (colored). Prior VLAs keep high totals while scoring close to zero once objects move or the task changes. \prelimnote</div></details>
 </div>
 <ul>
-<li>整体流程为：对 LIBERO 人类演示进行场景重排、跨环境/表面迁移和指令改写，再用独立感知模块把双相机图像转换为显式物体列表与腕部视觉编码，最后由条件化的流匹配扩散 Transformer 输出未来动作块。</li>
-<li>数据增强先把演示切成接近、抓取、搬运、放置和设施交互等物体中心阶段，再将末端执行器轨迹变换到目标实体的新位姿；阶段间插入过渡运动，生成轨迹只有通过仿真器原任务成功判定才被保留。</li>
-<li>随机重排会移动、旋转物体和设施；环境迁移将可兼容任务放入其他 LIBERO 环境，表面迁移则更换桌面。关系型指令只采用较小位移，以避免增强后指令失真；增强规则不读取 LIBERO-PRO 的布局文件。</li>
-<li>agentview 适配器在冻结的 DINOv3 特征上预测物体类别、全局三维位置、偏航角和置信度；腕部适配器把 wrist 图像压缩成少量 token，并通过训练期专用解码器重建逐格类别和深度，使编码保留抓取区域的局部几何信息。</li>
-<li>TinyCLIP 分别把 agentview 和文本压缩为单个图像、文本向量；物体列表、8 个腕部 token、图像向量、文本向量和机器人状态由上下文编码器融合。训练时独立随机丢弃各输入组，以减少策略对单一通道的依赖。</li>
-<li>与大型 VLM 型 VLA 相比，RageVLA 没有微调数十亿参数的视觉语言骨干，也没有继承现成动作专家：DINOv3 与 TinyCLIP 保持冻结，仅训练感知适配器，并从头训练上下文编码器和流匹配动作 Transformer。</li>
+<li><strong>整体流程</strong>：先把 LIBERO 人类示范按 approach、grasp、transport、place、fixture interaction 等物体中心阶段切分并重定向到新场景；训练时，独立感知模块把双相机图像转换为物体列表、腕部视野编码和图文嵌入，随后流匹配扩散 Transformer 生成未来 20 步动作。</li>
+<li><strong>轨迹重定向</strong>：对作用于实体 \(o\) 的阶段，将示范中的末端位姿先转换到实体局部坐标系，再通过实体的新位姿映射回世界坐标系，从而在移动或旋转物体后保持末端与物体的相对运动；阶段间用插值轨迹衔接，夹爪命令沿用原示范。</li>
+<li><strong>Robust Augmentation</strong>：随机重排物体与夹具的位置和朝向，把可迁移任务放入其他 LIBERO 环境及桌面表面，并为每条指令生成改写版本；生成轨迹必须重新仿真并通过原任务成功判据才会保留。关系型指令只采用较小位移，以避免破坏指令真值。</li>
+<li><strong>Grounded Encoding</strong>：冻结的 DINOv3 ViT-B/16 共享处理 agentview 与腕部图像；agentview 适配器以类似 CenterNet 的头预测类别、位置、偏航角、高度和置信度，形成显式物体列表；腕部适配器压缩为 8 个 token，并在训练时通过语义类别图和深度图重建约束其保留近场几何。</li>
+<li><strong>视觉语言条件</strong>：冻结 TinyCLIP 分别把 agentview 和指令压缩为一个 512 维向量；物体列表、腕部 token、图像向量、文本向量和机器人状态由上下文 Transformer 融合。训练时独立随机丢弃各输入组，降低策略对单一通道的依赖。</li>
+<li><strong>动作生成</strong>：动作模型不是在大型 VLM 上微调，而是从头训练的流匹配扩散 Transformer；它以融合后的上下文为条件迭代去噪动作块。相较既有 VLA，RageVLA 没有扩大通用视觉语言骨干，而是新增显式感知接口，并用与该接口匹配的增强数据迫使策略读取当前布局。</li>
 </ul></section><section class="section"><h2>实验与结果</h2><ul>
-<li>在完整 LIBERO-PRO 单因素扰动协议上，RageVLA s1 的总成功率为 0.72，高于排行榜中最佳既有 VLA π0.5 的 0.53；更大的 RageVLA n1 达到 0.73。这里的既有 VLA 数字来自 LIBERO-PRO 排行榜，并非作者统一复跑。</li>
-<li>优势主要来自以往模型较弱的 Pos 和 Task：s1 在 LIBERO-Spatial、LIBERO-10、LIBERO-Object 的 Pos 成功率分别为 0.53、0.51、0.94，而此前模型对应单元格最高不超过 0.20；s1 也在四个 Task 单元格中全部领先此前 VLA。</li>
-<li>Task 结果对评测时采用哪条指令敏感。按正文所述的统一指令来源，RageVLA 的 Task 均值为 0.52，而独立重评的 π0.5 为 0.26；这比直接对照排行榜中 π0.5 的 0.01 更公平。</li>
-<li>在 LIBERO-Object 因果干预实验中，保持相机图像正确但打乱传给动作模型的物体位置后，成功率由 0.965 降至 0.215，说明显式位置并非可忽略的辅助输入，策略行为确实依赖该通道。</li>
-<li>当目标物体位移达到 28 cm 时，RageVLA 成功率仍为 0.865；作者在同一评测 harness 中运行的 π0.5 为 0.105。感知侧在未见布局上找到 99.5% 的物体，物体位置中位误差为 0.27 cm。</li>
+<li>在 LIBERO-PRO 完整 12,000-episode 协议上，RageVLA s1 总成功率为 <strong>0.72</strong>，高于表中最佳既有 VLA \(\pi_{0.5}\) 的 <strong>0.53</strong>；参数更大的 RageVLA n1 达到 <strong>0.73</strong>。既有模型数字来自 LIBERO-PRO leaderboard，而非作者统一复跑。</li>
+<li>提升主要来自容易暴露轨迹记忆的条件。RageVLA s1 在 Spatial、LIBERO-10、LIBERO-Object 的 Pos 单元分别达到 <strong>0.53、0.51、0.94</strong>，对应既有模型最佳值至多为 <strong>0.20、0.08、0.17</strong>；它也在所有四个 Task 单元上超过表中的既有 VLA。</li>
+<li>Task 列存在指令来源这一协议敏感项：按 leaderboard 数字，\(\pi_{0.5}\) 的四套 Task 单元接近零；论文引用的独立、同指令来源复评中，RageVLA 与 \(\pi_{0.5}\) 的 Task 均值分别为 <strong>0.52 与 0.26</strong>。因此不能把表中 <strong>0.01</strong> 一类数字直接解释为模型能力的唯一差异。</li>
+<li>条件干预显示策略确实使用显式位置输入：在 LIBERO-Object 原始布局中，保持相机图像正确、只打乱提供给策略的物体位置，成功率从 <strong>0.965 降至 0.215</strong>。这比仅观察训练损失或平均成功率更直接地排除了“完全忽略位置条件”的解释。</li>
+<li>在目标物体移动 <strong>28 cm</strong> 的闭环测试中，RageVLA 成功率仍为 <strong>0.865</strong>；作者在同一 harness 下运行的 \(\pi_{0.5}\) 仅为 <strong>0.105</strong>。感知模块在留出布局中找到 <strong>99.5%</strong> 的物体，物体位置中位误差为 <strong>0.27 cm</strong>，支持显式定位接口在未见布局上仍可用。</li>
+<li>RageVLA 并非所有扰动都占优：s1 在 LIBERO-10 的 Obj 单元只有 <strong>0.45</strong>，低于多种既有 VLA；作者将其与训练中没有纹理或颜色增强联系起来。Obj、Sem 等不改变核心布局或任务的条件上，其优势也明显小于 Pos、Task。</li>
 </ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
-<li>训练增强没有随机化物体纹理或颜色，因此并未解耦外观因素；正文明确指出其较弱单元格是 LIBERO-10 的 Obj，s1 成功率为 0.45。可加入纹理、材质、光照和实例级外观增强，单独检验是否改善 Obj 而不损伤位置估计。</li>
-<li>所有主要证据来自 LIBERO/LIBERO-PRO 仿真，物体标签和感知监督也由模拟器提供；尚无真机、深度噪声、遮挡、相机标定漂移或检测漏报下的证据。下一步应在真机复现目标位移曲线，并注入位姿偏差与置信度校准误差。</li>
-<li>论文只报告一个训练随机种子。虽然两个模型都完成了各自 12,000 个评测 episode，但无法由现有结果判断训练方差、增强数据生成方差或 s1 与 n1 的差异是否稳定。</li>
-<li>RageVLA 依靠准确的显式对象类别和位置，可能难以直接扩展到开放词汇物体、未知实例、多个同类物体或无法可靠估计全局坐标的场景。可系统扫描位置噪声、漏检、误分类和同类目标歧义，绘制动作成功率随感知误差变化的曲线。</li>
-<li>TinyCLIP 的紧凑表示降低了模型规模，但作者也承认它缺少大型 VLM 的广泛预训练知识；当前实验不足以证明该架构能处理 LIBERO 之外的长指令、组合概念或开放世界语义。可保持动作头和增强数据一致，仅替换语言/视觉编码器做受控对比。</li>
-<li>所给正文在主结果段中截断，附录 A 的层级结构、损失权重和完整训练超参数未提供，后续章节中的更多消融与失败分析也无法核对；复现时需要查阅完整论文附录或作者发布代码。</li>
+<li>证据全部来自 LIBERO 系列仿真，依赖模拟器提供的物体类别、三维位置、偏航角、高度、深度及成功判据作为监督；真机中检测误差、遮挡、标定漂移和长尾类别可能破坏这一接口，当前结果不能直接外推到真实机器人。</li>
+<li>论文只报告一个训练 seed。虽然两个模型都完整运行了 12,000 个评测 episode，但尚无跨训练随机种子的方差，也缺少对“增强数据”和“显式感知”各自贡献的完整数字消融；因而无法从给定原文精确量化两部分分别贡献多少。</li>
+<li>增强没有随机化纹理与颜色，LIBERO-10 的 Obj 结果已经暴露该缺口。可继续加入保持任务语义不变的材质、光照和实例外观增强，并检查它是否改善 Obj 而不损害依赖颜色描述的任务。</li>
+<li>当前 Task 测试能衡量任务变化，却不等同于严格的“未见物体×目标×场景”组合留出。后续应构造交叉覆盖训练集，分别留出物体—目标对、目标—环境对和三元组合，避免随机增强无意中覆盖测试组合。</li>
+<li>位置打乱证明策略使用该通道，但尚不能证明它持续遵循目标运动或能表达期望变化方向。可进一步做逐时刻位置置零、交换目标与干扰物、加入受控偏置，以及抓取后移动目标区域等干预，区分“用于初始定位”与“闭环持续跟随”。</li>
+<li>轨迹只在生成后通过最终成功谓词筛选，文中未展示失败恢复数据或恢复专项评测。可加入抓取失败、物体滑落、放置偏差和执行中目标移动等中途扰动，检查策略能否恢复，而非只从随机初始布局执行一次成功轨迹。</li>
 </ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
-<li>平台：LIBERO 仿真环境；输入为标准 agentview 相机、腕部相机、机器人本体状态和自然语言指令。</li>
-<li>原始数据：LIBERO 的 130 个任务，每个任务 50 条人类演示。</li>
-<li>增强数据：训练集 132,610 条成功轨迹、279 万个样本；留出测试集 1,751 条轨迹、3.66 万个样本；每 8 个控制步采样一次。</li>
-<li>数据生成：保存模拟器状态与动作，之后渲染图像；每条生成轨迹重新仿真，并仅保留通过任务成功谓词的轨迹。训练轮次与留出轮次使用不同种子。</li>
-<li>感知骨干：两路相机共享冻结的 DINOv3 ViT-B/16，按相机原生分辨率编码；DINOv3 共 86M 参数，两个可训练适配器共 4M 参数。</li>
-<li>视觉语言编码：冻结的 TinyCLIP 共 84M 参数，输出一个 512 维 agentview 图像向量和一个 512 维文本向量。</li>
-<li>模型规模：感知引擎共 174M 参数；s1 动作引擎为 35M、完整推理栈约 0.21B 参数，n1 动作引擎为 100M、完整推理栈约 0.27B 参数。</li>
-<li>动作协议：每次预测 20 个未来动作，执行前一半后重新感知并规划；动作模型使用流匹配目标从头训练。</li>
-<li>LIBERO-PRO：采用单因素扰动；Obj、Pos、Sem、Task 使用发布的任务和初始状态文件，Env 使用 LIBERO-PRO 自带扰动代码生成。每个表格单元包含 10 个任务、每个任务 50 个初始状态；每个 RageVLA 变体共评测 12,000 个 episode。</li>
-<li>基线来源：LIBERO-PRO 主表中的 OpenVLA、π0、π0.5、MolmoAct、NORA 和 X-VLA 数字直接复制自排行榜；作者只在 LIBERO-Object 的分级物体位移实验中自行运行了 π0.5。</li>
-<li>训练随机种子：报告一个；两种 RageVLA 均在 12,000 个 episode 上完成评测且无运行错误。</li>
-<li>所给原文未披露优化器、学习率、批大小、训练步数、流积分步数、各输入组丢弃概率和具体损失权重；正文称这些位于附录 A。</li>
+<li><strong>平台与形态</strong>：LIBERO 仿真环境；使用 LIBERO 标准 agentview 相机、腕部相机和机器人本体状态。</li>
+<li><strong>原始数据</strong>：LIBERO 共 130 个任务，每个任务 50 条人类示范。</li>
+<li><strong>增强数据</strong>：训练集 <strong>132,610</strong> 条轨迹、<strong>2.79M</strong> 个样本；留出测试集 <strong>1,751</strong> 条轨迹、<strong>36.6k</strong> 个样本；每隔 8 个控制步采样一次。</li>
+<li><strong>数据验证</strong>：所有生成轨迹均重新仿真，并通过对应任务的最终成功检查；不同生成轮次使用不同 seed，最后一轮仅用于测量感知与动作误差。</li>
+<li><strong>语言增强</strong>：每条原始指令由语言模型生成 20 个改写；训练时随机选取原指令或一个改写。原文未披露所用语言模型名称。</li>
+<li><strong>轨迹增强范围</strong>：随机移动和旋转物体及夹具；将满足实体数量与唯一性条件的任务移植到其他 LIBERO 环境；同时迁移到其他桌面表面。训练增强不读取 LIBERO-PRO 文件，也不交换指定物体的位置。</li>
+<li><strong>感知骨干</strong>：冻结 DINOv3 ViT-B/16，按相机原生分辨率处理两个视角；DINOv3 参数量 <strong>86M</strong>，两个可训练适配器合计 <strong>4M</strong>。</li>
+<li><strong>图文编码器</strong>：冻结 TinyCLIP，参数量 <strong>84M</strong>；图像塔和文本塔各输出一个 <strong>512 维</strong>向量。</li>
+<li><strong>动作模型</strong>：从头训练的上下文编码器与流匹配扩散 Transformer；RageVLA s1 为 <strong>35M</strong>，RageVLA n1 为 <strong>100M</strong>。</li>
+<li><strong>完整参数量</strong>：s1 为 <strong>0.21B</strong>，n1 为 <strong>0.27B</strong>；计入冻结的 DINOv3、TinyCLIP、适配器和动作模型。</li>
+<li><strong>动作协议</strong>：每次预测未来 <strong>20 步</strong>动作，执行前半段后重新规划；腕部编码为 <strong>8 个 token</strong>。</li>
+<li><strong>LIBERO-PRO 协议</strong>：一次只启用一种扰动；Obj、Pos、Sem、Task、Env 五类扰动覆盖 LIBERO-Goal、Spatial、LIBERO-10、Object 四套任务。每个表格单元包含 10 个任务、每个任务 50 个初始状态，总计 <strong>12,000 episodes</strong>。</li>
+<li><strong>评测文件</strong>：Obj、Pos、Sem、Task 使用官方发布文件；Env 文件未发布，作者使用 LIBERO-PRO 自身扰动代码生成。采用官方 episode 上限与成功判据，不过滤发生碰撞的初始状态。</li>
+<li><strong>报告范围</strong>：只报告一个训练 seed；s1、n1 均完成全部 12,000 个 episode，作者称评测过程零错误。</li>
+<li><strong>基线来源</strong>：LIBERO-PRO 主表中的既有 VLA 数字原样取自 leaderboard；作者只在 LIBERO-Object 位移实验中通过同一 harness 自行运行了 \(\pi_{0.5}\)。</li>
 </ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
-<li>这篇论文值得推荐的核心不只是 LIBERO-PRO 总分，而是它直接检验了 VLA 是否读取当前物体位置：位置通道打乱和连续位移测试比常规平均成功率更能区分场景条件策略与轨迹复现策略。</li>
-<li>它提供了一条与扩大 VLM 骨干不同的路线：把鲁棒性问题拆成增强数据覆盖、显式几何感知和闭环生成动作三个部分，并以 0.21B 参数取得高于大型 VLA 的 LIBERO-PRO 总分。</li>
+<li>这篇论文值得推荐的重点不是“更大的 VLA”，而是把鲁棒性归因落实为两个可检验设计：训练数据主动打破位置、背景和语言相关性，策略侧提供与这些变化对应的显式感知条件。</li>
+<li>它同时给出了条件遵循干预和闭环位移测试：成功率在位置输入被打乱后从 0.965 降至 0.215，说明显式条件不仅被拼接进网络，而且实际控制了行为。</li>
 </ul>
-<h3 class="sub">与π系列的关系</h3>
+<h3 class="sub">与本项目关系</h3>
 <ul>
-<li>RageVLA 不是 π0、π0-FAST、π0.5 或 OpenPI 的衍生模型；所给原文没有说明代码继承、检查点复用或与这些项目存在合作关系，也没有报告 π0-FAST 或 OpenPI 基线。</li>
-<li>它与 π0/π0.5 的共同点是采用流匹配生成动作块，并在执行部分动作后重新规划；区别是 π0/π0.5 将流匹配动作专家连接到约 3B 的视觉语言模型，而 RageVLA 使用冻结 DINOv3 的显式物体位置与腕部编码、冻结 TinyCLIP 的单向量语义表示，以及从头训练的小型动作 Transformer。</li>
-<li>对 π0 与 π0.5 的 LIBERO-PRO 主表比较来自公开排行榜，并非统一重跑；只有 LIBERO-Object 分级位移中的 π0.5 是作者在同一 harness 下运行。因此，0.72 对 0.53 支持排行榜协议下的总体优势，而 28 cm 位移时 0.865 对 0.105 才是更严格的同框架鲁棒性对照。</li>
-<li>论文没有证明显式感知设计一定优于 π 系列骨干；更准确的结论是：在 LIBERO-PRO 上，大规模预训练本身没有消除位置记忆，而强增强与显式几何条件能够显著改善该失败模式。</li>
+<li>RageVLA 的物体列表与 Austin 项目的 G / A-F 接口都试图把语言意图转换为策略可读取的几何条件，但二者表达内容不同：前者主要提供“有哪些物体、它们在哪里”，接近 A 的定位部分；它没有直接表达 F 所要求的物体期望运动方向、变化轨迹或交互阶段。</li>
+<li>其位置打乱实验对应 Austin 对“条件是否真正被使用”的关注，证据强于仅报告低训练损失。不过论文只做了位置错配和物体位移，没有覆盖 G 的置零、反向、交换，也未证明抓取之后策略会持续追踪目标或遵循期望物体运动。</li>
+<li>增强数据对位置、环境、桌面和语言做交叉变化，直接支持“强执行器不能替代组合覆盖”的判断；但论文没有按物体×目标×场景明确构造严格留出组合，因此它展示的是扰动鲁棒性与部分任务泛化，而不是对 Austin 所需组合泛化的完整证明。</li>
+<li>与 OpenPI 路线的联系主要来自对照：论文在同一位移 harness 下得到 RageVLA 0.865、\(\pi_{0.5}\) 0.105，说明强预训练执行器若没有相匹配的数据变化和显式几何输入，未必会利用当前场景条件。论文并未把 RageVLA 的物体列表或类似 G 的条件接入 OpenPI，因此不能据此判断 π0/π0.5 接收 A/F 后的收益。</li>
 </ul>
-<h3 class="sub">对Austin研究的启发</h3>
+<h3 class="sub">启发</h3>
 <ul>
-<li>可在 OpenPI 执行器前增加结构化场景接口，将对象类别、位姿、偏航角、置信度和腕部局部深度 token 作为独立条件输入；保持原动作专家和图像输入不变，比较 pixels-only、显式位置、腕部编码以及两者同时加入的消融。</li>
-<li>将训练数据设计为因素正交的矩阵：分别随机化物体位姿、设施位姿、桌面、环境、指令措辞和外观，并为每种增强记录来源标签，以测量每个因素对 Pos、Task、Env、Obj 的迁移贡献。</li>
-<li>在闭环评测中加入本文式因果干预：随机打乱对象位置、添加厘米级噪声、删除检测、交换同类实例或制造图像—位置冲突，检查策略究竟遵循图像、语言还是显式引导条件。</li>
-<li>为感知—动作接口增加运行时监控：当对象置信度低、全局位置跳变或腕部深度与预期接触阶段不一致时，触发重新观测、缩短动作执行窗口或拒绝执行，而不是继续完整动作块。</li>
-<li>除平均成功率外，应绘制成功率随目标位移、旋转角、感知误差和遮挡程度变化的连续曲线，并分别报告首次抓取失败、抓取后掉落、目标误选和放置偏差，从而定位 OpenPI 闭环中的真实瓶颈。</li>
+<li>在现有 OpenPI 执行器上建立与本文对应的因子化对照：固定 π0/π0.5 与训练预算，比较纯 RGB+语言、RGB+物体位置、RGB+A、RGB+A/F 四种输入，避免把数据增强收益误归因于表示本身。</li>
+<li>将条件遵循测试扩展为完整干预矩阵：分别对 A 或 G/F 做置零、反向、目标—干扰物交换和受控空间偏移；同时保持图像不变，记录抓取对象、运动方向、最终目标和成功率，而不只报告总成功率。</li>
+<li>为“抓到了却没送到正确目标”设计分阶段指标：初次接近是否正确、是否成功接触/抓取、运输过程中是否持续朝目标推进、最终放置区域是否正确，以及目标在抓取后移动时能否重新规划。</li>
+<li>仿照本文按交互阶段重定向轨迹，但用物体或部件的目标运动生成 F，而不是直接迁移末端轨迹；分别检查 approach、contact、actuate 阶段能否跨物体和目标复用，避免把机械臂运动误当作期望物体变化。</li>
+<li>显式构造物体×目标×场景交叉覆盖和留出表：训练时保证每个单因子都出现，但留出特定二元或三元组合；另加入同一初始场景配不同目标的成对样本，迫使策略根据条件选择行为，而不是依赖熟悉的物体—目标关联。</li>
+<li>增加失败恢复数据：在训练或评测中注入抓取滑落、目标区移动、放置偏差和遮挡，观察 A/F 条件是否能支持重新定位与二次执行。RageVLA 的腕部深度/语义编码可作为近场接触与持物状态感知的参考，但不能替代 F 对期望变化的表达。</li>
 </ul>
 <h3 class="sub">一句话总结</h3>
-<ul>
-<li>ragento.ai 的 RageVLA 以强场景增强、冻结 DINOv3 上的显式物体/腕部感知和从头训练的流匹配动作 Transformer，在 0.21B 参数下取得 LIBERO-PRO 0.72 成功率，并在目标位移 28 cm 时以 0.865 对同 harness 的 π0.5 之 0.105。</li>
-</ul></div></details>
+<p>ragento.ai 的 Amrit Lal Singh 与 Smarak Kanjilal 通过 132,610 条跨布局、环境、表面和语言增强轨迹及显式物体位置感知构建 RageVLA，使 0.21B 参数模型在 LIBERO-PRO 达到 0.72 成功率，并以位置打乱导致 0.965→0.215、目标移动 28 cm 仍达 0.865 的实验验证策略确实使用几何条件。</p></div></details>
 <section id="paper-qa" class="qa-section" data-arxiv="2611.23517" data-title="RageVLA">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答</h2>
