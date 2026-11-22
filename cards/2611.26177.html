@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜SpatialScout-V2</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* AI Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.26177" rel="noopener noreferrer" target="_blank">arXiv 2611.26177</a></span><span class="badge">深读</span></div>
+<h1>深读｜SpatialScout-V2</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.26177" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>现有空间问答基准多基于固定图像或视频，只检验距离、方向等局部判断；即使回答正确，也不能证明智能体能在长时程交互中主动取证、跨视角关联实例，并持续维护完整的三维地图。</li>
+<li>SpatialScout 已在仿真中评估主动物体中心建图，但仿真渲染弱化了真实住宅中的光照变化、遮挡、外观差异以及非目标物干扰，难以反映真实观测下的定位失败模式。</li>
+<li>本文把任务扩展到真实住宅采集：VLM 智能体在固定交互预算内，从离散的已记录全景位置中自主选点和调整视角，依据标定 RGB 图像建立并修订物体中心地图；智能体不能访问深度图和参考标注。</li>
+<li>这是一个闭环、无需额外训练的评测设定：当前地图与历史观测影响下一步视点选择，七个 VLM 以现有模型和统一工具接口直接运行，论文未报告微调策略权重。</li>
+<li>作者目标是同时衡量真实场景主动探索中的定位精度与目标覆盖率，判断前沿 VLM 能否在有限交互下构建准确、完整的三维物体中心地图。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.26177.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.26177.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.26177.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.26177.png'">
+    <img src="/assets/figures/2611.26177.png" onerror="this.onerror=null;this.src='../assets/figures/2611.26177.png'" alt="SpatialScout-V2 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（AI 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>全景实例分割（Panorama Instance Masks）</strong>：以真实场景采集的多视角全景图像 $\{I_v\}_{v=1}^{V}$ 为输入，提取各视角中的对象实例掩码 $M_{v,k}\in\{0,1\}^{H\times W}$，形成后续三维标注的逐视图观测。</li>
+<li><strong>深度反投影与坐标对齐（Lifting to Metric Frame）</strong>：结合深度图 $D_v$、相机内参 $K_v$ 和位姿 $T_v\in\mathrm{SE}(3)$，将掩码像素反投影为三维点 $\mathbf{x}=T_v[D_v(\mathbf{u})K_v^{-1}\tilde{\mathbf{u}}]$，统一到公共度量坐标系。</li>
+<li><strong>跨视角融合与几何优化（Multi-view Fusion &amp; Geometric Refinement）</strong>：依据空间重叠和实例一致性融合点集 $\mathcal{P}_k=\bigcup_v\mathcal{P}_{v,k}$，剔除噪声与离群点，并拟合场景级三维包围盒 $B_k$，输出对象中心 $\mathbf{c}_k=(x_k,y_k,z_k)$。</li>
+<li><strong>人工多视点核验（Human Verification）</strong>：将 $B_k$ 重投影至原始图像，由标注员从至少两个视点检查其对象归属、范围和几何位置；通过核验的 $\{B_k,\mathbf{c}_k\}$ 构成最终真实采集场景的参考三维对象标注。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Reference 3D object annotation from real captures. Instance masks are extracted from panoramas, lifted into a common metric frame using depth and camera poses, and fused across views. Geometric refinement produces a scene-level box and its center for each object. Human annotators verify the boxes from at least two viewpoints.</div></details>
+</div>
+<ul>
+<li>整体流程为：给定目标实例清单、可选扫描位置和初始 RGB 视图，智能体选择全景位置与观察方向，获取透视图像，在多视角图像中标记对应点并调用三角测量，随后提交或覆盖目标的三维中心，直至主动结束建图。</li>
+<li>环境把 Realsee3D 的多位置全景采集组织为可交互的离散视点图。与可连续移动的真机导航不同，智能体只能访问已有扫描位置，但观察次序和朝向由其根据当前证据自主决定。</li>
+<li>智能体可查询相机位姿与内参，却不能读取深度图或真值位置；三角测量工具根据至少两个视图中的对应像素求取三维点，并返回射线残差和最大夹角等几何诊断信息。智能体仍需自行判断对应点，并把表面点转换为物体包围盒中心。</li>
+<li>地图采用可修订接口：每个目标由给定实例标识符指定，新的合法中心会替换该标识符的旧估计；工具只反馈提交是否被接受以及当前已提交数量，不返回基于真值的分数。</li>
+<li>评分时保留目标参考框的尺寸，仅将其平移到预测中心，再在同类别内进行预测与真值的一对一匹配。这一设计聚焦“中心定位”能力，而不要求模型同时预测类别、尺寸或朝向。</li>
+<li>相比 SpatialScout v1，v2 没有改变“自主观察—证据融合—地图修订”的任务核心，但把仿真图像替换为真实住宅观测，保留原场景中的目标、非目标物及自然遮挡，并允许在真实采集的多个全景位置间交互探索。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>Claude Opus 5.5 表现最佳：全部目标平均 3D IoU 为 22.52%，正 IoU、IoU 严格大于 0.5 和严格大于 0.9 的目标比例分别为 66.18%、18.36% 和 0.19%。即使是最佳模型，也只有不到五分之一的目标达到中等重叠，精确中心定位仍很困难。</li>
+<li>七个模型中有六个的全部目标平均 IoU 低于 20%。其后依次为 Claude Sonnet 5.5 的 18.14%、GPT-6 Astra 的 15.50%、GPT-6.1 Sol 的 15.04%、MiMo-V2.6-Pro 的 8.68%、DeepSeek-V4.1-Flash 的 5.49% 和 Qwen3.8-Max 的 4.87%。</li>
+<li>覆盖率与定位精度必须分开看：GPT-6 Astra 在已提交目标上的平均 IoU 为 21.65%，接近 Opus 的 22.58%，但计入遗漏后降至 15.50%，下降 6.15 个百分点；Opus 则仅由 22.58% 降至 22.52%，说明 Astra 的主要额外损失来自目标遗漏。</li>
+<li>高覆盖不等于高质量地图：MiMo、Qwen 和 DeepSeek 的全部目标与已提交目标平均 IoU 在报告精度下相同，但平均 IoU 仍分别只有 8.68%、4.87% 和 5.49%，表明广泛提交也可能伴随严重的位置偏差。</li>
+<li>工具行为与结果呈现相关性但不能证明因果：Astra 和 Opus 的三角测量调用占比分别为 20.2% 和 20.7%，高于 DeepSeek 的 10.7% 与 Qwen 的 10.6%；后两者反而将 39.8% 和 39.1% 的调用用于图像采集，说明增加观测数量本身不足以替代跨视角几何整合。</li>
+<li>个例显示模型并非完全缺乏精定位能力，但稳定性不足：冰箱案例中 Astra 达到 93.0% IoU，Opus 为 50.6%，DeepSeek 为零重叠；沙发案例中 Opus、Astra、DeepSeek 和 Qwen 分别为 89.5%、61.5%、31.1% 和 0。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>这不是连续空间中的真机移动实验。智能体探索的是预先录制且完成配准的全景视点，不需要处理底盘控制、碰撞规避、里程计漂移、在线 SLAM 或动态障碍，因此不能直接外推到真实机器人端到端导航。</li>
+<li>评分使用目标的真值类别、实例清单和参考包围盒尺寸，只评估预测中心平移后的 IoU；这隔离了中心定位能力，却弱化了开放词汇发现、类别识别、物体尺寸与朝向估计以及新实例建图的难度。</li>
+<li>参考标注由专有全景分割模型、深度、位姿和多视图融合自动生成，再经至少两个视点的人工检查。论文给出了质量控制流程，但所提供正文未报告标注者一致性或剩余中心误差，因此极高 IoU 阈值下的标注不确定性仍需量化。</li>
+<li>七个模型均在相同接口上评测，但没有传统几何 SLAM、学习式 ObjectNav/VLN 方法或“固定巡检路线＋几何三角化”程序基线，因而尚不能分离 VLM 推理缺陷、探索策略缺陷和工具接口设计造成的损失。</li>
+<li>可继续做的实验是加入分层系统：上层 VLM 只负责目标优先级和下一最佳视点，下层以显式位姿图、实例轨迹、视差阈值和鲁棒三角化维护几何状态；再分别消融语义规划与几何后端，检验性能瓶颈究竟在“看哪里”还是“如何融合”。</li>
+<li>可把当前离散视点协议迁移到连续真机：加入可达性约束、运动成本、位姿噪声和回环闭合，并报告 SR、SPL、中心误差及地图覆盖率；同时设置跨住宅、跨楼层和类别长尾拆分，检验探索策略能否跨场景泛化。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>数据：Realsee3D 真实世界子集含 1,000 个住宅场景，按场景以 9:1 划分训练集与测试集；SpatialScout-V2 固定使用其中 100 个测试场景。</li>
+<li>目标：共 3,171 个目标实例、29 个类别；公开给智能体的清单包含实例标识符及类别。</li>
+<li>采集平台：住宅由安装在三脚架上的 Galois 3D LiDAR 相机采集；源数据包含等距柱状 RGB 全景图、稀疏深度图和相机到世界坐标变换，但推理时智能体不能访问深度图。</li>
+<li>参考标注：全景实例掩码经深度反投影、跨视图关联、点云融合、离群点去除和重力对齐包围盒拟合生成；每个框至少从两个视点人工检查，不准确标注被移除。</li>
+<li>模型：Claude Opus 5.5、Claude Sonnet 5.5、GPT-6 Astra、GPT-6.1 Sol、MiMo-V2.6-Pro、Qwen3.8-Max、DeepSeek-V4.1-Flash；全部使用 xhigh reasoning 设置和统一提示词、工具接口，论文未报告额外训练或微调。</li>
+<li>起始状态：每个 episode 从按标识符字典序排列的第一个扫描位置开始，相对全景的 yaw 和 pitch 均为 0，并预先提供一张 RGB 观察。</li>
+<li>图像：从全景图投影得到 512×512 透视图，水平和垂直视场角均为 90°；使用双线性插值，水平方向环绕，pitch 限制在 −85° 至 85°。图像以 PNG 保存，以同分辨率、质量 82 的 JPEG 提供给模型。</li>
+<li>视点：所有列出的扫描位置均可按标识符选择；切换位置时保留当前 yaw 和 pitch。智能体可查询相机位姿、针孔内参并自主旋转和拍摄。</li>
+<li>三角测量：至少需要两个已获取视图中的对应点；至少一对相机间距不小于 5 cm，法方程条件数不超过 \(10^6\)，且解必须位于所有参与相机前方。</li>
+<li>交互预算：每个 episode 最多 120 个模型 turn，不另设图像数量上限；实际纳入评测的 episode 均不超过 100 个 turn。</li>
+<li>完成条件：最终执行工具必须是成功的 <code>finish_mapping</code>，且保存的参考文件和预测文件满足场景 manifest；部分地图和空地图仍可计分，未完成的尝试从头重跑，每个模型—场景对保留一个当前完成结果。</li>
+<li>指标：采用 object-micro 平均 3D IoU，以及 IoU 严格大于 0、0.5、0.9 的命中率；分别报告全部目标和已提交目标结果，并以 bootstrap 给出跨目标的均值与标准差。</li>
+<li>匹配：预测与同类别参考对象一对一匹配；平均 IoU 采用总 IoU 最大的分配，各阈值命中率则独立采用命中数最大的分配，总 IoU 用于打破平局。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的原因不是它提出了更强的导航策略，而是它把“主动看哪里、跨视角如何取证、最终能否形成可量化三维地图”放进同一个真实场景闭环协议，补足了只评问答正确率或导航到达率的盲区。</li>
+<li>结果揭示了一个对导航系统很关键的断层：前沿 VLM 可以完成大量工具调用和目标提交，却未必获得精确空间状态；最佳模型的全部目标平均 IoU 仍只有 22.52%，说明语言层面的规划能力不能替代显式几何估计。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>相比主流 VLN，SpatialScout-V2 不要求遵循自然语言路线或抵达单一终点，而要求智能体围绕固定目标清单自主选择观测并输出场景级三维物体中心地图；核心指标也从 SR、SPL 或路径误差转为 3D IoU、阈值命中率和覆盖率。</li>
+<li>相比 ObjectNav/GoalNav，它关注的不是“找到一个目标并停下”，而是在有限预算内定位多个实例并允许反复修订，因此探索顺序、目标遗漏和跨视角数据关联都会直接影响最终得分。</li>
+<li>相比经典 SLAM，它使用已注册的扫描位置、已知相机内外参和现成三角测量工具，不估计相机轨迹，也不构建稠密几何地图；其增量主要位于语义实例取证、对应点选择、视点调度和物体中心地图维护，而不是替代几何 SLAM 后端。</li>
+<li>相比 VSI-Bench 的固定视频空间推理，以及 OpenEQA active setting、E3VS-Bench 的主动问答，本文直接评价交互过程中形成的结构化三维地图，能同时暴露“没有找到目标”和“找到但定位不准”两类失败。</li>
+<li>工程权衡是用离散、标定好的真实全景规避真机运动与位姿估计噪声，使不同 VLM 可在同一观测目录上比较；代价是结果尚不能代表连续控制、路径可达性和在线 SLAM 条件下的端到端性能。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li>在空间几何表示上，可把单一中心坐标扩展为带协方差的实例状态：保存每次观测的相机位姿、像素射线、三角化残差、视差角和候选实例关联，只有不确定性降到阈值后才提交中心，避免 VLM 直接用语言推断覆盖精确几何。</li>
+<li>在分层规划接口上，可让 VLM 输出“目标实例＋期望观测侧面＋视差需求”，由下层 next-best-view 模块依据可达性、基线长度、遮挡预测和当前协方差选择具体位姿；这样可以把高层语义决策与低层几何约束解耦。</li>
+<li>在评测上，应同时保留覆盖率、已提交目标定位误差和全部目标得分，并加入交互成本或路径长度。Astra 从已提交目标 21.65% 降到全部目标 15.50% 的案例说明，单报已定位对象的精度会掩盖漏检问题。</li>
+<li>在工具监控上，可记录重复拍摄、近共线三角化、低视差对应点、无效地图覆盖及“长时间采集但不融合”等行为，并在预算耗尽前触发几何审查器；论文中的工具分布表明，更多图像调用不自动带来更高精度。</li>
+<li>在跨场景泛化上，可用训练住宅学习类别尺寸先验、常见支撑关系和遮挡模型，但在测试时保持几何后端显式可校验；进一步按房型、楼层、类别频次和遮挡程度分层报告，以判断提升来自通用探索策略还是数据集先验。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>SpatialScout-V2 由北京大学主导、天津大学参与，以 100 套 Realsee3D 住宅中的 3,171 个目标检验 VLM 的主动探索与三维物体中心建图能力，而最佳 Claude Opus 5.5 的全部目标平均 IoU 仅为 22.52%、IoU&gt;0.5 命中率仅为 18.36%，显示真实场景中的跨视角几何融合仍远未解决。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.26177" data-title="SpatialScout-V2">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答</h2>
+    <span class="qa-model-badge">AI</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.26177 · SpatialScout-V2</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">AI 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《SpatialScout-V2》</strong>（arXiv: 2611.26177）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置 AI 问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', 'AI', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = 'AI 正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用 AI 失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
