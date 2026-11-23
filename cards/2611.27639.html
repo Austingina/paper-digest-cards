@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SOAR: Training-Free Rank-Consistent Rollout Compression for Latent World Model Planning</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* AI Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.27639" rel="noopener noreferrer" target="_blank">arXiv 2611.27639</a></span><span class="badge">深读</span></div>
+<h1>SOAR: Training-Free Rank-Consistent Rollout Compression for Latent World Model Planning</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.27639" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>潜在世界模型依靠 CEM 在每次决策中采样数百条动作序列，并通过 Transformer 自回归展开；以公开的 JEPA-WM 为例，原始预算下单次规划即使在 H100 上也需 20–50 秒，闭环重规划开销很高。</li>
+<li>现有加速方法多沿用 ViT/VLM 的空间 token 剪枝思路，重点保持视觉特征内容；但 CEM 实际只消费候选动作的代价排序并选出精英集，特征或代价值本身的误差未必会改变规划结果。</li>
+<li>固定空间预算无法覆盖不同任务：Push-T 对接触区域的空间细节敏感，而 MetaWorld Reach 更依赖前一帧提供的运动信息；相同压缩方式可能在一个任务上安全、在另一个任务上失效。</li>
+<li>论文在冻结已发布世界模型检查点、保持原始 CEM 预算的闭环规划设定下，目标是无需训练和任务标签，按每次决策所需的排序保真度自适应压缩 rollout，在维持成功率的同时降低规划延迟。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.27639.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.27639.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.27639.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.27639.png'">
+    <img src="/assets/figures/2611.27639.png" onerror="this.onerror=null;this.src='../assets/figures/2611.27639.png'" alt="SOAR: Training-Free Rank-Consistent Rollout Compression for Latent World Model Planning Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（AI 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>稠密规划基线（Dense Rollout）</strong>：Figure 1 是冗余性诊断总览，而非网络拓扑图。规划器以完整上下文帧和全部空间位置执行潜在世界模型 rollout，所得任务成功率作为归一化基准；纵轴 “Success relative to dense” 表示压缩方案成功率与稠密成功率之比，$r_{\mathrm{rel}}=S_{\mathrm{compressed}}/S_{\mathrm{dense}}$。</li>
+<li><strong>四类剪枝轴（Four Pruning Axes）</strong>：子图 (a) 分别沿 Table 1 定义的四个 rollout 剪枝维度减少计算，并以横轴 speedup 衡量加速比。各曲线刻画压缩强度增加时 $r_{\mathrm{rel}}$ 的变化，用于辨别哪些中间计算存在冗余、哪些删减会破坏规划排序与最终成功率。</li>
+<li><strong>空间位置减半（Halving Spatial Positions）</strong>：子图 (b) 将潜在特征中的空间 token/位置数由 $N$ 压缩至 $N/2$，比较 Push-T 与 MetaWorld Reach 上的相对成功率；该操作直接降低世界模型 rollout 中空间特征传播与预测的计算量。</li>
+<li><strong>上下文帧丢弃（Dropping the Context Frame）</strong>：同一子图进一步移除历史 context frame，仅保留更精简的 rollout 条件输入。两项消融与 Dense 对照共同说明：空间位置和上下文均可能包含可压缩冗余，但不同任务对两类信息的敏感度并不一致。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Where a planning rollout is redundant. (a)~Success relative to dense versus speedup for the four pruning axes of \cref{tab:axes}. (b)~Success relative to dense on Push-T and MetaWorld Reach when halving the spatial positions or dropping the context frame.</div></details>
+</div>
+<ul>
+<li>整体流程是：从第一次 CEM population 中抽取少量候选动作序列，以多个嵌套 token 预算分别 rollout，比较压缩预算与完整预算下的候选排序，再选择满足排序一致性要求的最小预算执行该次决策的完整 CEM 搜索。</li>
+<li>SOAR 不以预测特征重建误差为准，而以候选代价的 Spearman 排名相关性为在线压缩信号；其依据是 CEM 只需由代价排序得到最低成本的 \(K\) 个精英候选。</li>
+<li>所有 rollout 的第 0 步保持完整计算，因为它是唯一直接读取真实观测的预测步，其误差会被后续自回归预测和最终规划代价持续继承。</li>
+<li>第 1 步以后不再重新计算前一帧，而是复用其注意力 key/value 缓存；这既保留依赖时序上下文的任务所需信息，也消除重复处理上下文帧的开销。</li>
+<li>后续步骤只压缩“最新帧”的空间位置，并使用固定、嵌套的棋盘格 token 子集。论文的诊断实验表明，均匀空间覆盖通常比 VLM 式显著性选择更可靠，关键更多在于“何时压缩”而非“选择哪些 token”。</li>
+<li>方法不训练新预测器、不微调原有检查点，也不改变原始 CEM 的候选规模、精英数和迭代预算；相对稠密规划器增加的只是每次决策一次轻量排序探测与 KV 缓存接口。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>在 7 项导航与操作任务、总计超过 80,000 个闭环 episode 上，SOAR 在达到稠密规划成功水平时取得 \(2.3\times\) 加速；进一步压缩至 \(2.5\times\) 加速时，仍保留稠密规划器 98% 的成功率。这里的成功率以同批、同初始状态和目标下的稠密模型为参照。</li>
+<li>在线探测仅占总规划时间的 1%–2%，说明直接在每个决策点检查排序一致性没有抵消 rollout 压缩带来的收益。</li>
+<li>50% 空间预算下，VLM token 选择规则并不可靠：ToMe、FastV、DART、DivPrune 的七任务平均成功率分别为稠密模型的 0.51、0.66、0.34、0.63；随机选择为 0.60。规划感知的 CostGrad 和 Guard-rank 提升到 0.84 和 0.89，但仍未达到稠密水平。</li>
+<li>压缩时机比 token 选择更关键：所有步骤均保留 128 个位置时，平均成功率为稠密模型的 0.90、加速 \(2.17\times\)；仅将第 0 步恢复为完整计算后，平均达到 1.03、加速 \(1.82\times\)。相反，仅完整计算最后一步时只有 0.66，表明末端补算无法修复早期自回归误差。</li>
+<li>不同任务呈现互补失败模式：保留一半空间位置时，Push-T 仅保留 0.73 的稠密成功率，而 MetaWorld Reach 为 1.08；移除上下文帧时，二者分别为 0.95 和 0.18。这支持按决策自适应预算，而不是为所有任务设置一个固定压缩率。</li>
+<li>单独使用上下文 KV 缓存即可在不知道任务类型的情况下匹配稠密成功率并获得 \(1.76\times\) 加速；直接删除上下文虽在导航和推动任务上基本无损，却会让 MetaWorld Reach 损失 31–43 个成功率百分点、Reach-Wall 损失 12–30 个百分点。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>证据集中于 JEPA-WM 系列的冻结检查点及其两帧滑动窗口结构；尚不能据此确认排序一致性预算在其他世界模型、长视频上下文、扩散式 world action model 或端到端 VLA 中同样有效。</li>
+<li>任务共 7 项，涵盖导航、平面推动、机械臂到达和放置，但原文所给实验均为既定基准中的闭环评测；提供的正文未披露真实机器人部署、传感噪声、动态遮挡或跨场景分布外测试结果。</li>
+<li>SOAR 用少量候选的 Spearman 相关性近似完整 population 的排序稳定性。相关性高并不严格保证前 \(K\) 个精英集合完全相同，尤其可能漏掉少数接近精英边界、但会影响后续 CEM 分布更新的候选。</li>
+<li>当前压缩变量主要是最新帧的 token 数量，固定棋盘格强调均匀覆盖，却未显式利用空间几何、障碍边界或接触拓扑。可进一步比较 Spearman 阈值、精英集合重合率与 top-\(K\) 边界 margin，并在低 margin 时自动回退到稠密 rollout。</li>
+<li>面向导航可增加长程 GoalNav/VLN、跨楼层和动态障碍实验，并分别报告 SR、SPL、碰撞率、规划延迟及排序相关性；还可将预算控制扩展为分层策略，例如高层世界模型自适应 token 预算、低层局部控制器维持固定频率。</li>
+<li>可在真实机器人或在线 SLAM 系统中测试缓存失效机制：当定位重置、回环闭合、观测突变或场景动态度超过阈值时清空 KV 缓存并恢复完整第 0 步，检验加速是否会被状态估计误差放大。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>模型：发布的 JEPA-WM 检查点，评测时冻结。</li>
+<li>视觉编码器：多数任务使用冻结的 DINOv2 ViT-S/14，将图像编码为 \(16\times16\) patch 特征网格；RoboCasa 使用 DINOv3 ViT-L/16。</li>
+<li>世界模型：动作条件 AdaLN Transformer；Maze、Wall、Push-T、MetaWorld 使用 6 层、宽度 384，RoboCasa 使用 12 层、宽度 1024。</li>
+<li>上下文：预测器使用两帧滑动窗口；第 0 步读取真实观测，后续步骤输入前一帧与最新帧。</li>
+<li>任务：Maze、Wall、Push-T、MetaWorld Reach、MetaWorld Reach-Wall、RoboCasa Reach、RoboCasa Place，共 7 项。</li>
+<li>CEM：每轮 \(N=300\) 个候选、\(K=10\) 个精英；Maze、Wall、Push-T 运行 30 轮，MetaWorld 与 RoboCasa 运行 15 轮。</li>
+<li>规划时域：\(H=6\) 或 \(H=3\)，提供的正文片段未逐任务列出对应关系。</li>
+<li>代价：最终预测特征与目标特征之间的 L2 距离；可用时包含本体感觉信息。空间剪枝时，目标特征限制到相同的保留位置。</li>
+<li>SOAR 探测：每个决策从第一次 CEM population 中取 \(M=16\) 个候选，在 3 个嵌套 token 预算下展开，以相对完整预算的 Spearman 相关性和阈值 \(\tau\) 选择最小预算；提供的正文片段未给出三个预算的具体 token 数及 \(\tau\) 数值。</li>
+<li>评测次数：前 5 项任务每次评测各运行 96 个 episode，两个 RoboCasa 任务各运行 32 个 episode；各方法共享初始状态与目标，进行配对比较。</li>
+<li>统计：报告相对同批稠密模型的任务平均成功率；95% 区间来自按任务分层、10,000 次重采样的配对 bootstrap。</li>
+<li>延迟：单张 H100、FP32，测量一次完整规划调用，包括编码、辅助计算及全部 CEM 搜索；以同任务稠密延迟归一化并报告其倒数为加速比。</li>
+<li>总规模：超过 80,000 个闭环 episode。</li>
+<li>训练与标签：SOAR 无额外训练，不使用任务标签。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的核心原因不是又一种空间 token 剪枝，而是它把规划压缩的目标从“特征是否逼真”改成“候选动作的排序是否稳定”，直接对齐采样式规划器真正使用的信号。</li>
+<li>论文同时给出较完整的失败诊断：真实观测进入模型的首步不能省、上下文可能不能删但可以缓存、固定预算会因任务动力学不同而失效。这些结论对世界模型导航的系统设计比单一加速数字更有价值。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>主流 VLN 通常直接预测动作或航点，经典 GoalNav/SLAM 则依赖显式地图、位姿估计和搜索；SOAR 不提出新的语言 grounding、地图表示或定位模块，而是加速基于潜在视觉特征和 CEM 的 world-model rollout。因此，它与 VLN/SLAM 更多是规划计算层面的互补关系，不能由本文结果推出 VLN 的 SR/SPL 或 SLAM 的轨迹误差改善。</li>
+<li>相比固定分辨率的潜在地图或统一空间剪枝，SOAR按每次决策的候选排序稳定性分配计算：容易区分的决策使用更少 token，排序敏感的决策保留更高预算。这类似给局部规划器增加一个在线“计算充分性”检查器。</li>
+<li>工程权衡是每次决策需要额外运行 16 个候选、3 档预算的探测，但其测得开销仅为规划时间的 1%–2%；收益则是在冻结模型和原始搜索预算不变时实现最高 \(2.3\times\) 的稠密成功率等效加速。</li>
+<li>对 SLAM 系统尤其值得注意的是上下文策略：直接删除历史帧可能破坏速度或动态状态推断，而 KV 缓存可以保留历史信息并避免重算。不过论文没有显式建图、回环检测、位姿图优化或几何一致性模块，也未报告 ATE/RPE。</li>
+<li>对 VLN 而言，论文没有语言指令、长程记忆或语义地图实验；其排名一致性原则可迁移到航点候选或 frontier 候选排序，但这一迁移尚未在本文验证。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li>在空间几何表示上，可把当前固定棋盘格扩展为“均匀覆盖优先、几何风险补充”的嵌套预算：基础层覆盖整张特征网格，增量层加入深度不连续处、可通行区域边界、窄通道及潜在碰撞区域，同时保持预算间严格嵌套以便复用计算。</li>
+<li>在分层规划接口上，可让高层 world model 输出候选子目标及其排序置信度，低层控制器继续使用固定频率执行；当 Spearman 相关性低、top-\(K\) 交集不足或精英边界 margin 过小时，高层自动提高 token 预算或缩短重规划间隔。</li>
+<li>在 SLAM/世界模型耦合中，可将 KV 缓存与地图版本绑定：正常帧间更新复用缓存，发生回环闭合、位姿大幅修正、跟踪丢失或动态场景突变时使缓存失效，避免历史特征与更新后的几何坐标系不一致。</li>
+<li>在跨场景泛化评测中，不只记录平均 SR/SPL，还应按场景复杂度、窄通道比例、动态物体数量和定位不确定性分桶，联合记录所选 token 预算、排序相关性、规划时延与失败类型，检查方法是否真的把更多计算分配给困难决策。</li>
+<li>可增加一个安全回退消融：比较 Spearman 阈值、top-\(K\) 精英集合重合率及二者结合的触发规则；导航中一旦压缩排序与稠密排序不一致且候选涉及碰撞风险，就恢复稠密 rollout，而不是继续采用最小预算。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>上海交通大学提出的 SOAR 以候选动作排序一致性在线选择 latent world-model rollout 的 token 预算，在 7 项导航与操作任务、超过 80,000 个闭环 episode 上以 \(2.3\times\) 加速达到稠密规划成功水平，并在 \(2.5\times\) 加速下保留 98% 的成功率。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.27639" data-title="SOAR: Training-Free Rank-Consistent Rollout Compression for Latent World Model Planning">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答</h2>
+    <span class="qa-model-badge">AI</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.27639 · SOAR: Training-Free Rank-Consistent Rollout Compression for Latent World Model Planning</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">AI 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《SOAR: Training-Free Rank-Consistent Rollout Compression for Latent World Model Planning》</strong>（arXiv: 2611.27639）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置 AI 问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', 'AI', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = 'AI 正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用 AI 失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
