@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tripwire: Robot Agents that Program Their Own Interrupts under Human Disturbance</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* AI Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.27182" rel="noopener noreferrer" target="_blank">arXiv 2611.27182</a></span><span class="badge">深读</span></div>
+<h1>Tripwire: Robot Agents that Program Their Own Interrupts under Human Disturbance</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.27182" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>现有机器人智能体通常采用回合制 harness：智能体调用预训练 VLA 或 WAM 后，必须等调用返回才能重新推理；即使底层策略持续闭环观测，智能体仍无法在执行中途撤销已经过时或变得危险的高层决策。</li>
+<li>人类可能在策略调用期间进入机器人路径、移动待抓物体或改变冰箱门等任务状态。提高智能体轮询频率可以缩短盲区，但前沿推理模型一次决策需要数秒，而且多数控制步并不需要重新规划。</li>
+<li>论文同时覆盖 RoboCasa365 扩展仿真和真实机器人；底层预训练策略保持冻结、被当作黑盒使用，TRIP 只改变策略调用期间的监控与控制权交还机制。</li>
+<li>作者目标是以无需训练、与策略无关的事件驱动接口，在减少智能体调用开销的同时，更及时地处理中途人类干扰，提高无接触安全性并维持任务成功率。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.27182.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.27182.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.27182.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.27182.png'">
+    <img src="/assets/figures/2611.27182.png" onerror="this.onerror=null;this.src='../assets/figures/2611.27182.png'" alt="Tripwire: Robot Agents that Program Their Own Interrupts under Human Disturbance Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（AI 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>指令解析与联合编程</strong>：输入任务指令 $\ell$ 后，视觉语言智能体 $\mathcal{A}$ 联合选择执行调用 $c$ 与中断程序 Tripwire $w$，即 $(c,w)\!\leftarrow\!\mathcal{A}(\ell)$；其中雪花表示模型参数冻结，TRIP 无需训练或修改底层策略。</li>
+<li><strong>调用执行模块（Call）</strong>：$c$ 可调用预训练操作策略，以观测 $o_t$ 产生动作 $a_t=\pi(o_t,c)$；也可通过控制器 $a_t=\kappa_c(o_t)$ 直接移动底座、机械臂或夹爪，或保持静止。</li>
+<li><strong>有状态监测模块（Tripwire）</strong>：执行期间，$w$ 持续读取 $o_t$，查询紧凑型 VLM，并融合查询结果、深度信息与历史记忆 $m$，计算 $(m,z_t)\!\leftarrow\!w(o_t,m)$。当 $z_t=\texttt{false}$ 时调用继续运行；记忆用于跨时间积累扰动证据。</li>
+<li><strong>触发、停止与重规划闭环</strong>：若 Tripwire 发火并输出原因 $z_t\neq\texttt{false}$，系统立即执行 Stop-and-Hold，中止当前 $c$ 并保持机器人静止；随后智能体结合 $\ell$、$z_t$、记忆 $m$ 及当前图像重新评估场景，更新 $(c,w)\!\leftarrow\!\mathcal{A}(\ell,z_t,m)$，形成事件驱动闭环。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Overview of TRIP. Given an instruction $\ell$, the agent selects a call $c$ and a tripwire $w$. During execution, the tripwire reads observations $o_t$, queries a compact VLM, and combines the results with depth and memory $m$ to produce $z_t$. A false output allows execution to continue; a firing stops the call and returns control to the agent with the reason and memory. The agent then reassesses the scene and updates the call and tripwire. Snowflakes denote frozen models; calls and VLM queries are illustrative.</div></details>
+</div>
+<ul>
+<li>整体流程为：视觉语言智能体根据任务指令选择策略调用、直接运动或等待，同时生成一个 tripwire；调用执行期间，tripwire 持续读取 RGB-D、机器人状态与执行元数据，决定继续执行还是立即中止并把控制权交还智能体。</li>
+<li>Tripwire 是有状态 Python 函数 \((m_{t+1},z_t)=w(o_t,m_t)\)：它可选择相机视角和紧凑 VLM 查询，将短文本回答与深度、几何位置、计时器、计数器及历史距离结合；返回 <code>false</code> 时继续执行，返回文本原因时触发中断。</li>
+<li>中断不等待智能体完成新一轮推理：harness 先停止当前策略或直接动作并让机器人保持静止，再把触发原因、tripwire 内存和当前图像交给智能体。智能体可据此恢复策略、等待、移动底座、操作机械臂，或处理被移动的目标。</li>
+<li>Tripwire 会随智能体决策动态改写。例如，执行操作时监测“人是否接近”，决定等待后则改为监测“人是否离开”；还可把上一次触发信息写入新程序常量，避免同一条件反复触发。</li>
+<li>生成程序运行在受限沙箱中；代码错误、超时或输出格式异常都会以故障安全方式停止当前调用并唤醒智能体，使其修订程序。</li>
+<li>相对回合制基线，TRIP 没有修改或微调底层 VLA/WAM，也保持相同的智能体、动作工具和提示词；核心变化仅是用可编程、可更新的执行期中断替代“等待工具调用自然结束或预设时长结束”。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>在最强策略 Xiaomi-Robotics-1（表中 XR）上，TRIP 的安全率由回合制 harness 的 61.3% 提升至 81.3%。该指标统计在“无人干扰时可解”的场景中没有发生人机接触的比例；作者据此称人机接触率约减半。</li>
+<li>XR 在有人干扰时的任务成功率分别为：策略单独运行 20.8%、回合制 harness 31.0%、TRIP 38.7%；无人条件下，TRIP 与回合制 harness 分别为 73.2% 和 73.8%，说明其安全收益并非来自明显牺牲无干扰任务能力。</li>
+<li>TRIP 对其余三个策略也总体更安全，并提高有人干扰下的总体成功率：GR00T 为 6.5%（回合制基线 6.0%），REKI-2B 为 22.6%（15.5%），PatchWAM 为 24.4%（18.5%）。GR00T 上增益很小，说明运行时监控无法弥补底层策略本身较弱的任务能力。</li>
+<li>XR 消融实验中，若初始 tripwire 生成后不再动态更新，安全率降至 61.3%；这表明贡献不只是“增加一个固定安全检查”，而是让监控条件随机器人响应和人类状态重新设定。</li>
+<li>XR 上智能体调用频率由每分钟机器人运行时间 30.3 次降至 19.4 次。真实机器人中，一次 tripwire 停止平均耗时 0.24 秒，而一次智能体推理平均为 4.3 秒，体现了把高频检测下沉到轻量监控层的意义。</li>
+<li>真实机器人在“挂杯子”和“挂毛巾”两项任务、挡住机械臂与移动目标物两类干扰下，TRIP 完成 25/40 次；回合制 harness 为 5/40，策略单独运行仅 1/40。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>RoboHD 每个场景使用首个能够容纳人类 avatar 的初始化种子；所给原文节选未披露多随机种子重复评测或置信区间，因此场景布局和单次执行随机性可能影响结果稳定性。可对每个任务增加多布局、多人物轨迹和多策略采样，并报告置信区间。</li>
+<li>仿真中 avatar 没有碰撞实体，人机接触通过人体骨架胶囊体与机器人碰撞几何包围盒的距离判断；这是一项严格但近似的安全指标，不能覆盖碰撞冲量、软接触、速度相关风险或近失事件。可补充最小距离、相对速度、停止距离和碰撞严重度指标。</li>
+<li>仿真会在智能体或 VLM 计算时暂停物理，而真实机器人不会暂停；因此仿真结果没有完整反映推理延迟期间人仍在移动的风险。可在不暂停物理的异步仿真中复测，并人为注入网络、VLM和智能体延迟抖动。</li>
+<li>真机证据仅包含两项操作任务、两类干扰和 40 次试验，尚不足以证明对不同机器人形态、拥挤多人环境或长时任务的泛化。可扩展到移动操作、多人交叉路径、遮挡、快速伸手和连续状态改变。</li>
+<li>Tripwire 由智能体生成代码，仍可能遗漏危险条件、依赖错误的 VLM定位或产生过多误触发；当前沙箱主要限制资源与访问权限，并不等同于形式化安全保证。可增加独立硬安全层、静态程序检查、最小距离不变量及“VLM失效时默认停车”的降级协议。</li>
+<li>论文未直接测试 π0、π0-FAST、π0.5 或 OpenPI。下一步可把 TRIP 接到 OpenPI 执行器的 action-chunk 边界与逐控制步停止接口，比较固定 chunk、周期轮询和事件中断，并分别测量安全率、误触发率、恢复成功率和端到端延迟。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>仿真平台：RoboHD，基于 RoboCasa365；机器人为 PandaOmron 移动操作平台，控制频率 20 Hz。</li>
+<li>数据组成：从 42 个需要在不同设施间导航的 RoboCasa365 复合任务构建，每个任务对应空间、物体状态、任务状态、感知四类干扰，共 168 个场景；其中 36 个场景来自 9 个 target-split 任务，132 个来自 33 个 pretrain-split 任务。</li>
+<li>人物设置：113/168 个场景中，人类活动位置距离无人物执行轨迹中的某个底座位置不超过 0.9 米，中位距离为 0.61 米；人物由机器人状态触发，在 idle、approach、wait、act、leave 五个阶段间转换。</li>
+<li>传感器：五个 RGB-D 相机，包括机器人两路前视相机、腕部相机，以及后方朝左、朝右的两路广角相机；策略使用前三路，智能体可请求任一相机图像。</li>
+<li>策略：三种 VLA——GR00T、REKI-2B、Xiaomi-Robotics-1（XR），以及一种 WAM——PatchWAM；全部以预训练黑盒方式使用，参数和架构保持不变。</li>
+<li>智能体与监控模型：默认智能体为 GPT-6.1-sol；tripwire 使用关闭 thinking 的 Qwen3.5-9B，模型保持冻结。</li>
+<li>对照协议：比较策略单独运行、使用相同智能体/工具/提示词的回合制 agentic harness，以及 TRIP；每个 RoboHD 场景还在没有人物时运行作为参考。</li>
+<li>成功与终止：有人场景只有在完成任务且全程无人机接触时才算成功；智能体方法在调用 <code>finish</code>、首次接触人物、达到 spend cap 或达到 100 次工具调用时终止。</li>
+<li>Tripwire 调度：每个控制步执行一次，约每秒机器人时间查询 VLM 两次；触发后可在 action chunk 中途停止策略。首个自编程 tripwire 出现前，默认监控器在调用结束或 8 秒后触发；静默的策略调用最长运行 60 秒。</li>
+<li>沙箱限制：源代码最长 6000 字符，仅允许 <code>numpy</code>、<code>math</code>、<code>json</code>、<code>re</code> 和 <code>statistics</code>，禁止文件访问；每次检查最多调用 VLM 两次，每个回答最多 64 tokens，检查必须在 4 秒内返回。</li>
+<li>仿真计算期间物理暂停；真机实验中物理世界不暂停。</li>
+<li>真机协议：两项任务为挂杯子和挂毛巾，两类干扰为阻挡机械臂和移动目标物，总计 40 次试验。所给原文节选未进一步披露真机型号、传感器配置及各条件的逐项试验分配。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的核心原因不是它提出了新的 VLA，而是它针对 VLA 部署中常被忽略的“控制权何时回到智能体”问题：策略可以闭环，但高层智能体在长调用期间仍可能失去及时干预能力。</li>
+<li>TRIP 把高成本的语义推理与高频的事件检测分离：智能体负责定义“什么变化值得打断”，紧凑 VLM、深度和时序程序负责持续检查，适合作为机器人基础策略之外的运行时系统研究样本。</li>
+</ul>
+<h3 class="sub">与π系列的关系</h3>
+<ul>
+<li>本文不是 π0、π0-FAST、π0.5 或 OpenPI 的新模型、训练配方或数据方法，也没有报告与这些模型的直接对比；提供的实验策略为 GR00T、REKI-2B、Xiaomi-Robotics-1 和 PatchWAM。</li>
+<li>TRIP 与 π 系列可能形成的是外挂式关系：π/OpenPI 策略继续负责由视觉和语言生成连续动作，权重、架构与训练数据均可保持不变；TRIP 位于执行器或 agent harness 层，在策略运行期间并行监测，并在事件发生时停止 action chunk、保持机器人并重新调用高层智能体。</li>
+<li>对 π0-FAST 等强调快速动作生成的策略，TRIP 解决的不是动作生成吞吐量，而是“当前动作序列是否还应继续”；即使策略推理很快，如果 action chunk 已因人类介入或目标移动而失效，仍需要低延迟、可解释的撤销接口。</li>
+<li>论文证明的是策略无关接口在四个非 π 策略上的可行性，不能据此断言它已兼容 OpenPI：实际接入仍取决于执行器能否安全地中止 chunk、清空或更新动作缓冲区，并在恢复时重建观测与控制状态。</li>
+</ul>
+<h3 class="sub">对Austin研究的启发</h3>
+<ul>
+<li>在 OpenPI 执行器中增加统一的 <code>interrupt(reason, state)</code> 接口：立即停止动作队列、进入安全保持状态，并把触发原因、近期 RGB-D/本体状态和监控历史返回给规划层。</li>
+<li>建立三组匹配评测：固定长度 action chunk、固定频率智能体/VLM轮询、TRIP式事件触发；同时报告任务成功率、无接触率、最小人机距离、每分钟智能体调用数、停止延迟及误触发次数。</li>
+<li>若 Austin 的系统使用引导场 \(G\) 或条件遵循机制，可让监控器检查“执行轨迹是否仍满足 \(G\) 的空间约束”，但应保留对新出现人物和被移动物体的开放词汇 VLM查询，避免只监控调用开始时已经枚举的对象。</li>
+<li>将 tripwire 测试纳入闭环回放：系统性注入人物靠近、目标移动、门体状态改变、视觉遮挡和 VLM错误定位，检查程序是否触发、是否能安全重入策略，以及同一条件是否造成触发振荡。</li>
+<li>把学习策略之外的硬约束独立出来：生成式 tripwire 负责语义事件和恢复时机，底层控制屏障或急停模块负责不可违反的距离、速度与力限制，避免把安全完全交给代码生成和视觉语言判断。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>TRIP 由马萨诸塞大学阿默斯特分校与明尼苏达大学双城分校作者提出，以可动态改写的有状态 Python 中断程序封装冻结的 VLA/WAM，在 Xiaomi-Robotics-1 上把安全率从 61.3% 提至 81.3%、有人干扰成功率从 31.0% 提至 38.7%，并在真机干扰实验中取得 25/40 次成功。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.27182" data-title="Tripwire: Robot Agents that Program Their Own Interrupts under Human Disturbance">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答</h2>
+    <span class="qa-model-badge">AI</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.27182 · Tripwire: Robot Agents that Program Their Own Interrupts under Human Disturbance</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">AI 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Tripwire: Robot Agents that Program Their Own Interrupts under Human Disturbance》</strong>（arXiv: 2611.27182）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置 AI 问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', 'AI', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = 'AI 正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用 AI 失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
