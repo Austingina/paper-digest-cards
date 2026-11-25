@@ -518,15 +518,15 @@ details.fold .fold-body {
 <div class="wrap">
 <article class="card">
 <header class="header">
-<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.32245" rel="noopener noreferrer" target="_blank">arXiv 2611.32245</a></span><span class="badge">深读</span></div>
+<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.32245" rel="noopener noreferrer" target="_blank">arXiv 2611.32245</a></span><span class="badge">深读</span></div>
 <h1>深读｜VLAs Execute, Code Recovers</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.32245" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
-<li>冻结 VLA 的原子技能可以在单独执行时表现良好，但组合后的技能交接处会出现明显断层：在 LIBERO-Goal 的 64 个有序技能对、640 个交接状态上，π0.5 的平均成功率从单技能独立执行的 98.0% 降至直接串联的 14.2%。</li>
-<li>常见的 re-homing 只恢复机器人本体姿态，无法处理前序技能留下的抽屉、盘子等场景残留；即使机械臂回到 home pose，后继技能仍可能沿其惯常轨迹撞上这些残留物。语言描述的进入条件或纯视觉判断也未直接刻画特定策略实际需要的三维运动空间。</li>
-<li>本文的 Stage 1 在固定的 LIBERO-Goal 仿真厨房中使用冻结的 π0.5，比较本体、视觉和物理世界三类干预；策略权重不更新，执行过程由预先测得的几何条件进行调用前检查，并由确定性的代码原语恢复场景。</li>
-<li>作者的目标是以无需失败数据、无需微调 VLA 的方式，为冻结技能建立可测量的三维物理前提，使规划器能在执行前发现并修复技能交接处的碰撞风险，从而可靠组合更长任务。</li>
+<li>冻结 VLA 的原子技能单独执行可靠，但组合成长任务时会在技能交接处失效：前一技能留下的抽屉、物体或机械臂姿态，会改变后一技能的启动状态，即使高层计划本身正确。</li>
+<li>现有 re-homing 主要恢复机器人姿态，语言前置条件或 VLM 审查又难以描述策略实际经过的三维空间；它们无法可靠判断“任务已完成”是否意味着“下一技能已就绪”。</li>
+<li>论文通过受控干预区分 body、view 与 world 三类分布偏移，关注的具体失败模式是：冻结策略重复惯常轨迹，与前序技能留下的实体残留发生碰撞，而非单纯受到视觉干扰。</li>
+<li>Stage 1 在 LIBERO-Goal 仿真环境中使用权重冻结的 \(\pi_{0.5}\)，采用确定性规划、离线深度检查与预构建修复程序；完整 LLM 自主编排、在线 RGB-D、跨策略迁移和真机闭环均尚未完成。作者目标是在不微调 VLA、无需失败数据的条件下，提高长程技能组合的可靠性和可扩展性。</li>
 </ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
   <div class="arch-figure-bar">
     <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
@@ -544,61 +544,58 @@ details.fold .fold-body {
   <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Seam failures are primarily physical and policy-specific. (a)~Comparing three interventions on the exact same transition and random seed of open middle drawer $\to$ push the plate (totals over 10 trials): returning the arm home (Re-homed) still collides \ExHomeContact{} times; erasing the drawer from the policy&#x27;s camera input (View Reset, inset) leaves the physical collision unchanged (\ExView{} success, \ExViewContact{} collisions); only physically closing the drawer (World Reset) succeeds (\ExWorld). (b)~Top: on the same open drawer, push the plate&#x27;s 3D envelope intersects the drawer (red, \ExHome), whereas turn on the stove sweeps clear (no overlap, 10/10). Bottom: across all nine skills that can follow open middle drawer (dashed green line: World Reset 9--10/10), our 3D overlap cleanly separates the six colliding skills (breaking five) from the three clear ones, whereas frontier VLM \texttt{Qwen4-Max} flags nearly every skill as blocked across 7 held-out trials per pair, even the completely unaffected turn on the stove.</div></details>
 </div>
 <ul>
-<li>整体流程是：先让每个冻结技能在其名义起始分布中独立成功执行，记录机械臂连杆、夹爪和所持物体的三维扫掠体积；组合任务时，用该体积检查前序技能留下的场景残留，必要时调用代码恢复，再让 VLA 执行分布内技能。</li>
-<li>每个技能 \(k\) 的 Skill Envelope \(E_k(x)\) 表示成功轨迹中体素 \(x\) 被扫过的经验概率。构建时只保留成功 rollout，因此不需要人工失败示例、失败恢复训练或符号化领域模型；每个技能单独建模，复杂度随技能数按 \(O(n)\) 增长，而非为所有技能对建立 \(O(n^2)\) 的交接模型。</li>
-<li><code>Check(k,s)</code> 计算残留物体或可动部件与后继技能包络的重叠，返回阻挡技能惯常路径的元素及其排序；它回答的是“当前世界状态是否满足这个特定冻结策略的物理进入条件”，而不是场景是否一般意义上显得整洁。</li>
-<li><code>Free(K,s)</code> 对剩余技能集合的包络取并集，再在其补空间中寻找有支撑、无碰撞且较近的放置位姿，使被移开的物体不仅避开当前技能，也尽量不阻挡后续技能。</li>
-<li>Agent loop 在语义约束允许的候选顺序中用就绪概率排序；每个技能执行前先 re-home 和 <code>Check</code>，若被阻挡则选择恢复程序并用 <code>Free</code> 给出目标位置，恢复后再次检查，最后才调用冻结 VLA。若恢复操作撤销了先前目标，系统会在末尾重新执行相应技能并验证全部目标。</li>
-<li>本文没有修改 π0.5 的权重，也没有要求 VLA 学会新的恢复技能：VLA 负责分布内操作，短代码原语负责分布外场景修复，Skill Envelope 是两者之间的策略特定几何接口。Stage 1 的恢复程序仍是预制解析原语，而非自主 LLM 在线合成。</li>
+<li>整体流程是：从每个技能的成功独立执行中测量三维扫掠空间 → 在技能调用前检查场景残留是否侵入该空间 → 必要时由经典代码修复场景 → 回到 home 位并复查 → 调用冻结 VLA 执行其分布内技能。</li>
+<li>对技能 \(k\)，作者以正向运动学将机械臂连杆、夹爪及被携带物体映射到世界坐标体素网格，聚合多次成功轨迹，得到每个体素被扫过概率 \(E_k(x)\)，即策略特定的 3D Skill Envelope。</li>
+<li><code>Check(k,s)</code> 计算场景中各残留元素与技能包络的峰值及体积重叠，提前返回阻挡物及其排序；目标技能本身要操作的对象不作为残留处理。</li>
+<li><code>Free(K,s)</code> 对尚未执行的技能集合 \(K\) 求包络并集的补集，寻找有支撑、无碰撞且不会阻挡后续技能的物体放置区域。</li>
+<li>排序层用包络重叠和 re-homing 后的位姿误差估计技能就绪概率，在语义约束允许的候选顺序中最大化整条链的就绪概率；修复若破坏了先前目标，流程会在末尾重新调用相应技能。</li>
+<li>本文没有修改或训练 \(\pi_{0.5}\) 骨干。碰撞门控完全由几何量完成；轻量 logistic 或五参数 multiplicative-hazard 校准头只用于顺序排序、VLM 对比和泛化评测，而非训练新的动作策略。</li>
 </ul></section><section class="section"><h2>实验与结果</h2><ul>
-<li>因果干预表明，剩余组合失败主要来自物理阻挡而非视觉干扰：re-homing 将成功率从 14.2% 恢复到 82.8%；在相同状态和策略噪声下，仅从相机渲染中隐藏残留物只增加 1.7 个百分点，碰撞率仍为 17.0%，而物理恢复场景将成功率提高到 92.8%，并把碰撞率降至 2.0%。</li>
-<li>不使用失败数据时，包络重叠在全部 640 个交接状态上的碰撞预测 AUROC 为 0.946，其中抽屉为 0.986、自由物体为 0.847；仅用单视角 RGB-D 深度差分仍达到 0.944 AUROC，并在 140 个抽屉状态上与仿真器状态门控给出 140/140 一致结果。</li>
-<li>在 429 个交接状态的技能就绪预测中，包络模型达到 0.902 AUROC，优于 Qwen4-Max、Qwen3.8-27B 和 GLM-5.3-Flash 的九种文本、图像或状态差分配置至少 0.110；最佳 VLM 为 Qwen4-Max，但仍未达到包络模型。对同一前序技能内部的区分，本文方法为 0.834，而 Qwen4-Max 和 GLM-5.3 分别为 0.666 和 0.500。</li>
-<li>几何条件具有一定的未见组合泛化证据：在未见前序技能划分上，logistic 包络模型 AUROC 为 0.843，对应 pair lookup 为 0.695、去掉几何信息的消融为 0.499；在零抽屉训练状态的跨类别测试中，5 参数模型达到 0.912，而 lookup 为 0.681。</li>
-<li>冻结 π0.5 用两种反向措辞执行“关闭抽屉”仅成功 1/280（0.4%），而代码 slide primitive 在 140 个新抽屉交接状态上成功 138/140（98.6%）。经 <code>Check</code> 门控的主动恢复把全部 640 个两步交接成功率从 re-homing 的 82.8% 提高到 92.3%，接近特权 World Reset 的 92.8%；它捕获了 70/70 个失败状态，并跳过了 20 个安全状态，避免始终恢复带来的 20 次额外动作。</li>
-<li>在 128 条含抽屉的 3–4 步链上，包络引导的排序与恢复将全链成功率从随机排序加 re-homing 的 29.7% 提高到 93.8%，增加 64.1 个百分点，并与特权 World Reset 的 90.6% 相当；在四组无法仅靠排序规避冲突的双抽屉任务上，恢复使成功数从 0/32 提升至 28/32。</li>
+<li>在相同的 640 个交接状态上，单技能独立成功率为 98.0%，直接串联仅为 14.2%；re-homing 恢复到 82.8%。隐藏残留物但保留碰撞体的 View Reset 只增加 1.7 个百分点，碰撞率仍为 17.0%（re-homing 为 17.8%）；物理恢复场景的 World Reset 则达到 92.8%，并将碰撞率降至 2.0%，支持“物理残留而非视觉干扰主导剩余失败”的判断。</li>
+<li>不使用失败轨迹的包络重叠，在 640 个交接状态上预测碰撞达到 0.946 AUROC；抽屉和自由物体分别为 0.986 与 0.847。单帧 RGB-D 相对初始深度的差分仍达到 0.944 AUROC，并在 140/140 个抽屉状态上与仿真器状态门控一致。</li>
+<li>在 429 个交接状态上，包络就绪度模型达到 0.902 AUROC，至少领先九种 VLM 配置中的最佳结果 0.110；对比涵盖 Qwen4-Max、Qwen3.8-27B、GLM-5.3-Flash 的图像、文本规则和状态差分提示。碰撞判断中，本文方法为 0.961，VLM 为 0.866。</li>
+<li>泛化实验中，未见 predecessor 的 logistic 包络模型为 0.843 AUROC，pair lookup 为 0.695，去掉几何后降至 0.499；五参数模型在 640 个新交接状态上达到 0.864，跨类别且训练中没有抽屉状态时仍为 0.912。</li>
+<li>冻结 \(\pi_{0.5}\) 接受两种反向语言表述来“关闭抽屉”时仅成功 1/280（0.4%），而短 slide primitive 在 140 个新抽屉交接状态上成功 138/140（98.6%）。<code>Check</code> 门控的主动修复将全部 640 个两步接缝成功率从 82.8% 提高到 92.3%，接近特权 World Reset 的 92.8%；它检出 70/70 个失败状态，并跳过 20 个安全状态。</li>
+<li>在 128 条含抽屉的 3–4 步任务链上，包络引导的排序与修复将完整任务成功率从 29.7% 提高到 93.8%，高于该协议下 World Reset 的 90.6%；在四组无法通过重新排序避开冲突的双抽屉任务中，修复使成功数从 0/32 提高到 28/32。</li>
 </ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
-<li>证据目前来自 Stage 1：只有一个冻结策略、一个固定 LIBERO 厨房、两种抽屉恢复原语、离线深度检查和确定性规划。尚不能据此断言该机制能直接迁移到真实机器人、稠密杂乱环境、双臂平台或其他 VLA。</li>
-<li>Skill Envelope 利用冻结技能轨迹的可重复性；如果策略具有明显多模态路径、会主动绕障、相机与机器人标定漂移，或持物形状和姿态变化很大，名义成功轨迹的体素占用可能不足以覆盖真实执行风险。论文尚未报告这些条件下的敏感性分析。</li>
-<li>自由物体恢复仍主要是待验证能力：Stage 1 已展示 <code>Free</code> 的几何定义，但在线 LLM 编排、恢复代码合成及程序库积累被留到 Stage 2。可按作者给出的判据测试：合成程序能否在至少 90% 的状态中真正清空包络，并在动作后重新检查。</li>
-<li>当前结果更能证明“避免阻挡既有轨迹”，不能证明系统获得了新的接触技能或更一般的组合表示。可进一步对 OpenVLA-OFT、其他 π0/π0.5 检查点和具有不同轨迹分布的策略分别测量包络，检验其策略特异性以及跨策略复用是否成立。</li>
-<li>可在真实 RGB-D 闭环中逐步更新残留物与包络重叠，并加入场景变化、遮挡、深度噪声和恢复失败；同时比较调用前主动修复、碰撞后反应式修复以及允许策略自行绕障三种协议，报告任务成功率、额外动作、误报和漏报，而不只报告 AUROC。</li>
+<li>作者明确将本文定位为 Stage 1：证据来自固定 LIBERO 厨房中的单个冻结策略、两种抽屉修复 primitive、离线深度检查和确定性规划，尚不能外推到真实传感噪声、密集杂乱环境或其他 VLA。</li>
+<li>当前完整 agent loop 仍未由 LLM 自主执行；<code>Free</code> 引导的自由物体修复代码合成、程序验证与技能库积累只是 Stage 2 计划，本文的强结果主要由预构建解析程序取得。</li>
+<li>碰撞预测对抽屉明显强于自由物体（0.986 对 0.847 AUROC），且 500 个自由物体状态本身有 92.0% 成功率；因此现有实验对复杂自由物体阻挡、堆叠和连续累积误差的证据较弱。</li>
+<li>可在 OpenPI 执行器外增加统一的 <code>Home → Check → Repair/Free → Check → Execute</code> 接口，并分别记录几何误报、漏报、额外动作数和最终目标保持率；这能验证收益是否来自及时修复，而非总是执行固定 cleanup。</li>
+<li>可按作者提出的判据扩展到 BOSS、OpenVLA-OFT 和真机双臂：比较 body、world、view 三类干预，要求修复恢复至少 80% 的 World Reset 增益；同时测试包络能否跨策略复用，或是否必须为每个检查点重新测量。</li>
+<li>对动态场景可进一步构建在线、带不确定性的时变包络：用多视角 RGB-D 更新障碍占据，并把深度置信度纳入 <code>Check</code> 阈值消融，避免单帧遮挡导致“几何上看似安全”。</li>
 </ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
-<li>平台与任务：LIBERO-Goal 固定仿真厨房；使用目标涉及不同物体或部件的 64 个有序两技能组合，每个组合 10 个交接状态，共 640 个 handoff。</li>
-<li>策略：冻结的 π0.5；不进行策略微调，不使用失败 rollout 构建 Skill Envelope。</li>
-<li>单技能基准：独立执行平均成功率为 98.0%；每个技能的包络由 37–89 条成功 rollout 构建，具体数量随技能而异。</li>
-<li>几何表示：世界坐标系下 1 cm 体素；通过前向运动学记录机器人连杆、夹爪及所持物体的定向包围盒所扫过的体素。</li>
-<li>门控阈值：<code>Check</code> 使用预先固定的峰值占用阈值 \(\tau=0.05\)；纯几何碰撞分数和恢复门控不使用失败数据。</li>
-<li>就绪模型：使用带残留元素指示变量的 logistic scorer，或类型无关的 5 参数乘性 hazard head；后者用于部分未见前序、多物体和跨类别泛化实验。</li>
-<li>感知：状态版本直接使用仿真器中的物体/部件体素；RGB-D 版本用单帧当前深度与初始深度做差，报告的中位处理时间为 426 ms。</li>
-<li>VLM 对照：Qwen4-Max、Qwen3.8-27B、GLM-5.3-Flash；输入配置包括 BATON 风格文本规则、图像查询和状态差分，共九次配置运行，在 429 个 handoff 上比较。</li>
-<li>两步恢复：主动代码恢复在全部 640 个 handoff 上由 <code>Check</code> 门控，其中对 140 个新鲜开放抽屉状态执行恢复；对照包括 re-homing、碰撞后的反应式恢复以及特权 World Reset。</li>
-<li>长链评测：共 256 条要求终止时所有目标同时成立的 3–4 目标链；其中 128 条包含抽屉，并另含四组共 32 条双抽屉冲突任务。</li>
-<li>Stage 1 的规划和恢复：使用确定性技能排序及预制解析代码原语；自主 LLM 工具编排、自由物体恢复代码合成、跨 benchmark/策略迁移和真机在线 RGB-D 均属于尚未完成的 Stage 2。</li>
+<li>平台与任务：LIBERO-Goal 固定厨房仿真环境；64 个目标对象或部件互不重叠的有序两技能对，每对 10 个交接状态，共 640 个 handoff。</li>
+<li>策略：冻结 \(\pi_{0.5}\)；原文未披露更具体的检查点名称、训练框架或对该策略进行额外微调。</li>
+<li>干预协议：保存完整交接状态并在相同策略噪声下重放；比较 Direct Chain、Re-homing、View Reset 和 World Reset。</li>
+<li>包络数据：仅保留技能独立执行成功的 rollout，每个技能使用 37–89 条；通过正向运动学体素化机械臂连杆、夹爪和携带物体，不使用失败 rollout 或人工示范。</li>
+<li>几何参数：世界坐标网格分辨率为 1 cm；<code>Check</code> 与 <code>Free</code> 的包络占据阈值预先固定为 \(\tau=0.05\)。</li>
+<li>深度协议：单个 RGB-D 视角，以当前帧与初始深度做差；报告的中位处理时间为 426 ms。Stage 1 使用离线深度检查。</li>
+<li>就绪度对比：429 个 handoff；VLM 包括 Qwen4-Max、Qwen3.8-27B、GLM-5.3-Flash，分别测试 BATON 风格文本规则、图像查询和状态差分。</li>
+<li>修复协议：两步修复在全部 640 个 handoff 上门控，其中主动抽屉修复涉及 140 个打开抽屉状态；代码修复使用预构建解析 primitive。</li>
+<li>长程协议：共 256 条 3–4 目标链，要求终止时所有目标同时成立；其中 128 条含抽屉，另含四组共 32 条双抽屉冲突链。</li>
+<li>统计：论文称所有主要指标均预注册，所报告增益的 95% 置信区间下界均高于零。</li>
 </ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
-<li>推荐这篇论文的原因不只是它提高了长链成功率，而是它通过受控干预定位了组合失败的具体来源：冻结 VLA 的后继技能需要一条未被场景残留占据的策略特定三维通道，“前序任务已完成”并不等于“后继技能已就绪”。</li>
-<li>它给出了一个实用的组合架构：不强迫通用执行策略覆盖所有恢复分布，而是测量其稳定能力边界，再让几何代码处理边界之外的世界状态。这与使用 OpenPI 预训练策略作为执行器、重点研究放置和失败恢复的方向直接相关。</li>
+<li>推荐这篇的核心原因不是它提出了新的 VLA，而是它把 \(\pi_{0.5}\) 的组合失败转化为可测量、可在执行前查询的三维接口，为冻结策略的长程编排提供了训练外解决方案。</li>
+<li>论文还给出一组较完整的因果证据：恢复机器人姿态、改变视觉输入和物理恢复世界被放在相同 handoff 上比较，因此“代码负责修复、VLA 负责执行”的分工不只是经验性模块拼接。</li>
 </ul>
-<h3 class="sub">与本项目关系</h3>
+<h3 class="sub">与π系列的关系</h3>
 <ul>
-<li>Skill Envelope 可作为 A/F 接口之外的一层“策略可执行性条件”：A 指定接近的交互区域，F 表达物体期望发生的运动，而包络描述执行该技能时机械臂、夹爪及持物需要占用的空间。它不能替代 F，因为它不表达物体应向哪里运动，也不解决从视觉中提取交互意图的问题。</li>
-<li>本文直接使用冻结的 π0.5，支持“能力较强的 OpenPI 策略负责闭环执行、外挂模块处理组合接口”的路线；但论文没有验证 π0、其他 π0.5 检查点或视觉预测 G 条件下是否仍有相同收益，也没有证明策略会持续遵循目标场或正确完成物体到目标的放置。</li>
-<li>与项目中的 G 置零、反向、交换消融不同，本文对条件遵循的证据主要来自 body/view/world 因果干预、去几何消融及交接后的实际成功率。它证明几何门控与物理碰撞有关，却没有测试策略是否理解或遵循可反向变化的运动条件。</li>
-<li>论文的组合泛化主要是未见前序技能、单物体到多物体和跨残留类别的就绪预测，不等同于物体×目标×场景的系统性交叉留出。其价值更偏向防止已有技能因前序残留而失效，而不是让策略获得训练中从未出现过的接触或放置技能。</li>
+<li>本文直接使用冻结的 \(\pi_{0.5}\) 作为执行策略，Skill Envelope、<code>Check</code>、<code>Free</code>、排序器和修复程序均位于策略外部；没有改变 \(\pi_{0.5}\) 的网络结构、动作生成方式、训练数据或损失。</li>
+<li>它利用了冻结策略轨迹具有重复性的特点：这种刚性会造成接缝碰撞，但也使成功轨迹的扫掠体积可以预先测量。论文因此更接近 \(\pi_{0.5}\) 的执行 harness，而不是新的 π 系列训练方法。</li>
+<li>提供的原文没有基于或对比 \(\pi_0\)、\(\pi_0\)-FAST，也没有报告 OpenPI 实现、检查点兼容性或跨 π 版本迁移结果；不能据此声称包络已在整个 π/OpenPI 生态中验证。</li>
+<li>对 π 系列研究的关键启发是：长程失败未必需要继续扩大模型或加入失败微调。若原子策略可靠而接缝失败具有稳定几何原因，先测量策略真实扫掠空间，可能比让 VLM 用语言猜测前置条件更有效。</li>
 </ul>
-<h3 class="sub">启发</h3>
+<h3 class="sub">对Austin研究的启发</h3>
 <ul>
-<li>在现有 A/F 或 G 管线旁增加“执行器包络”监控：分别为 π0/π0.5 的抓取、搬运、放置和开关部件技能，从成功 rollout 建立三维占用概率；执行前检查当前目标、障碍物及前一步移动物体是否侵入包络。</li>
-<li>将评测拆成三个可诊断层次：任务意图是否正确、A/F 或 G 是否被策略持续遵循、实际路径是否因场景残留不可执行。对同一个失败状态分别做 re-home、视觉擦除和物理移除，避免把几何碰撞误判成条件表示失效。</li>
-<li>针对“抓到了但没送到正确目标”，同时记录两类量：F/目标轨迹误差用于判断目标跟随，Skill Envelope 重叠用于判断路径阻挡。若目标轨迹正确但执行中碰撞，应优先调用恢复；若包络清空后仍送错目标，则问题更可能在意图表示、目标关联或策略条件遵循。</li>
-<li>在组合数据设计中加入同一初始场景、不同目标和不同技能顺序，并显式留出物体×目标×残留类别组合；比较 pair lookup、无几何条件、Skill Envelope、A/F，以及 A/F+Envelope，区分记忆熟悉关联、表达期望变化和保证物理可执行性三种作用。</li>
-<li>复用项目已有的置零/反向/交换测试，但把包络作为额外控制变量：先确保所有测试条件下路径均无阻挡，再判断 G/F 改变是否真正改变物体运动；反过来固定 G/F，只改变包络中的残留物，以测量恢复模块能否在不改变任务意图的情况下恢复成功。</li>
-<li>对自由物体放置采用 <code>Free</code> 式前瞻约束：临时移开的物体不仅要避开当前技能，还要避开后续抓取和放置技能的包络；恢复后重新检查目标是否被破坏，并将“清障后重做被撤销目标”纳入长链成功协议。</li>
+<li>在 OpenPI 执行器中为每个 skill checkpoint 建立版本化 envelope，并将机器人本体、夹爪、携带物体的轨迹统一记录到世界坐标；更换 checkpoint 后重新测量，先检验包络是否具有策略特异性。</li>
+<li>将引导场或条件遵循评测拆成“语义目标正确”和“几何启动集满足”两部分：在同一任务中系统改变抽屉开度、障碍位置及视野可见性，分别测量策略是否改道、碰撞或继续重复惯常轨迹。</li>
+<li>实现最小闭环接口 <code>check(skill, scene)</code>、<code>free(remaining_skills, scene)</code> 和 <code>verify(goals)</code>，要求每次代码修复后重新感知和复查，而不是默认修复动作成功。</li>
+<li>增加三类对照：无监控、语言/VLM 前置条件、策略实测几何包络；同时报告成功率、碰撞率、误报导致的额外动作、漏报率以及被修复破坏的历史目标数。</li>
+<li>优先复现“冻结 \(\pi_{0.5}\)+抽屉残留”的受控实验，再扩展到自由物体和多视角在线深度；若自由物体上的提升明显弱于抽屉，应考虑动态物体模型或学习式恢复，而不是直接泛化论文结论。</li>
 </ul>
 <h3 class="sub">一句话总结</h3>
-<ul>
-<li>香港科技大学（广州）与上海科技大学的作者以冻结 π0.5 成功轨迹构建三维 Skill Envelope，并用几何检查与代码恢复将两步任务成功率从 82.8% 提升至 92.3%、含抽屉的 3–4 步链从 29.7% 提升至 93.8%，但其贡献是保障既有技能的物理可执行性，而非学习新的 A/F 交互表示或接触技能。</li>
-</ul></div></details>
+<p>香港科技大学（广州）与上海科技大学作者提出以冻结 \(\pi_{0.5}\) 成功轨迹构建免失败数据的 3D Skill Envelope，使两步接缝成功率由 82.8% 升至 92.3%、含抽屉的 3–4 步链由 29.7% 升至 93.8%，但跨策略、OpenPI 与真机闭环仍待验证。</p></div></details>
 <section id="paper-qa" class="qa-section" data-arxiv="2611.32245" data-title="VLAs Execute, Code Recovers">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答</h2>
