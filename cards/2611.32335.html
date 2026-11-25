@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜GOLD-SLAM</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* AI Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.32335" rel="noopener noreferrer" target="_blank">arXiv 2611.32335</a></span><span class="badge">深读</span></div>
+<h1>深读｜GOLD-SLAM</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.32335" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>透视相机视场有限，在重复纹理、弱纹理或快速运动下容易缺少稳定的帧间对应；全景相机虽提供 \(360^\circ\times180^\circ\) 覆盖，却带来 ERP 非均匀采样、极区拉伸和更强的投影非线性。</li>
+<li>全景相机与 LiDAR 的视场不匹配会形成大面积深度盲区：这些区域既缺少用于位姿估计的几何约束，也难以可靠初始化高斯，限制全景 Gaussian SLAM 的定位和稠密重建。</li>
+<li>增量式 Gaussian SLAM 若仅依据低累积不透明度添加高斯，已有高斯的高不透明度可能遮挡新出现的近处表面；同时，深度冲突还会产生漂浮伪影。</li>
+<li>论文面向搭载 LiDAR、IMU 和双鱼眼全景相机的真机系统，并覆盖手持、地面机器人、背包及 UAV 数据；目标是在统一球面几何下兼顾准确定位、度量几何与全景逼真渲染，并验证资源受限平台上的在线运行可行性。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 2）</span>
+    <a href="/assets/figures/2611.32335.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.32335.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.32335.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.32335.png'">
+    <img src="/assets/figures/2611.32335.png" onerror="this.onerror=null;this.src='../assets/figures/2611.32335.png'" alt="GOLD-SLAM Figure 2 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（AI 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>多模态输入与统一球面几何</strong>：UAV同步采集LiDAR点云、IMU测量与全景图像；相机点 $\boldsymbol\mu^C$ 经ERP投影 $\pi(\boldsymbol\mu^C)=(u,v)^\mathsf T$ 转为球面像素，并以径向深度 $R$ 反投影为 $R\mathbf d(u,v)$。</li>
+<li><strong>前端位姿估计</strong>：沿用FAST-LIVO2误差状态滤波框架，以IMU传播状态，并融合LiDAR scan-to-map约束和全景视觉更新，输出位姿 $\mathbf T_W^I$；LiDAR盲区采用跨帧特征约束，LiDAR覆盖区由Patch Brightness Uncertainty（PBU）建模共享亮度变化。</li>
+<li><strong>球面高斯重建后端</strong>：Gaussian-LIC2被改造为ERP球面投影与渲染；利用实测LiDAR深度及预测全景深度初始化高斯 $\mathcal G=\{\boldsymbol\mu_g,\boldsymbol\Sigma_g,o_g,\mathbf f_g\}$，并通过光度损失与LiDAR深度损失联合优化。其图像协方差为 $\boldsymbol\Sigma_g^{\rm img}=\mathbf J_{\pi,g}\boldsymbol\Sigma_g^C\mathbf J_{\pi,g}^\mathsf T+\epsilon\mathbf I$。</li>
+<li><strong>DAEP地图维护</strong>：Depth-Aware Map Extension and Pruning依次执行深度感知插入、深度引导自适应更新及深度冲突剪枝，补充新观测表面、抑制错误高斯，最终输出一致的全景高斯地图。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 2 Caption）</summary><div class="arch-cap-text">Overview of GOLD-SLAM. The UAV platform collects LiDAR, IMU measurements and panoramic images. Inspired by FAST-LIVO2&#x27;s error-state filtering framework, the frontend integrates panoramic visual updates with IMU propagation and LiDAR scan-to-map constraints. Inter-frame constraints use features in the LiDAR blind zone, while Patch Brightness Uncertainty (PBU) models shared brightness variations in the LiDAR-supported zone. To support panoramic reconstruction, we adapt the Gaussian-LIC2 backend to spherical projection and rendering. Gaussians are initialized using measured LiDAR depth and predicted panoramic depth, and optimized with photometric and LiDAR depth losses. Depth-Aware Map Extension and Pruning (DAEP) combines depth-aware insertion, depth-guided adaptive updates, and depth-conflict pruning to improve the reconstruction of newly observed surfaces.</div></details>
+</div>
+<ul>
+<li><strong>整体流程：</strong> IMU 负责高频状态传播，LiDAR 提供 scan-to-map 几何约束，全景视觉补充 LiDAR 盲区及亮度变化下的约束；前端输出固定姿态，后端以 LiDAR 实测深度和全景预测深度初始化、优化并维护 3D Gaussian 地图。</li>
+<li><strong>统一球面表示：</strong> 跟踪与建图共用 ERP 球面投影、反投影及其 Jacobian；高斯协方差通过局部切平面近似投影到 ERP 图像，径向距离同时用于高斯排序、深度渲染和地图维护。</li>
+<li><strong>盲区视觉约束：</strong> 在 LiDAR 无覆盖区域提取角点，经金字塔光流和前后向一致性筛选后，利用历史视线三角化；系统在观测方向的切平面上构造 bearing residual，并根据视差、历史位姿不确定性和角度观测噪声加权。</li>
+<li><strong>受控信息融合与 PBU：</strong> 盲区视觉信息相对当前状态协方差受到上限约束，避免视觉更新过度主导滤波；LiDAR 覆盖区则用 Patch Brightness Uncertainty 将整块共享的增益和偏置变化纳入光度残差协方差，降低照明变化被误判为相机运动的风险。</li>
+<li><strong>混合深度初始化：</strong> 每个建图关键帧由 Depth Any Panoramas 预测径向深度，并以其和 LiDAR 有效重叠区域的中位深度比对齐尺度；有 LiDAR 时优先使用实测深度，盲区使用缩放后的预测深度，经深度连续性筛选后初始化高斯。</li>
+<li><strong>DAEP 地图维护：</strong> 除低不透明度区域外，当观测表面明显位于渲染表面之前时也插入高斯；对深度冲突高斯提高初始尺度、不透明度及优化更新权重，并依据 LiDAR 优先、预测深度容差更宽的深度一致性检查剪除前景漂浮物。后端保持前端位姿不变，以 RGB、SSIM 和有效 LiDAR 像素上的径向深度损失优化地图。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>在四个公开数据集的平均 ATE RMSE 上，GOLD-SLAM 分别取得：Hilti-Oxford <strong>0.059 m</strong>、M3DGR <strong>0.344 m</strong>、M2DGR <strong>0.360 m</strong>、Oxford Spires <strong>0.077 m</strong>；其中前两项为表中最佳，Oxford Spires 排名第二，M2DGR 与 FAST-LIVO2 持平。</li>
+<li>Hilti-Oxford 上，GOLD-SLAM 的平均 ATE 为 <strong>0.059 m</strong>，优于 FAST-LIVO2 的 <strong>0.064 m</strong>、Gaussian-LIC2 的 <strong>0.196 m</strong>，也显著低于仅全景视觉的 ODGS-SLAM <strong>9.165 m</strong> 和 PanoGS-SLAM <strong>9.167 m</strong>。</li>
+<li>M3DGR 上，GOLD-SLAM 为 <strong>0.344 m</strong>，与 FAST-LIVO2 的 <strong>0.346 m</strong> 接近，并优于 Gaussian-LIC2 的 <strong>0.379 m</strong>；ODGS-SLAM 和 PanoGS-SLAM 分别为 <strong>3.231 m</strong> 与 <strong>29.316 m</strong>。</li>
+<li>相对现有全景基线，论文汇总报告平均 PSNR 提高 <strong>5.56–9.10 dB</strong>、平均 Depth-L1 降低 <strong>71.9%–83.9%</strong>。所给正文截取未包含完整重建表，因此无法进一步核对每个数据集、每条序列及各基线对应的绝对 PSNR、Depth-L1 数值。</li>
+<li>Jetson Orin NX 16GB 上实现了在线运行，但以重建质量下降为代价；所给原文未披露该配置的具体 FPS、延迟、显存占用及质量降幅，不能据此量化其实时裕量。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>全景盲区深度依赖 DAP 单目预测，并仅通过 LiDAR 重叠区的中位比例对齐尺度；在玻璃、反射面、极暗区域或跨场景深度分布变化下，局部深度偏差仍可能错误初始化高斯。可按语义类别、局部置信度与 LiDAR 距离分层统计初始化误差。</li>
+<li>ERP 高斯投影采用局部切平面近似，极区强畸变和跨水平边界的 Gaussian footprint 仍存在近似误差。可加入球面原生 rasterizer，并单独报告纬度分桶后的渲染与深度误差。</li>
+<li>后端优化时固定前端姿态，地图光度与深度误差不能反向修正长期轨迹漂移；可对比固定姿态、局部滑窗联合优化和回环后全局地图校正三种协议的精度与计算成本。</li>
+<li>Jetson 实验只说明能够在线运行且质量下降，缺少 FPS、功耗、峰值显存和降质来源的完整数据；可进一步拆分图像分辨率、关键帧间隔、每轮优化视图数、SH 阶数及高斯数量对速度—质量曲线的影响。</li>
+<li>WHOLE 含 20 条室内外序列并覆盖弱几何、高动态、全向、低照度和简单场景，但所给截取未展示其完整定位、重建结果及分场景消融，也未提供跨城市或长期季节变化证据。后续应按五类场景分别报告失败率，并进行跨平台、跨园区泛化测试。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li><strong>数据集：</strong> Hilti-Oxford 2022、M3DGR、M2DGR、Oxford Spires，以及作者采集的 WHOLE，共五个数据集。</li>
+<li><strong>WHOLE：</strong> 20 条室内外序列，覆盖 Weak-geometry、High-dynamic、Omnidirectional、Low-light 和 Easy 场景，包括房间、长走廊、车库、玻璃立面和开放空间，以及白天、夜间、低照度和快速运动模糊。</li>
+<li><strong>采集平台：</strong> 定制 FanciSwarm Pro UAV；传感器为 MID360S LiDAR、其内置 IMU，以及 Insta360 X5 双鱼眼全景相机。部分公开数据来自地面机器人、手持或背包平台。</li>
+<li><strong>标定与参考：</strong> 双鱼眼内参及相机—IMU 空间、时间参数由 Kalibr 和 AprilGrid 标定；LiDAR—相机外参由 FAST-Calib2 标定；WHOLE 序列端点使用 AprilGrid 观测提供参考姿态。</li>
+<li><strong>公开序列：</strong> Hilti-Oxford 选用 Exp04、Exp14、Exp18、Exp21；M3DGR 选用 Varying-illu05、Corridor01/02、Grass01/02；M2DGR 选用 room_01、hall_02、door_02、gate_03；Oxford Spires 选用 Keble03、Observatory01、ChristChurch03、Blenheim01。</li>
+<li><strong>定位基线：</strong> FAST-LIO2、FAST-LIVO2、Ground-Fusion++；定位与重建基线为 Gaussian-LIC2、ODGS-SLAM、PanoGS-SLAM。</li>
+<li><strong>输入公平性：</strong> GOLD-SLAM 使用 \(360^\circ\) ERP、LiDAR 和 IMU；透视视觉基线使用水平视场 \(97^\circ\) 的图像。ODGS-SLAM 与 PanoGS-SLAM 使用 GOLD-SLAM 生成的融合深度 \(D_F\)。M3DGR 上 GOLD-SLAM 与 Gaussian-LIC2 仅使用 MID-360 作为 LiDAR 输入。</li>
+<li><strong>重建输入：</strong> 以 10 Hz 采样；ERP 分辨率为 \(1024\times512\)，透视图像为 \(512\times384\)。</li>
+<li><strong>关键帧与优化：</strong> GOLD-SLAM 每 5 帧选择一个建图关键帧，每轮最多优化 70 个视图；高斯颜色采用三阶球谐函数。</li>
+<li><strong>损失权重：</strong> \(\lambda_s=0.2\)，\(\lambda_d=0.015\)。</li>
+<li><strong>DAEP 参数：</strong> \(\tau_\alpha=0.99\)，\(\delta_0=0.25\,\mathrm{m}\)，\(\beta=0.1\)。</li>
+<li><strong>视觉融合参数：</strong> 盲区视觉信息上限参数 \(\gamma=0.28\)；PBU 使用 \(\sigma_\alpha=0.05\)、\(\sigma_b=2\)。原文截取未给出 \(\sigma_n\) 的具体值。</li>
+<li><strong>计算平台：</strong> Intel Core i7-14700KF、64 GB RAM、NVIDIA RTX 5090 D v2 24 GB；另在 Jetson Orin NX 16GB 上评估嵌入式配置。</li>
+<li><strong>指标：</strong> 定位采用 ATE RMSE 和平移端点漂移；摘要报告重建使用 PSNR 与 Depth-L1。所给截取未包含完整评测次数、全部消融协议及嵌入式速度参数。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的核心原因不是单纯把 3DGS 投影改为全景，而是把 <strong>球面跟踪、LiDAR 盲区约束、混合深度初始化和深度冲突地图维护</strong> 串成一套可在线运行的多传感器 SLAM。</li>
+<li>WHOLE 补充了 UAV 在弱几何、快速运动、低照度和全向观测下的数据，对研究空中机器人如何同时获得稳定位姿、度量几何和可渲染地图具有直接价值。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>相对 VLN 或 GoalNav，GOLD-SLAM 不直接学习语言条件策略或目标导航策略，也不报告 SR、SPL；它提供的是可供规划器使用的度量位姿、径向深度和全景 Gaussian 地图，因此不能用导航成功率与 VLN 方法直接横向比较。</li>
+<li>相对 FAST-LIO2、FAST-LIVO2 等传统里程计，其增量在于利用完整球面视觉，尤其把 LiDAR 盲区中的跨帧特征变成带协方差的方向约束，同时输出可渲染的稠密 Gaussian 地图；代价是引入深度预测和持续地图优化的算力开销。</li>
+<li>相对 ODGS-SLAM、PanoGS-SLAM 等全景 Gaussian SLAM，核心增量是 LiDAR/IMU 的度量约束、盲区视觉融合、PBU 和 DAEP。实验中纯全景基线在部分大尺度序列出现明显漂移，而 GOLD-SLAM 在 Hilti-Oxford 与 M3DGR 的平均 ATE 分别达到 <strong>0.059 m</strong> 和 <strong>0.344 m</strong>。</li>
+<li>相对 Gaussian-LIC2，GOLD-SLAM继承并改造其 LiDAR—惯性—视觉及 Gaussian 后端思路，但将透视相机扩展为统一球面模型，并使用全景预测深度覆盖 LiDAR 盲区。工程权衡是获得更广覆盖的同时，需要处理 ERP 极区畸变、水平周期边界和预测深度误差。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li><strong>空间几何表示：</strong> 可将球面 Gaussian 地图作为导航系统的中间层，同时导出占据、可通行性、径向深度不确定性和外观特征；不要直接让高层规划器依赖纯 RGB 渲染质量。</li>
+<li><strong>分层规划接口：</strong> 高层以全景地图选择局部目标和可观测方向，低层继续使用 LiDAR—IMU 状态估计与短时避障；把盲区视觉信息限制机制改造成规划器可读取的置信度，避免在视觉证据弱时产生过激控制。</li>
+<li><strong>地图更新监控：</strong> 可复用 DAEP 的“渲染深度—观测深度冲突”作为在线异常信号，分别触发近表面插入、漂浮高斯清理、局部重建或重新定位，而不是仅按低不透明度扩图。</li>
+<li><strong>跨场景泛化：</strong> 在训练或评测导航策略时，按 WHOLE 的弱几何、高动态、低照度类别构造分层测试，并记录定位退化、地图冲突率和最终 SR/SPL，验证感知地图误差是否真正传导为导航失败。</li>
+<li><strong>建议的最小实验：</strong> 固定同一规划与控制栈，分别接入 LiDAR 点云地图、透视 Gaussian 地图和 GOLD-SLAM 式球面 Gaussian 地图；同时报告 ATE、地图 Depth-L1、局部目标到达率、SR/SPL、GPU 延迟和峰值显存，以区分“地图更漂亮”和“导航更可靠”。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<ul>
+<li>湖南大学、清华大学、KIT、牛津大学等机构提出的 GOLD-SLAM 以统一球面几何融合 LiDAR、IMU 与全景视觉，并通过 PBU 和 DAEP 改善定位及重建，在公开数据集上最低平均 ATE 达 <strong>0.059 m</strong>，相对全景基线平均 PSNR 提高 <strong>5.56–9.10 dB</strong>、Depth-L1 降低 <strong>71.9%–83.9%</strong>。</li>
+</ul></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.32335" data-title="GOLD-SLAM">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答</h2>
+    <span class="qa-model-badge">AI</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.32335 · GOLD-SLAM</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">AI 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《GOLD-SLAM》</strong>（arXiv: 2611.32335）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置 AI 问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', 'AI', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = 'AI 正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用 AI 失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
