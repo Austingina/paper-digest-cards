@@ -527,7 +527,23 @@ details.fold .fold-body {
 <li>既有权重空间编辑工作已涉及行为克隆策略以及 π0.5 的执行速度、指令 grounding，但针对机器人基础模型中反复出现的物理执行故障，能否通过极少量参数编辑实现可靠修复，证据仍有限。</li>
 <li>本文在 RoboTwin 2.0 仿真环境中研究闭环 π0.5 策略：模型持续读取相机图像和机械臂状态、规划并执行动作；修复过程不新增示范、不进行监督微调、强化学习或梯度更新。</li>
 <li>作者目标是验证：当故障状态能从动作专家的内部激活中识别，且可由简单动作纠正时，是否能直接写入少量权重，提高未见场景成功率，同时尽量不影响原有行为。</li>
-</ul></section><section class="section" id="sec-method"><h2>方法</h2><ul>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Fig. 1）</span>
+    <a href="/assets/figures/2611.31715.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.31715.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.31715.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.31715.png'">
+    <img src="/assets/figures/2611.31715.png" onerror="this.onerror=null;this.src='../assets/figures/2611.31715.png'" alt="Sparks of Weight-Space Programming for Robot Foundation Models Fig. 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（AI 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>实验平台（A）</strong>：左侧展示 RoboTwin 双臂操作系统，由两台 UR5 机械臂及 WSG 夹爪构成；任务为 <code>place_mixed_objects_basket</code>，即双臂在桌面场景中抓取混合物体并放入篮筐。该面板描述的是任务载体与执行机构，而非神经网络的数据流。</li>
+<li><strong>任务输入与输出（A）</strong>：输入是包含待操作物体、目标篮筐及环境外观的仿真场景，机器人依据观测执行双臂抓取—搬运—放置动作；输出表现为物体被成功置入篮筐的任务状态。题注未给出观测张量、动作张量或策略符号，故不能据图指定其维度或公式。</li>
+<li><strong>场景变化（B）</strong>：右侧样例依次强调物体类别与组合、篮筐、纹理、光照及背景的变化，用于构造跨场景分布差异，检验模型在视觉外观和任务实例变化下的泛化能力。</li>
+<li><strong>图示边界</strong>：Fig. 1 是实验设置与数据多样性总览，并未展示 Stage I/II、权重空间编程模块、特征编码器或从输入到输出的模型结构；因此，无法仅依据该图可靠引入 $z_t$、$\pi$ 或具体权重变换公式。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Fig. 1 Caption）</summary><div class="arch-cap-text">Fig 1. (A) RoboTwin bimanual UR5 setup with WSG grippers for the place_mixed_objects_basket task. (B) Scenes vary in object, basket, texture, lighting, and background.</div></details>
+</div>
+<ul>
 <li>整体流程为：运行原始策略复现故障 → 根据仿真器精确状态诊断失败 → 记录 π0.5 动作专家的神经元活动 → 寻找能够标记卡住状态的激活模式 → 直接改写权重以注入纠正动作 → 在独立场景上验证、锁定并测试。</li>
 <li>编辑代理为具备工具访问能力的 Claude Opus 5.5，可启动和停止策略服务器、运行仿真、检查动作与逐步神经元激活、修改权重并测试结果。由于完整模型超出代理上下文，代理只检查 VLA 中有针对性的局部模块。</li>
 <li>每项修复复用动作专家最后一层中的两个近静默神经元，分别对应两条机械臂，并重写其连接，使其在与已诊断故障相关的状态下触发任务特定的纠正运动。</li>
