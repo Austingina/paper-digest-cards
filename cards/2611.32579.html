@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Follow-Bench 2.0</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* AI Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">导航</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.32579" rel="noopener noreferrer" target="_blank">arXiv 2611.32579</a></span><span class="badge">深读</span></div>
+<h1>深读｜Follow-Bench 2.0</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.32579" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>现有具身视觉跟踪（EVT）基准主要衡量目标是否持续可见，通常以较远距离的后方跟随为主，难以反映近距离队形、个人空间、拥挤交互和侧方跟随中的社会舒适性。</li>
+<li>人员跟踪与 ReID 数据集只离线评估感知，无法观察身份切换、遮挡或暂时丢失如何进一步导致错误运动、碰撞或跟随失败；相反，Follow-Bench 1.0 等规划基准使用二维仿真和真值人员状态，未覆盖感知—规划耦合误差。</li>
+<li>机器人跟随中的困难往往同时发生：门口排队会叠加遮挡与碰撞压力，街角会造成几何遮挡，干扰者会引发身份混淆，而侧方跟随所需的横向空间又容易被迎面行人占据。</li>
+<li>本文建立 Unreal Engine 中的三维闭环仿真基准：策略接收视觉、深度或 LiDAR 等观测并实际控制机器人；评测器可读取仿真真值计算指标，但真值不反馈给被测策略。</li>
+<li>作者目标是用统一协议联合评估身份保持、目标恢复、避障、社会空间和跟随队形，从而诊断模块化系统、端到端视觉策略与基础模型主动跟踪器在社会感知人员跟随中的真实短板。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.32579.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.32579.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.32579.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.32579.png'">
+    <img src="/assets/figures/2611.32579.png" onerror="this.onerror=null;this.src='../assets/figures/2611.32579.png'" alt="Follow-Bench 2.0 Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（AI 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>仿真环境输入（Photorealistic 3D Crowds）</strong>：图从逼真的三维人群场景出发，机器人接收时刻 $t$ 的视觉观测 $o_t$，其中同时包含目标行人、动态干扰者及环境几何信息；目标是由连续观测序列 $o_{1:t}$ 直接预测跟随动作。</li>
+<li><strong>跟随任务配置（Following Tasks）</strong>：基准并行设置后方跟随（Back-following）与侧方跟随（Side-following）。策略 $\pi$ 根据 $o_t$ 输出控制量 $a_t=\pi(o_{1:t})$，使机器人相对目标保持期望距离 $d^\ast$ 与方位角 $\theta^\ast$；侧方任务还要求维持稳定的横向社会位置。</li>
+<li><strong>诊断场景（Four Diagnostic Scenarios）</strong>：两类任务进一步置于图中四种诊断性人群场景中，系统性改变遮挡、邻近行人干扰与目标运动关系，以检验目标身份保持、拥挤环境避碰及长时序跟随能力，而非仅测试短程视觉追踪。</li>
+<li><strong>端到端评测输出（End-to-End Evaluation）</strong>：机器人控制产生轨迹 $\tau=\{(o_t,a_t)\}_{t=1}^{T}$，评测同时考察跟随成功、目标相对位姿误差 $\|p_t-p_t^\ast\|_2$、碰撞与社会距离约束，从而形成覆盖“感知—决策—控制”的社会感知跟随评价闭环。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Follow-Bench~2.0 evaluates socially-aware robot person following in photorealistic 3D crowds, with back- and side-following tasks across four diagnostic scenarios.</div></details>
+</div>
+<ul>
+<li>整体流程为：场景层定义可行走区域、NavMesh 流点、结构布局、NPC 行为和天气；Episode Manager 同步目标、非目标行人、机器人策略与评测模块；策略从传感器观测生成机器人动作，评测器记录任务、安全和社会性指标。</li>
+<li>每个 episode 首帧用目标人物边界框指定身份。该框既可初始化视觉基础模型跟踪器或模块化感知管线，也可转换为 VLA 策略使用的语言描述。</li>
+<li>基准设置 Open Plaza、Street Corner、Cluttered Park 和 Narrow Passage 四类诊断场景，分别突出短时行人遮挡、街角几何遮挡、外观相似干扰者与复杂障碍，以及排队、让行和门口瓶颈。</li>
+<li>非目标 NPC 由 NavMesh 与 Social Force Model 驱动，并可执行穿行、让行、瓶颈交互和 shadow-following 等行为；目标人物沿可复现的 NavMesh 路径运动，且不受 SFM 力作用。</li>
+<li>同时支持后方和侧方跟随。碰撞、长期丢失目标或 episode 结束时未能重新接近目标属于硬失败；短时丢失或暂时偏离队形可以恢复，目标可见性、相对距离与方位、个人空间侵入及运动平滑性则单独计量。</li>
+<li>基准没有为各方法统一重写内部算法，而是提供共同的闭环接口：模块化方法继续采用显式感知—BEV 状态—规划管线，TrackVLA 与 OA-VAT 保留端到端后方跟随接口；侧方跟随仅对具备相应接口的模块化方法评测。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>论文在统一闭环协议下复现并评估了 <strong>14 个代表性策略</strong>，覆盖模块化管线、VLA 策略和基础模型主动跟踪方法；但所提供正文截断于评测协议开头，没有给出完整方法清单、结果表或各指标数值。</li>
+<li>已披露的总体结论是：面向 RPF 设计的模块化管线在近距离、社会舒适跟随方面显著优于 TrackVLA 和 OA-VAT 等 EVT 风格端到端视觉基线。这说明“让目标保持在视野内”不能替代对合适跟随距离、方位和社会空间的显式处理。</li>
+<li>在狭窄通道及人际交互密集的场景中，即使模块化方法也出现严重性能下降，表明感知错误、遮挡、避碰和社会约束之间的闭环耦合仍未解决。</li>
+<li>侧方跟随比后方跟随更困难：迎面行人、横向净空不足和瓶颈会直接破坏并排行走队形；现有 TrackVLA 与 OA-VAT 只提供后方跟随接口，因此论文不能报告它们的侧方跟随结果。</li>
+<li>原文摘要与当前节选未披露可核对的 SR、SPL、目标恢复率、碰撞率、社会空间侵入率或运动平滑度数值，也未给出模块化方法相对端到端方法的绝对差值；因此不能据此补写量化排名或提升百分比。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li><strong>证据不足：</strong>当前提供的原文不含完整实验表、方差、重复次数及统计显著性，无法判断“显著优于”对应的绝对幅度，也无法核查 14 个策略在每种场景和难度上的完整排名。</li>
+<li><strong>设定外推风险：</strong>基准建立在 Unreal Engine 中；照片级渲染并不等于真实传感器噪声、真实行人意图或真实人机互动，正文节选也未报告 sim-to-real 或真机验证。</li>
+<li><strong>横向比较不完全对称：</strong>模块化策略被配置为 1.5 m 的社会跟随，并能接入多视角 RGB-D、LiDAR 和显式 BEV；TrackVLA、OA-VAT 只暴露后方跟随接口。结果更适合揭示接口和任务目标差异，而不能单独证明某一学习范式普遍优于另一范式。</li>
+<li><strong>可继续做的实验：</strong>在相同传感器预算下分别关闭侧视 RGB-D、LiDAR、ReID 和动态搜索恢复模块，报告身份切换、恢复率、碰撞率及社会空间侵入的变化，以拆分多传感器收益和规划收益。</li>
+<li><strong>可继续做的迁移：</strong>把四类场景中的遮挡、瓶颈和队形扰动参数化为训练课程，再用少量真实走廊、街角与排队数据校准人流模型；同时引入“后方—侧方”在线模式切换，检验分层规划器能否根据横向净空主动退回安全队形。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>仿真平台：Unreal Engine；论文明确表示贡献重点是 RPF 挑战驱动的基准设计，而非新的模拟器。</li>
+<li>场景：Open Plaza、Street Corner、Cluttered Park、Narrow Passage。</li>
+<li>难度：<code>easy</code>、<code>hard</code>、<code>boss</code>、<code>legend</code>；联合调节人群数量与密度、行走速度与生成间隔、社会交互模式及身份歧义，<code>legend</code> 难度引入与目标外观相似的行人。</li>
+<li>天气：<code>clear</code>、<code>cloudy</code>、<code>dusk</code>、<code>rain</code>、<code>fog</code>；高难度更偏向低可见度天气，但天气仍与难度预设分开采样和配置。</li>
+<li>机器人输入：支持 RGB、深度和 LiDAR；模块化后方跟随使用前向 RGB-D，侧方跟随融合前、左、右 RGB-D，并统一提升为 BEV 状态。</li>
+<li>机器人形态：平台支持四足、人形和轮式机器人；当前节选未说明主实验具体采用哪一种形态。</li>
+<li>目标初始化：episode 第一帧给出目标人物边界框。</li>
+<li>模块化感知：ByteTrack 与 Target-ReID；默认 ReID 骨干为 ResNet18，并为 <code>MPC w/ Traj.</code> 额外评测更重的 KPR 骨干。</li>
+<li>模块化规划器：MPC、<code>MPC w/ Traj.</code>、<code>MPC w/ DS.</code>，分别采用设计跟随点、预测轨迹和面向目标丢失的动态搜索场。</li>
+<li>端到端与基础模型基线：重新训练的 TrackVLA，语言骨干为 Qwen3-4B；以及 OA-VAT。</li>
+<li>跟随配置：模块化策略评测后方与侧方跟随，期望距离均为 <strong>1.5 m</strong>；TrackVLA 与 OA-VAT 仅支持后方跟随。</li>
+<li>成功协议：碰撞、长期目标丢失或结束时未回到目标附近判为失败；短时丢失和短时队形偏差允许恢复。</li>
+<li>评测信号：任务成功、目标可见与恢复、碰撞、社会空间侵入、跟随距离与方位、运动平滑性；评测使用的仿真真值不输入策略。</li>
+<li>交互工具：可人工控制目标测试定制行为，或遥操作机器人采集模仿学习示范；轨迹、跟踪行人和障碍物等调试可视化不参与策略输入或指标计算。</li>
+<li>当前节选未披露 episode 总数、每项重复次数、随机种子、控制频率、相机参数、机器人动力学限制及训练硬件。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的核心原因不是提出了新的导航网络，而是把目标身份、遮挡恢复、局部避障、社会空间和跟随队形放入同一个三维闭环协议，能够暴露单纯 SR 或“目标仍可见”指标掩盖的失败。</li>
+<li>对导航研究尤其有价值的是四类诊断场景：它们将几何遮挡、人群交互和身份歧义组合起来，可用于判断失败究竟来自视觉跟踪、空间表示、局部规划还是控制接口。</li>
+</ul>
+<h3 class="sub">与现有VLN/SLAM对比</h3>
+<ul>
+<li>与 VLN 相比，Follow-Bench 2.0 不是根据语言寻找静态目标位置，而是持续跟随一个会移动、会被遮挡且可能与干扰者外观相似的指定人物；目标状态和可通行空间都随人群变化。</li>
+<li>与 ObjectNav/GoalNav 相比，其终点不是一次性到达的固定目标，而是随时间变化的目标相对位姿。仅到达目标附近仍不够，还需要保持后方或侧方队形、避免侵入个人空间并在暂时丢失后恢复。</li>
+<li>与经典 SLAM 导航相比，静态几何地图只能解决部分避障问题；系统还必须表示目标身份、动态行人轨迹、遮挡关系和社会区域。本文模块化基线采用 RGB-D、LiDAR 提升的 BEV 状态，体现了显式空间表示在近距离社会跟随中的工程优势。</li>
+<li>工程权衡也较明确：模块化管线便于加入 1.5 m 跟随约束、预测轨迹和动态搜索恢复，但依赖多传感器、ReID 与手工规划接口；端到端方法接口更紧凑，却仍偏向远距离可见性目标，且 TrackVLA、OA-VAT 未自然支持侧方跟随。</li>
+<li>该工作是评测平台而非 SLAM 算法，没有提出新的定位、建图或回环检测方法，也未在当前节选中报告地图误差、轨迹误差或 SPL；其增量主要是动态社会环境下的闭环任务定义和诊断指标。</li>
+</ul>
+<h3 class="sub">对Austin启发</h3>
+<ul>
+<li><strong>空间几何表示：</strong>在 BEV 中同时维护静态占据、目标轨迹分布、其他行人的短时预测轨迹、可见性/遮挡扇区和个人空间代价层；评测时分别关闭这些层，定位身份恢复与社会避障各自的贡献。</li>
+<li><strong>分层规划接口：</strong>把高层输出设计为“目标身份置信度＋期望相对队形＋恢复模式”，低层负责局部避碰与轨迹跟踪；当侧方净空不足或身份置信度下降时，显式切换到后方跟随、减速观察或搜索，而不是让单一控制策略隐式处理全部模式。</li>
+<li><strong>跨场景泛化：</strong>训练时不要只随机纹理和天气，还应系统扫过人群密度、交叉流、瓶颈、外观相似干扰者与遮挡持续时间；测试时按四类失效因素留一类外推，检验策略学到的是社会跟随机制还是场景记忆。</li>
+<li><strong>监控与数据设计：</strong>采集示范时同步记录身份切换、目标不可见区间、队形误差、最小人际距离及恢复动作，把“成功但长时间侵入个人空间”和“短暂丢失后成功恢复”从普通成功 episode 中拆开。</li>
+<li><strong>真机落地：</strong>优先复现走廊门口、街角会车和排队三个低成本场景，并在相同视场和传感器预算下对比前视、三视角和 LiDAR 配置，从而量化仿真中多视角 BEV 优势能否迁移到真实机器人。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>Follow-Bench 2.0 由南方科技大学、腾讯 Robotics X 与福田实验室推出，以 Unreal Engine 中四类三维场景和统一闭环协议评测 14 个模块化、VLA 及基础模型策略，发现模块化方法在近距离社会跟随上优于 TrackVLA、OA-VAT，但当前原文节选未披露可核对的 SR、SPL 或误差数值。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.32579" data-title="Follow-Bench 2.0">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答</h2>
+    <span class="qa-model-badge">AI</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.32579 · Follow-Bench 2.0</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">AI 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Follow-Bench 2.0》</strong>（arXiv: 2611.32579）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置 AI 问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', 'AI', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = 'AI 正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用 AI 失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
