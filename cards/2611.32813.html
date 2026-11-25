@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>深读｜Atomic Policy</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --ink: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e6e6;
+  --line-soft: #f0f0f0;
+  --chip: #f3f4f6;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --card-pad: 1.1rem;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: #f5f5f4;
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+.wrap {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1rem 0.75rem 2.5rem;
+}
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0,0,0,.04);
+}
+.header {
+  padding: 1.25rem var(--card-pad) 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  align-items: center;
+  margin-bottom: 0.65rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--chip);
+  color: #374151;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.badge.topic { background: #eff6ff; color: #1d4ed8; }
+.badge.arxiv a { color: inherit; text-decoration: none; }
+.badge.arxiv a:hover { text-decoration: underline; }
+h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.links {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.65rem;
+  align-items: center;
+}
+.qa-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-jump:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  text-decoration: none;
+}
+.links .ext-link {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.links .ext-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.section {
+  padding: 1rem var(--card-pad) 1.05rem;
+  border-bottom: 1px solid var(--line);
+}
+.section:last-child { border-bottom: none; }
+.section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.section h3.sub {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 650;
+  color: #111;
+}
+.section ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.section li { margin: 0.28rem 0; }
+.section p { margin: 0.35rem 0; }
+.section code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  background: var(--line-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+.section a { color: var(--accent); }
+details.fold {
+  border-bottom: 1px solid var(--line);
+  background: #fafafa;
+}
+details.fold:last-child { border-bottom: none; }
+details.fold > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.95rem var(--card-pad);
+  font-size: 1.02rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  user-select: none;
+}
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after {
+  content: "展开";
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.12rem 0.55rem;
+  background: #fff;
+}
+details.fold[open] > summary::after { content: "收起"; }
+details.fold .fold-body {
+  padding: 0 var(--card-pad) 1.05rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+/* Paper Architecture Figure & Walkthrough Box */
+.arch-figure-box {
+  margin: 0.75rem 0 1.05rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+.arch-figure-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 0.65rem;
+}
+.arch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.arch-zoom-link {
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.arch-zoom-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.arch-img-wrap {
+  display: block;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+.arch-img-wrap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 4px;
+}
+.arch-walkthrough {
+  margin-top: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border-left: 3px solid #2563eb;
+}
+.arch-walk-head {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 0.4rem;
+}
+.arch-walk-body ul {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+.arch-walk-body li {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-walk-body p {
+  margin: 0.32rem 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.arch-cap-fold {
+  margin-top: 0.55rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.arch-cap-fold > summary {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 600;
+  color: #64748b;
+}
+.arch-cap-text {
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.65rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #475569;
+}
+
+/* AI Paper Q&A Section */
+.qa-section {
+  padding: 1.15rem var(--card-pad) 1.25rem;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+.qa-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.qa-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 720;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.qa-model-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.qa-paper-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 0.7rem;
+  max-width: 100%;
+  word-break: break-word;
+}
+.qa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+.qa-chip {
+  appearance: none;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.qa-chip:hover {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+.qa-messages {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.75rem;
+  max-height: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.7rem;
+}
+.qa-msg {
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+.qa-msg.assistant {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+  align-self: flex-start;
+  width: 100%;
+}
+.qa-msg.user {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  align-self: flex-end;
+  max-width: 90%;
+}
+.qa-msg .qa-role {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+.qa-msg p { margin: 0.35rem 0; }
+.qa-msg p:first-child { margin-top: 0; }
+.qa-msg p:last-child { margin-bottom: 0; }
+.qa-msg ul, .qa-msg ol { margin: 0.35rem 0; padding-left: 1.2rem; }
+.qa-msg li { margin: 0.2rem 0; }
+.qa-msg h3, .qa-msg h4 { margin: 0.55rem 0 0.25rem; font-size: 0.95rem; }
+.qa-msg code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.qa-msg pre {
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 12.5px;
+  margin: 0.45rem 0;
+}
+.qa-msg pre code { background: none; color: inherit; padding: 0; }
+.qa-msg table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.qa-msg th, .qa-msg td {
+  border: 1px solid #cbd5e1;
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+}
+.qa-msg th { background: #f1f5f9; font-weight: 600; }
+.qa-think-box {
+  margin-bottom: 0.45rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 0.3rem 0.55rem;
+  font-size: 12.5px;
+  color: #64748b;
+}
+.qa-think-box summary {
+  cursor: pointer;
+  font-weight: 600;
+  user-select: none;
+}
+.qa-think-content {
+  margin-top: 0.35rem;
+  white-space: pre-wrap;
+}
+.qa-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.qa-textarea {
+  width: 100%;
+  min-height: 3.4rem;
+  max-height: 9rem;
+  resize: vertical;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  background: #fff;
+}
+.qa-textarea:focus {
+  outline: 2px solid #bfdbfe;
+  border-color: #2563eb;
+}
+.qa-Controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.qa-opts {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.qa-opts label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  user-select: none;
+}
+.qa-send-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 0.42rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.qa-send-btn:hover { background: #1d4ed8; }
+.qa-send-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+.footer-note {
+  margin-top: 0.85rem;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+@media (min-width: 640px) {
+  body { font-size: 15.5px; }
+  h1 { font-size: 1.35rem; }
+  .wrap { padding-top: 1.5rem; }
+}
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+</head>
+<body>
+<div class="wrap">
+<article class="card">
+<header class="header">
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.32813" rel="noopener noreferrer" target="_blank">arXiv 2611.32813</a></span><span class="badge">深读</span></div>
+<h1>深读｜Atomic Policy</h1>
+<div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.32813" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
+</header>
+<section class="section"><h2>问题</h2><ul>
+<li>长程操作不仅要识别“操作哪个物体”，还要处理动作依赖、隐含中间步骤和执行后不断变化的场景；仅靠完整任务指令驱动端到端策略，策略还需自行推断当前子任务、空间目标与切换时机。</li>
+<li>现有解析式原语难以覆盖复杂抓取、受约束放置和关节物体交互；学习策略虽有细粒度控制能力，但在重定向到新目标、按新顺序复用技能以及前序动作失败后恢复时仍不可靠。</li>
+<li>论文同时覆盖仿真和真机，采用闭环执行：局部策略反复读取最新观测，阶段检查器决定继续、推进或重规划。策略既包括分别训练的专用技能，也包括经任务微调的通用动作模型；并非统一冻结所有策略权重。</li>
+<li>作者目标是把任务级推理与学习到的局部控制解耦，通过可复用的“原子技能—目标—完成条件”接口，提高复杂长程任务中的任务遵循、技能组合和失败恢复能力。</li>
+</ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
+  <div class="arch-figure-bar">
+    <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
+    <a href="/assets/figures/2611.32813.png" target="_blank" rel="noopener" class="arch-zoom-link" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.32813.png'">🔍 点击放大查看高清原图 ↗</a>
+  </div>
+  <a href="/assets/figures/2611.32813.png" target="_blank" rel="noopener" class="arch-img-wrap" onclick="if(location.pathname.indexOf('/paper-digest-cards/')===0)this.href='../assets/figures/2611.32813.png'">
+    <img src="/assets/figures/2611.32813.png" onerror="this.onerror=null;this.src='../assets/figures/2611.32813.png'" alt="Atomic Policy Figure 1 模型结构图" loading="lazy">
+  </a>
+  <div class="arch-walkthrough"><div class="arch-walk-head">🧭 模型结构图逐模块详解（AI 精读）</div><div class="arch-walk-body"><ul>
+<li><strong>任务输入与符号规划（Planner）</strong>：机器人接收语言指令 $\ell$ 与观测 $o_t=(I_t^1,\ldots,I_t^M,q_t)$。VLM 根据 PDDL 域 $\mathcal D$、主视角图像 $I_t^1$ 估计场景状态与目标谓词：$(\hat{x}_t,G)=\operatorname{VLM}(\mathcal D,\ell,I_t^1)$；符号求解器生成阶段计划 $\mathcal P_t=\operatorname{Solve}(\mathcal D,\hat{x}_t,G)$，其中 $P_k=(s_k,g_k)$ 指定原子技能及其目标。</li>
+<li><strong>目标落点（Grounder / MolmoPoint）</strong>：进入当前阶段（图示为 “pick blue cube”）后，MolmoPoint 将阶段目标 $g_k$ 与图像对齐，输出目标物体上的二维像素点 $p_k$，作为低层策略的显式空间引导；无独立目标的技能可令 $g_k=\varnothing$。</li>
+<li><strong>原子技能执行（Skill Policy）</strong>：被选技能以多相机图像、机器人本体状态 $q_t$ 和点提示 $p_k$ 为条件，经 diffusion U-Net 生成动作块 $A_t$；该动作块跨若干控制步执行，使阶段级技能可由专用策略或共享条件策略实现。</li>
+<li><strong>视觉检查与闭环转移（VLM Checker）</strong>：VLM 按阶段专属 checklist 核验执行结果：$\texttt{done}$ 沿蓝色箭头推进至下一阶段，$\texttt{not\_done}$ 保持当前技能并继续采样 $A_t$，$\texttt{replan}$ 沿红色箭头返回 Planner，依据新观测重估 $\hat{x}_t$ 并生成新计划。</li>
+</ul></div></div>
+  <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">Atomic Policy architecture, shown with point-steered skills for Tabletop Manipulation. The planner combines VLM state and goal estimation with PDDL planning. For the active pick blue cube phase, the grounder (MolmoPoint) supplies a 2D image point $p_k$. The selected skill generates an action chunk $A_t$ using a diffusion U-Net conditioned on images, proprioception $q_t$, and $p_k$. The VLM checker evaluates the outcome against a phase-specific checklist: \texttt{done} advances the plan, \texttt{not\_done} continues the phase, and \texttt{replan} requests a new plan. Blue arrows indicate execution and phase transitions; the red arrow indicates replanning.</div></details>
+</div>
+<ul>
+<li>整体流程为：语言指令与当前图像输入 VLM，VLM估计当前符号状态和目标谓词；PDDL 求解器依据技能的前置条件与效果生成阶段序列；策略执行当前阶段；独立 VLM 检查执行结果并控制阶段切换或重新规划。</li>
+<li>每个阶段表示为 \(P_k=(s_k,g_k)\)：\(s_k\) 是原子技能，\(g_k\) 是物体、部件或放置区域等目标；打开或关闭已经抓住的抽屉时，目标可为空。每个技能还绑定阶段级完成条件，而不是仅依赖固定执行时长。</li>
+<li>系统支持三种引导接口：短语言阶段指令、归一化二维图像点，或二者结合。点引导时，MolmoPoint-8B 根据目标描述在主相机图像中返回二维点；技能决定“做什么”，点决定“对哪里做”，策略自行生成接近、接触和操作动作。</li>
+<li>对依赖目标的阶段，目标点可随执行刷新，使策略能够跟随目标在图像中的位置变化；无独立目标的阶段则省略点输入。语言模式使用阶段模板，把完整任务拆成诸如“抓起蓝色方块”之类的即时指令。</li>
+<li>检查器周期性输出 <code>not_done</code>、<code>done</code> 或 <code>replan</code>：分别对应继续当前阶段、进入下一阶段，以及从最新场景重新估计符号状态并求解新计划；阶段超时同样会触发重规划，因此已经完成的步骤可以被跳过。</li>
+<li>方法没有修改 PDDL 求解器、MolmoPoint 或检查器来学习机器人示教；这些模块作为外围 agentic harness 调度策略。低层执行器则可替换为专用 diffusion policy、共享语言策略或 \(\pi_{0.5}\)；\(\pi_{0.5}\) 的原生接口不支持点条件，因此该实例只使用阶段语言和检查器控制的切换。</li>
+</ul></section><section class="section"><h2>实验与结果</h2><ul>
+<li>在 Push 5 Blocks 中，使用 CLIP 视觉编码器的 Atomic Policy diffusion policy 达到 \(78.7\%\pm11.4\%\) 成功率和 \(97.9\%\pm0.8\%\) 得分；该任务最好的端到端对照成功率为 \(\pi_{0.5}\) LoRA 的 \(8.0\%\pm7.5\%\)，而全量微调 \(\pi_{0.5}\) 为 \(1.0\%\pm3.0\%\)。</li>
+<li>在 Tabletop Manipulation 中，Atomic Policy 的 DINOv3 与 CLIP 版本均达到 \(64.0\%\) 平均成功率，分别为 \(64.0\%\pm15.0\%\) 和 \(64.0\%\pm9.2\%\)；端到端全量微调 \(\pi_{0.5}\) 为 \(40.0\%\pm14.1\%\)，语言条件 VLA U-Net 两个版本仅为 \(8.3\%\pm9.0\%\) 和 \(5.0\%\pm5.0\%\)。</li>
+<li>使用同一个全量微调 \(\pi_{0.5}\) 骨干时，加入阶段提示和检查闭环后，Push 5 Blocks 成功率从 \(1.0\%\pm3.0\%\) 提升到 \(26.0\%\pm13.6\%\)；但 Tabletop 上反而从 \(40.0\%\pm14.1\%\) 降至 \(16.3\%\pm14.1\%\)。这说明 agentic 分阶段并非对所有执行器自动有效，作者认为缺少显式点引导可能使 \(\pi_{0.5}\) 难以稳定遵循相互依赖的阶段提示。</li>
+<li>在 MolmoSpaces PnP Next-To 中，MolmoBot 微调加 Atomic Policy 达到 \(48.5\%\) 成功率；同一表中的 MolmoBot 微调、微调加固定点分别为 \(43.5\%\) 和 \(27.5\%\)，零样本 MolmoBot 为 \(37.0\%\)。结果表明“加入点”本身不够，按阶段给点并结合规划、检查闭环才取得最高结果。</li>
+<li>论文展示了检查器在方块跌落或任务状态不确定时触发重规划的案例，也声称在真机长程任务中验证任务遵循与恢复；但所提供原文截断于 MolmoSpaces 结果段，未包含真机任务的成功率、评测次数、完整消融和失败类型统计，不能据此补写数字。</li>
+</ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
+<li>方法依赖 VLM 对符号状态、目标和阶段完成情况的判断，也依赖手工定义的任务族 PDDL domain、技能前置条件、效果与检查清单；规划正确性因此受感知误判和符号模型遗漏共同限制。</li>
+<li>二维点只指定图像中的空间目标，不显式表达期望物体运动方向、接触方式、姿态或约束；遇到同一点对应多种交互、遮挡、深度歧义或精确放置关系时，控制意图仍需由技能先验推断。</li>
+<li>\(\pi_{0.5}\) 实验呈现明显任务依赖：原子化提示在二维推动上有效，在抽屉长程操作上却降低成功率。现有证据不足以说明 OpenPI 系列执行器能够稳定服从阶段条件，也未验证 \(\pi_0\)、带原生点条件的 \(\pi_{0.5}\) 或更强空间接口。</li>
+<li>可以增加针对条件遵循的干预评测：保持场景和技能不变，分别将目标点置零、移到干扰物、交换两个目标或反向指定目标，并测量动作轨迹、最终物体和检查器判断是否随条件一致改变，而不只统计整任务成功率。</li>
+<li>可以构造“物体×目标×场景×技能序列”的交叉覆盖与留出组合，并分别报告抓取、搬运、放置、阶段切换和失败恢复成功率；这能区分真正的组合泛化、熟悉物体—目标关联复现，以及由 PDDL 重新排序带来的收益。</li>
+</ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
+<li>仿真套件包括：二维物理环境 Push 5 Blocks、MuJoCo 中的 Franka Panda 抽屉操作，以及 MolmoSpaces 中的 Franka PnP Next-To；论文还包含真机任务，但所给节选未披露真机型号、传感器配置和评测规模。</li>
+<li>Push 5 Blocks 要求圆形推动器依次把五个不同颜色和形状的方块推到指令指定的目标圆；Tabletop Manipulation 要求打开抽屉、从五个随机摆放的彩色方块中选择指定方块放入抽屉，再关闭抽屉。</li>
+<li>前两个仿真套件默认使用 <code>gemini-2.5-flash</code> 进行规划与检查，点定位器为 MolmoPoint-8B；MolmoSpaces 实验的规划器和检查器使用原文标注的 <code>gemini-3.8-flash</code>。</li>
+<li>专用技能采用 diffusion policy：动作 U-Net 接收图像、本体状态及可选二维点；视觉编码器比较了从头训练的 ResNet，以及全量微调的 DINOv3 和 CLIP。</li>
+<li>端到端对照包括使用字节级文本编码器或冻结 CLIP 文本编码器的 VLA U-Net，以及通过 LoRA 或全量参数微调的 \(\pi_{0.5}\)；<code>\(\pi_{0.5}\) + atomic</code> 使用全量微调检查点、阶段语言提示和检查器控制的切换，不输入二维点。</li>
+<li>Push 5 Blocks 与 Tabletop 结果为最多 10 次 evaluation 的均值与标准差，每次使用 10 个固定留出 episode；原文未说明为何部分配置少于 10 次 evaluation。</li>
+<li>MolmoSpaces PnP Next-To 要求把指定物体放到指定容器或目标物体旁边，成功阈值为距离目标 \(5\) cm 以内，每个 episode 最长 40 秒。</li>
+<li>MolmoSpaces 微调结果取截至 16k 训练步的最后 10 个检查点评测，每个检查点 20 次 rollout，共 200 次；零样本模型各评测 200 次。微调方法共享 20 个固定 benchmark episode 与随机种子。</li>
+<li>MolmoBot 使用带阶段标签的 MolmoBot-Data 微调，并在 MolmoSpaces-Bench 上评测；普通 <code>FT + Point</code> 在首帧固定拾取物和目标物的两个点，Atomic Policy 版本使用阶段提示、逐阶段目标点以及 VLM 规划—检查闭环。</li>
+<li>规划器、MolmoPoint 地面化模块和检查器不使用任务专属机器人示教训练；低层策略本身则使用分阶段示教或任务数据训练、微调。</li>
+</ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
+<li>推荐这篇的主要原因不是它提出了新的低层控制网络，而是它把“技能选择、空间目标、完成证据”定义成统一阶段接口，并在同一闭环中比较专用策略与 \(\pi_{0.5}\) 等通用执行器。</li>
+<li>论文还给出了一个重要的负结果：同样的原子化 harness 对 Push 5 Blocks 有帮助，却会降低 \(\pi_{0.5}\) 在 Tabletop 上的成功率，说明模块化分解与语言提示并不等价于执行器真正遵循条件。</li>
+</ul>
+<h3 class="sub">与本项目关系</h3>
+<ul>
+<li>“技能＋二维目标点”与 Austin 的 A/F 接口中的 A 较接近：语言和 VLM 选择交互对象或区域，MolmoPoint 从视觉中得到归一化二维位置，低层策略负责具体接近与接触；但 Atomic Policy 没有显式表示期望的物体变化 F、运动方向或引导场，因此更像“目标定位＋技能编排”，不能直接解决“抓到了却未送到正确目标”的运动意图表达问题。</li>
+<li>目标点刷新、阶段完成检查和 <code>done/not_done/replan</code> 为目标持续跟随及失败恢复提供了闭环机制，但论文报告的是任务结果与检查器驱动的恢复，不是对条件服从性的因果检验；所给原文没有 G/A-F 项目所强调的置零、反向、交换条件消融。</li>
+<li>\(\pi_{0.5}\) 可以作为 Austin 当前 OpenPI 执行器实验的直接参照：结果显示阶段语言能否重定向策略高度依赖任务，而该模型又没有原生点接口。论文也没有证明在物体×目标留出组合上获得泛化，其“组合”主要是 PDDL 对已有技能的序列组合，不等同于学习出可重组的交互表示。</li>
+</ul>
+<h3 class="sub">启发</h3>
+<ul>
+<li>在 OpenPI 执行器上复刻三组接口：完整任务语言、阶段语言、阶段语言＋A/F；使用相同初始场景和低层检查点，分别统计抓取、目标跟随、放置、阶段切换及最终任务成功率，检验几何条件是否补足纯语言阶段提示的缺陷。</li>
+<li>将 Atomic Policy 的检查器拆成可审计的阶段清单，例如“目标物已抓起”“目标物正朝指定目标移动”“已进入目标区域且释放”“释放后未滚出区域”，并记录每种 <code>not_done</code> 与 <code>replan</code> 的触发原因，避免最终成功率掩盖抓取成功但放置错误。</li>
+<li>对 A/F 或 G 做置零、反向、交换目标和干扰点四类干预，同时保留相同技能 ID 与语言；若动作和物体轨迹没有按 F 改变，就应判定执行器把条件当作弱提示或任务 ID，而非真正持续遵循。</li>
+<li>数据划分应显式交叉覆盖物体、目标、方向、场景和技能序列，并留出未见“物体×目标”及未见阶段顺序；同时设置“同一初始场景、不同目标”的成对测试，排除策略依赖熟悉关联。</li>
+<li>可把 <code>replan</code> 接口接到 Austin 的视觉 G 预测模块：重规划时重新选择对象和目标，并重新估计 A/F，而不是只重发原语言；比较固定条件、每阶段刷新和连续刷新三种模式，检查恢复收益来自目标更新还是仅来自额外执行次数。</li>
+</ul>
+<h3 class="sub">一句话总结</h3>
+<p>Atomic Policy 由普渡大学团队用 VLM、PDDL、二维目标点和阶段检查器组合原子技能，在 Push 5 Blocks 上达到 \(78.7\%\) 成功率、在 Tabletop 上达到 \(64.0\%\)、在 MolmoSpaces PnP Next-To 上达到 \(48.5\%\)，但 \(\pi_{0.5}\) 的混合结果也表明阶段化编排尚不能替代对几何条件真实遵循的验证。</p></div></details>
+<section id="paper-qa" class="qa-section" data-arxiv="2611.32813" data-title="Atomic Policy">
+  <div class="qa-head">
+    <h2 class="qa-title">🤖 AI 论文问答</h2>
+    <span class="qa-model-badge">AI</span>
+  </div>
+  <div class="qa-paper-pill">📌 默认选中本篇：2611.32813 · Atomic Policy</div>
+  <div class="qa-chips">
+    <button type="button" class="qa-chip" data-q="这篇论文的核心创新和解决的痛点是什么？">这篇论文的核心创新和解决的痛点是什么？</button>
+    <button type="button" class="qa-chip" data-q="请详细讲讲它的方法模块和公式原理">请详细讲讲它的方法模块和公式原理</button>
+    <button type="button" class="qa-chip" data-q="实验是怎么设计的，关键结果提升了多少？">实验是怎么设计的，关键结果提升了多少？</button>
+    <button type="button" class="qa-chip" data-q="跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？">跟 π0 / π0.5 等主流 VLA 相比有什么异同或启发？</button>
+  </div>
+  <div class="qa-messages" id="qa-messages">
+    <div class="qa-msg assistant">
+      <div class="qa-role">AI 论文助读</div>
+      <div class="qa-body">已默认选中本篇论文<strong>《Atomic Policy》</strong>（arXiv: 2611.32813）并加载全文深读上下文。可点击上方快捷问题或直接输入提问，我将基于本篇论文为你解答。</div>
+    </div>
+  </div>
+  <div class="qa-input-row">
+    <textarea id="qa-input" class="qa-textarea" rows="2" placeholder="围绕本篇论文提问（Enter 发送，Shift+Enter 换行）…"></textarea>
+    <div class="qa-Controls">
+      <div class="qa-opts">
+        <label><input type="checkbox" id="qa-think"> 深度思考</label>
+        <span id="qa-status">基于本篇深读与原文回答</span>
+      </div>
+      <button type="button" id="qa-send" class="qa-send-btn">提问</button>
+    </div>
+  </div>
+</section>
+</article>
+<footer class="foot"><p class="footer-note">论文深读卡片 · 主栏始终展开 · 实验设置 / AI导读可折叠 · 内置 AI 问答</p></footer>
+</div>
+<script>
+(function(){
+  const sec = document.getElementById('paper-qa');
+  if (!sec) return;
+  const arxivId = sec.getAttribute('data-arxiv') || '';
+  const paperTitle = sec.getAttribute('data-title') || document.title || '';
+  const msgBox = document.getElementById('qa-messages');
+  const inputEl = document.getElementById('qa-input');
+  const sendBtn = document.getElementById('qa-send');
+  const thinkChk = document.getElementById('qa-think');
+  const statusEl = document.getElementById('qa-status');
+
+  const API_URL = (location.hostname === '177.2.190.33' || location.hostname === '100.101.204.97')
+    ? '/api/paper-qa'
+    : 'http://177.2.190.33/api/paper-qa';
+
+  const KATEX_OPTS = {
+    delimiters: [
+      {left: '$$', right: '$$', display: true},
+      {left: '$', right: '$', display: false},
+      {left: '\\(', right: '\\)', display: false},
+      {left: '\\[', right: '\\]', display: true}
+    ],
+    throwOnError: false
+  };
+
+  function getCardContext() {
+    const clone = document.querySelector('.card') ? document.querySelector('.card').cloneNode(true) : document.body.cloneNode(true);
+    const qa = clone.querySelector('#paper-qa');
+    if (qa) qa.remove();
+    clone.querySelectorAll('script, style').forEach(el => el.remove());
+    return (clone.innerText || clone.textContent || '').trim().slice(0, 16000);
+  }
+
+  function escHtml(s) {
+    return String(s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMdWithMath(raw) {
+    if (!raw) return '';
+    const mathList = [];
+    const stash = (m) => {
+      const idx = mathList.length;
+      mathList.push(escHtml(m));
+      return '@@MATH_' + idx + '@@';
+    };
+    let s = String(raw)
+      .replace(/\$\$[\s\S]+?\$\$/g, stash)
+      .replace(/\\\[[\s\S]+?\\\]/g, stash)
+      .replace(/\$[^$\n]+?\$/g, stash)
+      .replace(/\\\([\s\S]+?\\\)/g, stash);
+
+    const codeList = [];
+    s = s.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+      const idx = codeList.length;
+      codeList.push('<pre><code>' + escHtml(code.replace(/\n$/, '')) + '</code></pre>');
+      return '@@CODE_' + idx + '@@';
+    });
+
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+    const lines = s.split('\n');
+    const out = [];
+    let inUl = false;
+    let inTable = false;
+
+    const closeLists = () => {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (inTable) { out.push('</tbody></table>'); inTable = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const ln = lines[i];
+      const trim = ln.trim();
+      if (!trim) {
+        closeLists();
+        continue;
+      }
+      if (/^@@CODE_\d+@@$/.test(trim)) {
+        closeLists();
+        out.push(trim);
+        continue;
+      }
+      if (trim.startsWith('|') && trim.endsWith('|') && trim.split('|').length > 3) {
+        if (inUl) { out.push('</ul>'); inUl = false; }
+        const cells = trim.slice(1, -1).split('|').map(c => c.trim());
+        if (cells.every(c => /^[:\-]+$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          out.push('<table><thead><tr>' + cells.map(c => '<th>' + c + '</th>').join('') + '</tr></thead><tbody>');
+          inTable = true;
+        } else {
+          out.push('<tr>' + cells.map(c => '<td>' + c + '</td>').join('') + '</tr>');
+        }
+        continue;
+      } else if (inTable) {
+        out.push('</tbody></table>');
+        inTable = false;
+      }
+      const hm = trim.match(/^(#{1,4})\s+(.*)/);
+      if (hm) {
+        closeLists();
+        out.push('<h4>' + hm[2] + '</h4>');
+        continue;
+      }
+      const lm = trim.match(/^(?:[-*•]|\d+\.)\s+(.*)/);
+      if (lm) {
+        if (!inUl) { out.push('<ul>'); inUl = true; }
+        out.push('<li>' + lm[1] + '</li>');
+        continue;
+      }
+      closeLists();
+      out.push('<p>' + trim + '</p>');
+    }
+    closeLists();
+
+    let html = out.join('\n');
+    codeList.forEach((c, idx) => {
+      html = html.replace('@@CODE_' + idx + '@@', () => c);
+    });
+    mathList.forEach((m, idx) => {
+      html = html.replace('@@MATH_' + idx + '@@', () => m);
+    });
+    return html;
+  }
+
+  function typesetEl(el) {
+    if (window.renderMathInElement && el) {
+      try { window.renderMathInElement(el, KATEX_OPTS); } catch (e) {}
+    }
+  }
+
+  const history = [];
+  let busy = false;
+
+  function appendMsg(role, label, initialHtml) {
+    const wrap = document.createElement('div');
+    wrap.className = 'qa-msg ' + role;
+    const roleDiv = document.createElement('div');
+    roleDiv.className = 'qa-role';
+    roleDiv.textContent = label;
+    const bodyDiv = document.createElement('div');
+    bodyDiv.className = 'qa-body';
+    bodyDiv.innerHTML = initialHtml || '';
+    wrap.appendChild(roleDiv);
+    wrap.appendChild(bodyDiv);
+    msgBox.appendChild(wrap);
+    msgBox.scrollTop = msgBox.scrollHeight;
+    return { wrap, bodyDiv };
+  }
+
+  async function askQuestion(questionText) {
+    const q = (questionText || inputEl.value || '').trim();
+    if (!q || busy) return;
+    busy = true;
+    sendBtn.disabled = true;
+    inputEl.value = '';
+
+    const userBubble = appendMsg('user', '你', '<p>' + escHtml(q) + '</p>');
+    typesetEl(userBubble.bodyDiv);
+    history.push({ role: 'user', content: q });
+
+    const enableThinking = !!(thinkChk && thinkChk.checked);
+    const botBubble = appendMsg('assistant', 'AI', '<p style="color:#64748b">正在基于本篇论文思考回答…</p>');
+    statusEl.textContent = 'AI 正在回答…';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          arxiv_id: arxivId,
+          title: paperTitle,
+          context: getCardContext(),
+          messages: history.slice(-8),
+          enable_thinking: enableThinking,
+          stream: true
+        })
+      });
+
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error('HTTP ' + resp.status + ': ' + errText.slice(0, 200));
+      }
+
+      const ctype = resp.headers.get('content-type') || '';
+      if (ctype.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buf = '';
+        let answerAcc = '';
+        let reasonAcc = '';
+        let lastRender = 0;
+
+        const renderNow = (force) => {
+          const now = Date.now();
+          if (!force && now - lastRender < 120) return;
+          lastRender = now;
+          let html = '';
+          if (reasonAcc) {
+            html += '<details class="qa-think-box"' + (answerAcc ? '' : ' open') + '><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(reasonAcc) + '</div></details>';
+          }
+          const cleanedAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+          html += renderMdWithMath(cleanedAns || (reasonAcc ? '' : '…'));
+          botBubble.bodyDiv.innerHTML = html;
+          typesetEl(botBubble.bodyDiv);
+          msgBox.scrollTop = msgBox.scrollHeight;
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const parts = buf.split('\n\n');
+          buf = parts.pop() || '';
+          for (const part of parts) {
+            for (const line of part.split('\n')) {
+              const t = line.trim();
+              if (!t.startsWith('data:')) continue;
+              const d = t.slice(5).trim();
+              if (d === '[DONE]') continue;
+              try {
+                const pkt = JSON.parse(d);
+                if (pkt.error) throw new Error(pkt.error);
+                if (pkt.delta) answerAcc += pkt.delta;
+                if (pkt.reasoning_delta) reasonAcc += pkt.reasoning_delta;
+                renderNow(false);
+              } catch (e) {
+                if (e.message && !e.message.includes('JSON')) throw e;
+              }
+            }
+          }
+        }
+        renderNow(true);
+        const finalAns = answerAcc.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+        if (finalAns) {
+          history.push({ role: 'assistant', content: finalAns });
+        }
+      } else {
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || '请求失败');
+        let html = '';
+        if (data.reasoning) {
+          html += '<details class="qa-think-box"><summary>💭 思考过程</summary><div class="qa-think-content">' + escHtml(data.reasoning) + '</div></details>';
+        }
+        html += renderMdWithMath(data.answer || '');
+        botBubble.bodyDiv.innerHTML = html;
+        typesetEl(botBubble.bodyDiv);
+        if (data.answer) {
+          history.push({ role: 'assistant', content: data.answer });
+        }
+      }
+      statusEl.textContent = '回答完成 · 基于本篇论文';
+    } catch (err) {
+      const isHttpsMixed = location.protocol === 'https:' && API_URL.startsWith('http://');
+      const jpCardUrl = 'http://177.2.190.33/cards/' + encodeURIComponent(arxivId) + '.html#paper-qa';
+      botBubble.bodyDiv.innerHTML = '<p style="color:#dc2626">调用 AI 失败：' + escHtml(err.message || String(err)) + '</p>' +
+        (isHttpsMixed ? '<p style="font-size:12.5px">提示：当前页面为 HTTPS，浏览器可能拦截对 HTTP 问答接口的直接请求。请访问 <a href="' + jpCardUrl + '">JP 节点卡片页 (' + jpCardUrl + ')</a> 直接提问。</p>' : '');
+      statusEl.textContent = '请求出错，请重试';
+    } finally {
+      busy = false;
+      sendBtn.disabled = false;
+      msgBox.scrollTop = msgBox.scrollHeight;
+    }
+  }
+
+  sendBtn.addEventListener('click', () => askQuestion());
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      askQuestion();
+    }
+  });
+  sec.querySelectorAll('.qa-chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.getAttribute('data-q') || btn.textContent;
+      askQuestion(q);
+    });
+  });
+})();
+</script>
+</body>
+</html>
