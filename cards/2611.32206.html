@@ -518,15 +518,15 @@ details.fold .fold-body {
 <div class="wrap">
 <article class="card">
 <header class="header">
-<div class="meta"><span class="badge topic">π 系列</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.32206" rel="noopener noreferrer" target="_blank">arXiv 2611.32206</a></span><span class="badge">深读</span></div>
+<div class="meta"><span class="badge topic">交互表示与组合泛化</span><span class="badge arxiv"><a href="https://arxiv.org/abs/2611.32206" rel="noopener noreferrer" target="_blank">arXiv 2611.32206</a></span><span class="badge">深读</span></div>
 <h1>深读｜Seeing Is Not Reaching</h1>
 <div class="links"><a href="#sec-method" class="qa-jump" style="background:#f0fdf4;color:#166534;border-color:#bbf7d0">📐 原版模型结构图详解</a><a href="#paper-qa" class="qa-jump">🤖 向 AI 提问本篇论文</a><a href="https://arxiv.org/abs/2611.32206" class="ext-link" rel="noopener noreferrer" target="_blank">原文 ↗</a></div>
 </header>
 <section class="section"><h2>问题</h2><ul>
-<li>VLA 通常继承视觉语言模型的目标定位能力，但在 LIBERO-PRO 等位置扰动中，即使目标已被移动，机械臂仍可能返回该目标在训练演示中的原位置；仅观察最终动作，无法判断模型是没有看见目标、没有使用视觉定位，还是视觉信号被其他捷径覆盖。</li>
-<li>现有研究发现两类相关现象：策略可能依赖场景线索执行原任务，也可能由指令检索熟悉的轨迹或位置。但“表征中可解码目标身份”并不能证明模型能从名称定位当前图像中的目标，更不能证明该定位实际参与动作控制。</li>
-<li>论文在 LIBERO 仿真环境中诊断六种 VLA，通过目标位置扰动与同场景指令扰动区分“场景捷径”和“指令捷径”；重点分析冻结的已训练 π0.5 策略，并在闭环重规划的 flow-matching 动作采样过程中实施无需再训练的推理时干预。</li>
-<li>作者的目标是确认 π0.5 的视觉落地究竟是否参与控制，并在不提供目标坐标、不增加训练的条件下，降低指令捷径对移动目标触达和任务成功的影响。</li>
+<li>VLA 通常继承自具备视觉定位能力的 VLM，但目标物体被移走后，机械臂仍可能伸向训练时的位置；仅观察失败轨迹，无法判断模型是丢失了视觉 grounding、没有使用它，还是其作用被其他捷径覆盖。</li>
+<li>论文区分两类失败：场景捷径让策略无视新指令、继续执行该场景原有任务；指令捷径则由物体名称检索训练中的熟悉位置，而非依据当前图像定位物体。</li>
+<li>作者在 LIBERO 仿真操作任务中，对六种 VLA 进行目标重定位和同场景指令替换，并在闭环执行中记录夹爪首次闭合位置；进一步对 π0.5 的信息路径进行因果遮罩。PSG 是推理时干预，不更新策略参数。</li>
+<li>目标是解释“看到了目标却没有伸向目标”的因果机制，并在不重新训练、不提供目标坐标或分割掩码的条件下，提高位置扰动下的目标到达率和任务成功率。</li>
 </ul></section><section class="section" id="sec-method"><h2>方法</h2><div class="arch-figure-box">
   <div class="arch-figure-bar">
     <span class="arch-badge">📐 论文原版模型结构图（Figure 1）</span>
@@ -544,59 +544,58 @@ details.fold .fold-body {
   <details class="arch-cap-fold"><summary>查看论文原图英文题注（Figure 1 Caption）</summary><div class="arch-cap-text">\piH\ attends to the requested object yet follows an instruction shortcut. Under Task-paired (same scene, new request), OpenVLA-OFT follows a scene shortcut, while \piO\ and \piH\ follow an instruction shortcut to the requested object&#x27;s training place. First-close rates and image-average-normalized attention are aggregated over five scene--request pairs.</div></details>
 </div>
 <ul>
-<li>整体流程为：输入主相机、腕部相机图像与自然语言指令 → 分别切断两条“指令到动作”注意力路径并比较 flow velocity → 得到视觉落地效应与直接指令效应 → 在每个 Euler 采样步中放大前者、抑制后者 → 输出动作块并继续闭环重规划。</li>
-<li>作者区分两条路径：视觉落地路径由图像 token 读取物体名称 token，再由动作 token 读取图像 token；直接路径则允许动作 token 绕过图像、直接读取完整指令。</li>
-<li>Pathway-Separated Guidance（PSG）在同一 noisy action 和 flow timestep 下计算原始速度 \(v\)、切断主相机图像到名称 token 路径后的速度，以及切断动作 token 到完整指令路径后的速度，由差分估计 grounding effect \(v_g\) 和 direct effect \(v_d\)。</li>
-<li>PSG 将采样速度改为 \(\tilde v=v+a v_g-b v_d\)。论文固定 \(b=1\)，即完整减去直接路径效应，并通过 \(a\) 放大模型自身已有的视觉落地效应；这不同于把“有指令”和“无指令”整体相减的 CAG/RSS，因为后者会混合两条方向相反的路径。</li>
-<li>名称 token 来自指令中所有名词短语，由固定文本规则识别；视觉落地切断只限制主相机图像 token 读取名称 token，其余注意力连接保持不变。</li>
-<li>PSG 不更新 π0.5 参数，也不使用目标坐标、检测器、分割掩码或外部目标方向；它只修改六个运动维度，不修改夹爪速度。相对原始策略，每个动作块增加一次 prefix 计算，每个 Euler 步增加两次 action-expert 前向计算。</li>
+<li>整体流程为：输入主相机、腕部相机、机器人状态与语言指令 → π0.5 通过 flow matching 生成动作块 → 分离语言影响动作的两条路径 → 在每个 Euler 采样步调整预测速度 → 闭环执行经引导的动作。</li>
+<li>作者定义两条指令到动作的路径：grounding 路径由图像 token 读取物体名称 token，再由动作 token 读取图像表示；direct 路径则允许动作 token 绕过图像、直接读取完整指令。</li>
+<li>因果诊断分别遮罩两条路径：grounding cut 阻止主相机图像 token 读取名称 token，direct cut 阻止动作 token 直接读取指令；输入图像、指令、噪声动作与 flow timestep 保持不变，以观察夹爪目的地如何变化。</li>
+<li>Pathway-Separated Guidance（PSG）在同一采样状态下计算原始速度 \(v\)、切断 grounding 路径后的速度和切断 direct 路径后的速度，据此得到 grounding effect 与 direct effect；随后放大前者并抑制后者，而不是像整指令 guidance 那样将两种相反作用混在一个对比信号中。</li>
+<li>PSG 不修改模型权重，也不使用目标坐标、检测器、分割掩码或额外训练数据；它只调整六个运动维度的速度，夹爪速度保持原预测。</li>
+<li>相比原始采样器，PSG 每个动作块增加一次 prefix 计算，并在每个 Euler 步增加两次 action-expert 前向评估；因此它是外挂式推理干预，而非新的策略训练方法。</li>
 </ul></section><section class="section"><h2>实验与结果</h2><ul>
-<li>六种 VLA 呈现不同捷径：OpenVLA-OFT、TurboVLA 和 SmolVLA 在 Task-paired 扰动下倾向返回原场景任务位置，表现为场景捷径；π0、π0-FAST 和多数情况下的 π0.5 则前往新指令所指物体的训练位置，而非其当前图像位置，表现为指令捷径。</li>
-<li>在较宽松的触达定义下，π0.5 在 200 个 Position 扰动 episode 中有 42 次触达移动目标；为排除“移动目标恰好位于另一任务训练位置”的混淆，作者采用保守判据后，原始 π0.5 的触达数为 29/200。</li>
-<li>路径切断给出因果证据：切断视觉落地路径后，移动目标触达从 29/200 降至 0/200；切断动作 token 直接读取指令的路径后，触达反而从 29/200 增至 64/200，并使训练位置处的闭合次数接近减半。这说明视觉落地已经参与动作控制，但常被直接路径承载的指令捷径压制。</li>
-<li>在原始、未移动目标的场景中，切断直接路径后仍有 199/200 个 episode 触达目标；因此熟悉场景会掩盖该捷径，因为视觉落地与训练位置检索在原场景中指向同一地点。</li>
-<li>注意力分析显示，PaliGemma 与 π0.5 的物体名称注意力会随目标移动；示例中的 wine bottle 被移动后，π0.5 对新位置的名称注意力由 0% 升至 30%。跨两个任务套件的九个物体上，LIBERO 微调后的 π0.5 对移动目标的名称注意力达到图像平均值的 6.4 倍，而 π0 和 π0-FAST 仍接近图像平均水平。</li>
-<li>在 LIBERO-PRO Object 的 Position 扰动上，PSG 将 π0.5 的 Reach 从 22.0% 提高到 52.6%，任务成功率从 16.6% 提高到 40.8%，两项指标均超过翻倍；论文称原始任务性能基本得到保持，但所提供正文在表格处截断，无法核对其具体原始任务数值。</li>
+<li>在五个 LIBERO-Object 任务上，Position 扰动将请求物体与另一物体交换。六种模型中有五种会回到目标的训练位置；π0.5 在宽松 reach 判据下，200 个 episode 中有 42 次到达重定位目标，但大多数轨迹仍返回训练位置。</li>
+<li>Task-paired 在场景不变时改为请求另一个物体：OpenVLA-OFT、TurboVLA 和 SmolVLA 主要返回场景原任务的位置，表现为场景捷径；π0、π0-FAST 与多数 π0.5 轨迹则前往新指令所指物体的训练位置，表现为指令捷径。</li>
+<li>π0.5 保留了视觉定位信号：酒瓶重定位后，其名称 token 对新位置的注意力由 0% 升至 30%；跨两个任务套件的九个物体，LIBERO 微调后的 π0.5 对移动目标的名称注意力达到图像平均值的 6.4 倍，而两个 π0 变体仍接近图像平均值。该差异在 LIBERO 微调前的机器人预训练模型中已经出现。</li>
+<li>在采用更保守 reach 判据的 200 个目标重定位 episode 中，原始 π0.5 到达新目标 29 次；切断 grounding 路径后降至 0 次，说明视觉定位确实参与动作控制；切断 direct 路径后升至 64 次，同时训练位置处的闭合次数接近减半，说明 direct 路径携带的指令捷径正在覆盖 grounding。</li>
+<li>同一个 direct cut 在原始、未重定位场景中仍有 199/200 个 episode 到达目标，表明熟悉场景中 grounding 与位置捷径指向同一位置，常规评测会掩盖二者的冲突；但仅切断捷径也只能在重定位测试中达到 64/200，仍不足以稳定解决问题。</li>
+<li>在 LIBERO-PRO Object 的 Position 扰动下，PSG 将 π0.5 的目标到达率从 22.0% 提高到 52.6%，任务成功率从 16.6% 提高到 40.8%，两项指标均超过原来的两倍；论文称原始任务性能“基本保持”，但所提供正文在表格处截断，无法核对其逐任务数值。</li>
 </ul></section><section class="section"><h2>局限与可以继续做的</h2><ul>
-<li>核心因果干预与 PSG 主要围绕 π0.5 展开。π0 的两种路径切断都不能产生对移动目标的触达，与其较弱的名称注意力一致；因此 PSG 依赖模型已经保留可用视觉落地，不能直接修复 grounding 已在机器人预训练阶段退化的模型。</li>
-<li>证据来自 LIBERO 系列仿真任务，重点结果是五个 LIBERO-Object 任务及其位置扰动；尚无真机、不同机器人形态、动态目标、遮挡或更长时程任务的证据，不能直接外推到开放世界操作。</li>
-<li>PSG 的额外推理成本不可忽略：每个动作块多一次 prefix 计算，每个 Euler 步多两次 action-expert 计算。正文未在所给片段中报告端到端控制频率、延迟、显存占用或实时性影响。</li>
-<li>注意力跟随目标是重要诊断信号，但注意力本身并不等价于可靠空间定位；本文通过路径切断补充了因果证据，后续仍可加入目标框、三维位置误差、动作终点误差和跨层 causal tracing，检验 grounding effect 是否稳定对应真实目标几何。</li>
-<li>可继续做的实验包括：在 OpenPI 执行器中记录每次重规划的 \(v_g\)、\(v_d\) 范数及夹角，以“二者持续冲突”作为在线告警；联合扫描 \(a\) 与推理步数，绘制 Reach、成功率、延迟和原任务退化的 Pareto 曲线；再用目标位置反事实、同场景换指令和新增未见物体组合构造训练集，比较推理时 PSG 与反事实数据训练能否互补。</li>
+<li>PSG 的机制与主要改进数字集中在 π0.5；六种 VLA 虽用于捷径诊断，但现有原文片段没有证明 PSG 能迁移到 π0、OpenVLA-OFT、TurboVLA、SmolVLA 或其他机器人策略。</li>
+<li>实验证据来自 LIBERO 系列仿真任务与有限的物体重定位、指令替换组合，尚不能直接外推到真机中的遮挡、相机漂移、抓取误差、动态目标或长时序失败恢复。</li>
+<li>注意力转移本身不等于因果 grounding；本文通过路径遮罩补足了这一点，但遮罩按架构预定义路径，无法排除目标信息还经由其他 token、腕部图像或中间表示传播。正文也提到后续分析腕部相机，但所提供片段未包含对应结果。</li>
+<li>Reach 只判断夹爪首次闭合是否位于请求物体，不能完整覆盖抓取稳定性、运输过程中的持续目标跟随、正确放置和失败后的重试；Reach 明显高于最终成功率也说明到达目标并不等于完成任务。</li>
+<li>可继续构造物体×目标×场景的交叉覆盖和严格留出组合，并加入同一初始画面下的多目标反事实任务；同时分别统计接近、接触、抓取、运输、放置和恢复阶段，判断 direct shortcut 在哪个阶段重新占据控制。</li>
+<li>PSG 带来每个动作块一次额外 prefix 计算及每个 Euler 步两次额外 action-expert 评估；论文片段未报告实际延迟、吞吐量或控制频率，真机部署前应测量其是否满足闭环实时性。</li>
 </ul></section><details class="fold"><summary>实验设置</summary><div class="fold-body"><ul>
-<li>环境：LIBERO、LIBERO-PRO 和 LIBERO-Plus 仿真操作基准；核心捷径分析使用五个 LIBERO-Object 任务。</li>
-<li>被测模型：OpenVLA-OFT、TurboVLA、SmolVLA、π0、π0-FAST、π0.5，共六种 VLA。</li>
-<li>π 系列视觉语言骨干参考：PaliGemma；作者比较原始 PaliGemma、机器人预训练 base model 与 LIBERO 微调后策略的名称注意力。</li>
-<li>输入：主相机图像、腕部相机图像、自然语言指令；π0.5 通过 flow matching 生成动作块，并在重规划时从高斯噪声经 Euler 步积分得到动作。</li>
-<li>扰动协议：Position 将请求目标与另一物体交换位置但保持指令不变；Task/Task-paired 保持场景不变、改为请求场景中的另一物体。</li>
-<li>行为指标：记录夹爪第一次闭合的位置；在请求目标上闭合记为 Reach。保守判据排除移动目标落在另一任务训练位置、因而可能由捷径造成的闭合。</li>
-<li>路径诊断：Position 条件下共测试 200 个 episode；原始场景下另报告直接路径切断后的 199/200 触达结果。</li>
-<li>注意力分析：检查物体名称 token 到主相机图像 patch 的注意力；跨两个任务套件、九个物体比较预训练前后及 LIBERO 微调后的变化。</li>
-<li>PSG 参数与接口：\(b=1\)，\(a\ge 0\)；每个 Euler 步在相同 noisy action 和 flow timestep 上执行三种 velocity 预测，仅修改六个运动维度，保持夹爪速度不变。</li>
-<li>训练状态：PSG 是冻结策略上的推理时方法，不更新任何模型参数，也不需要额外训练数据或外部目标位置。</li>
-<li>所给论文正文在 Table 1 开头截断，未披露可核对的具体检查点名称、每任务 episode 分配、Euler 步数、\(a\) 的最终取值、仿真硬件与运行时延迟。</li>
+<li>平台：LIBERO、LIBERO-PRO 与 LIBERO-Plus 仿真操作基准；正文重点报告五个 LIBERO-Object 任务及 LIBERO-PRO Object 的 Position 扰动。</li>
+<li>机器人观测：主相机图像、腕部相机图像、机器人状态和语言指令；执行对象为带夹爪的机械臂，所提供原文未给出具体机器人型号。</li>
+<li>评测模型：OpenVLA-OFT、TurboVLA、SmolVLA、π0、π0-FAST、π0.5；PaliGemma 作为三个 π 模型共享的机器人训练前 VLM 参考。</li>
+<li>反事实协议：Position 扰动交换请求物体与另一物体但保持指令不变；Task/Task-paired 保持场景不变、改为请求场景内另一物体。</li>
+<li>行为指标：记录夹爪首次闭合位置；在请求物体上闭合计为 Reach。路径遮罩实验采用更保守判据，排除移动物体恰好位于另一任务训练位置、因而无法区分 grounding 与捷径的闭合。</li>
+<li>路径诊断规模：π0.5 的目标重定位因果遮罩测试包含 200 个 episode；原始场景 direct-cut 对照同样报告 200 个 episode。注意力汇总还涉及五个 scene–request pair，以及两个任务套件中的九个物体。</li>
+<li>grounding cut：阻止图像 token 读取指令中的物体名称；PSG 中具体遮罩主相机图像 token 到名称 token 的注意力。名称 token 由固定文本规则识别指令中的全部名词短语。</li>
+<li>direct cut：阻止动作 token 直接读取完整指令；π0 的诊断还同时涉及 state token。所有遮罩跨全部 Transformer 层和注意力头生效。</li>
+<li>动作生成：π0.5 通过 flow matching 和 Euler 积分生成动作块，并在闭环过程中重新规划。</li>
+<li>PSG：在每个 Euler 步于相同 noisy action 和 flow timestep 下评估三种速度；direct-effect 抑制系数设为 \(b=1\)，grounding 放大系数 \(a\) 的具体取值未出现在所提供原文片段中。</li>
+<li>训练状态：PSG 不更新参数、不增加训练；论文比较机器人预训练 base model 与 LIBERO 微调后策略，但所提供片段未披露微调数据量、训练步数、硬件、随机种子及完整检查点名称。</li>
 </ul></div></details><details class="fold"><summary>AI导读和推荐理由</summary><div class="fold-body"><ul>
-<li>推荐这篇的主要原因不是它又提出一个新的 VLA，而是它把“模型看见了目标却仍伸向旧位置”拆成可干预的两条因果路径，避免把所有位置扰动失败都笼统归结为视觉 grounding 丧失。</li>
-<li>对 π 系列尤其有价值的是，论文指出 π0.5 与 π0/π0-FAST 的差异在 LIBERO 微调前已经出现：π0.5 仍保留类似 PaliGemma 的名称—图像落地，而前两者在机器人预训练后已明显弱化。这提示基础训练阶段决定了后续推理时纠偏是否还有可利用的视觉信号。</li>
+<li>这篇论文值得推荐，因为它没有把“注意力落在目标上”直接当作策略理解视觉条件，而是用闭环目标重定位和路径遮罩区分“已编码”“被动作使用”与“被另一条捷径覆盖”三个层次。</li>
+<li>它对基于 OpenPI/π0.5 构建条件执行器尤其直接：π0.5 并非完全缺少视觉 grounding，而是 grounding 与语言检索出的训练位置同时影响动作，后者在分布外组合中占据上风。</li>
 </ul>
-<h3 class="sub">与π系列的关系</h3>
+<h3 class="sub">与本项目关系</h3>
 <ul>
-<li>本文直接分析 π0、π0-FAST 和 π0.5，并以共享视觉语言骨干 PaliGemma 作为机器人训练前的参照；它不是 π 系列原作者提出的新基础模型，也没有改变 π0.5 的训练目标、骨干结构或参数。</li>
-<li>三种 π 模型在 Task-paired 中都表现出由指令检索训练位置的倾向，但只有 π0.5 明显保留移动目标的名称注意力，并在部分 episode 中实际触达移动目标；因此作者将主要路径因果实验与 PSG 干预放在 π0.5 上。</li>
-<li>π0 与 π0-FAST 的问题更接近 grounding 本身已弱化：两种路径切断都不能让它们触达移动目标。π0.5 则属于 grounding 尚在、但被直接 instruction-to-action 路径覆盖，因而适合用 PSG 做冻结模型的推理时纠偏。</li>
-<li>论文与 OpenPI 的关系主要是基于其 π 系列模型实现和评测接口开展诊断与采样干预；PSG 是外挂在 flow-matching sampler 上的 inference-time harness，并非 OpenPI 或 π 系列训练框架的新版本。所给正文也未显示 PSG 已在 OpenPI 的所有机器人平台或真机配置上验证。</li>
-<li>相比 instruction-free guidance，PSG 不把整条语言条件统一增强，而是分别估计图像介导的 grounding effect 与动作直接读取指令的 direct effect；这对 π0.5 很关键，因为两者在目标移动后可能指向相反位置。</li>
+<li>论文直接对应 Austin 项目中“把 G 或 A/F 条件喂给策略，不等于策略真正遵循条件”的观察：π0.5 的物体名称注意力会跟随移动目标，但机械臂仍常被熟悉的“语言—训练位置”关联拉回去，类似 G 被编码却只表现为任务 ID，或被其他条件路径覆盖。</li>
+<li>本文没有提出 G/A-F 交互几何，也没有验证接触点、运动轴、物体期望运动或放置目标；其 grounding 主要解决“当前图像中请求物体在哪里”，因此与 A 的“接近哪个交互区域”联系较强，与 F 的“物体应如何运动”及新接触技能生成联系较弱。</li>
+<li>对当前 OpenPI π0/π0.5 执行器，关键风险是语言或训练中的物体—目标关联可能绕过 G，直接驱动动作。本文证明这种旁路可在原始任务中几乎不可见，却在目标重定位或未见组合上压过视觉条件。</li>
 </ul>
-<h3 class="sub">对Austin研究的启发</h3>
+<h3 class="sub">启发</h3>
 <ul>
-<li>在 OpenPI 执行器中增加三路可切换前向接口：原始 attention、<code>main-image ↛ noun-token</code>、<code>action-token ↛ instruction</code>，确保三路共享 noisy action、flow timestep 和观测，从而复现论文的路径差分而不是比较不同随机采样。</li>
-<li>将 \(v_g\) 与 \(v_d\) 做成闭环监控量：记录每次重规划中的范数、夹角及其对末端位姿六维速度的影响。当二者长期反向且 direct effect 占优时，可触发 PSG、降低动作幅度或请求新的相机观测。</li>
-<li>评测不能只看原始任务成功率。至少建立“原场景、位置交换、同场景换指令、位置与指令联合反事实”四组协议，并同时记录首次闭合位置、目标触达率、完整成功率、训练位置误触率和恢复轨迹。</li>
-<li>对引导场 \(G\) 或类似条件遵循模块，可把“增强语言条件”改为“增强经图像验证的语言条件”：只有名称 token 对当前图像目标形成稳定 grounding effect 时才放大；如果 π0/π0-FAST 式 grounding 已消失，应转向反事实数据或表示训练，而不是盲目提高 PSG 系数。</li>
-<li>在部署前扫描 \(a\) 并保留 \(a=0\) 与 direct-cut-only 两个对照，分别回答收益来自“去除指令捷径”还是“进一步放大视觉落地”；同时测量额外 action-expert 前向对闭环控制频率的影响。</li>
+<li>在现有 G 消融的置零、反向和交换之外，加入路径级干预：分别切断“视觉/G → 动作”与“语言 → 动作”的直接连接，比较接近区域、抓取、运输和放置阶段的闭环轨迹，判断 G 是未被使用，还是已发挥作用但被语言捷径覆盖。</li>
+<li>建立与 Position 和 Task-paired 对应的二维反事实矩阵：一类保持语言不变、交换物体或目标位置；另一类保持初始场景完全相同、只替换目标或期望运动。这样可区分场景捷径、物体名称捷径、目标位置捷径和真正的 A/F 条件遵循。</li>
+<li>对物体×目标×场景做交叉覆盖与留出组合，并刻意加入“同一物体在同一场景中送往不同目标”的训练样本；否则语言或场景可唯一检索目标位置，训练损失和原始任务成功率都无法证明组合泛化。</li>
+<li>将评测拆成“到达正确物体—稳定抓取—持续跟随目标—送达正确区域—释放—失败恢复”，同时记录 G/A-F 条件与动作的局部一致性；本文 Reach 从 52.6% 到最终成功率 40.8% 的差距提示，仅修复接近阶段不足以解决放置问题。</li>
+<li>可在 π0.5 上实现 PSG 式三次前向对比，分别估计 G-mediated effect 与 direct language effect，再尝试只在冲突显著的 replanning step 启用 guidance，以降低额外计算，并与原有 G 置零、反向、交换测试形成因果证据链。</li>
 </ul>
 <h3 class="sub">一句话总结</h3>
-<p>澳大利亚国立大学、CSIRO 与 GE Research 的作者发现 π0.5 虽能视觉定位移动目标却常被直接指令路径拉回训练位置，并以无需训练和外部坐标的 PSG 将 LIBERO-PRO Object Position 上的 Reach 从 22.0% 提至 52.6%、成功率从 16.6% 提至 40.8%。</p></div></details>
+<p>澳大利亚国立大学、CSIRO 与 GE Research 的作者证明 π0.5 的视觉 grounding 已参与控制却被指令到动作的训练位置捷径覆盖，并以无需训练的 PSG 将 LIBERO-PRO Object 位置扰动下的 Reach 从 22.0% 提升至 52.6%、成功率从 16.6% 提升至 40.8%。</p></div></details>
 <section id="paper-qa" class="qa-section" data-arxiv="2611.32206" data-title="Seeing Is Not Reaching">
   <div class="qa-head">
     <h2 class="qa-title">🤖 AI 论文问答</h2>
